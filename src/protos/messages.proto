@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "src/protos"; 
+ 
+ message Request {
+	string Name = 1;
+ }
+ 
+ message Response {
+	string Message = 1;
+}
+ 
+ service Service {
+	rpc Hello (Request) returns (Response) {}
+ }
