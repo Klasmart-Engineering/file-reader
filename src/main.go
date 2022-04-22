@@ -90,7 +90,6 @@ func composeCsvIngester[operation any](
 			recordValue = append(recordValue, byte(0))
 			recordValue = append(recordValue, schemaIDBytes...)
 			recordValue = append(recordValue, valueBytes...)
-			fmt.Println(recordValue)
 
 			// Put the row on the topic
 			key, _ := uuid.NewUUID()
