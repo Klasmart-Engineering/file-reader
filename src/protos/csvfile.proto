@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package protos.csvfile;
+option go_package = "src/protos"; 
+
+message CsvFile {
+	string file_id = 1;
+	string path = 2;
+}
+enum Type {
+	ORGANIZATION = 0;
+	SCHOOL = 1;
+	CLASS = 2;
+	USER = 3;
+	ROLE = 4;
+	PROGRAM = 5;
+	UNKNOWN = 6;
+  }
+message CsvFileRequest {
+	Type type = 1;
+	CsvFile csvfile = 2;
+ }
+ 
+message CsvFileResponse {
+	bool success = 2;
+    repeated CsvError errors = 3;
+}
+message CsvError {
+  string file_id = 1;
+	
+  repeated string message = 2;
+}
+service CsvFileService {
+	rpc IngestCSV (stream CsvFileRequest) returns (CsvFileResponse) {}
+ }

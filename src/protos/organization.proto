@@ -1,0 +1,22 @@
+syntax = "proto3";
+package organizationsService;
+
+option go_package = "src/protos"; 
+
+message Organization {
+    string guid = 1;
+    string name = 2;
+}
+
+message CreateRequest {
+    string request_id = 1;
+    Organization organization = 2;
+}
+message CreateResponse {
+    Organization organization = 1;
+}
+
+service OrganizationsService {
+    rpc Create(CreateRequest) returns (CreateResponse) {}
+}
+

@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-option go_package = "src/protos"; 
+package protos;
+option go_package = "src/protos;msgpb"; 
  
  message Request {
 	string Name = 1;
@@ -10,6 +11,6 @@ option go_package = "src/protos";
 	string Message = 1;
 }
  
- service Service {
-	rpc Hello (Request) returns (Response) {}
+ service HealthService {
+	rpc Check (HealthCheckRequest) returns (HealthCheckResponse) {}
  }
