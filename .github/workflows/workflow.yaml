@@ -1,0 +1,31 @@
+name: csv reader 
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+  
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.18.1'
+    - name: Run testing
+      run: cd test && go test -v
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.18.1'
+    - name: Run build
+      run: go build . 
+  
