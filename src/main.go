@@ -23,6 +23,7 @@ const (
 
 // topic, operation and rowToOperation could be defined for each operation type, then we compose the reader out of them
 const topic = "person"
+const schemaPath = "./src/avros/person.avsc"
 
 type person struct {
 	Name string
@@ -44,6 +45,7 @@ func rowToPerson(row []string) person {
 func composeCsvIngester[operation any](
 	topic string,
 	rowToOpConverter func([]string) operation,
+	schemaText string,
 	brokerAddrs []string,
 	logger *log.Logger,
 ) func(f *os.File, ctx context.Context) {
@@ -55,9 +57,9 @@ func composeCsvIngester[operation any](
 		Logger:  logger,
 	})
 	// Get schema for the provided topic
+
 	schemaRegistryClient := srclient.CreateSchemaRegistryClient("http://localhost:8081")
-	schema, err := schemaRegistryClient.GetLatestSchema(topic + "-value")
-	fmt.Println("schema", schema)
+	schema, err := schemaRegistryClient.CreateSchema(topic, schemaText, "AVRO")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -142,12 +144,19 @@ func main() {
 	}
 	defer f.Close()
 
+	schemaBytes, err := os.ReadFile(schemaPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Print(string(schemaBytes))
+
 	logger := log.New(os.Stdout, "kafka writer: ", 0)
 	ctx := context.Background()
 
 	csvIngester := composeCsvIngester(
 		topic,
 		rowToPerson,
+		string(schemaBytes),
 		[]string{brokerAddress},
 		logger,
 	)
