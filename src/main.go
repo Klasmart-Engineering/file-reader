@@ -84,7 +84,7 @@ func composeCsvIngester[operation any](
 			native, _, _ := schema.Codec().NativeFromTextual(value)
 			valueBytes, err := schema.Codec().BinaryFromNative(nil, native)
 			if err != nil {
-				panic("error with schema converting to binary")
+				panic("error converting to avro bytes " + err.Error())
 			}
 
 			// Combine row bytes with schema id to make a record
@@ -148,11 +148,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Print(string(schemaBytes))
 
 	logger := log.New(os.Stdout, "kafka writer: ", 0)
 	ctx := context.Background()
 
+	// Compose the csv ingester
 	csvIngester := composeCsvIngester(
 		topic,
 		rowToPerson,
