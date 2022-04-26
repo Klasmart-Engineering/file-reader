@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/riferrei/srclient"
@@ -22,48 +21,44 @@ const (
 )
 
 // topic, operation and rowToOperation could be defined for each operation type, then we compose the reader out of them
-const topic = "person"
-const schemaPath = "./src/avros/person.avsc"
+const topic = "organisation"
+const schemaPath = "./src/avros/organisation.avsc"
 
-type person struct {
-	Name string
-	Age  int
+type metadata struct {
+	Origin_application string
+	Region             string
+	Tracking_id        string
+}
+type payload struct {
+	Organization_name string
+	Guid              string
+}
+type organisation struct {
+	Payload  payload
+	Metadata metadata
 }
 
-func rowToPerson(row []string) person {
-	age, err := strconv.Atoi(row[1])
-	if err != nil {
-		log.Fatal(err)
+func rowToOrganisation(row []string) organisation {
+	md := metadata{
+		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:             os.Getenv("METADATA_REGION"),
+		Tracking_id:        uuid.NewString(),
 	}
-	p := person{
-		Name: row[0],
-		Age:  age,
+	pl := payload{
+		Guid:              row[0],
+		Organization_name: row[1],
 	}
-	return p
+	return organisation{Payload: pl, Metadata: md}
 }
 
 func composeCsvIngester[operation any](
 	topic string,
+	w *kafka.Writer,
 	rowToOpConverter func([]string) operation,
-	schemaText string,
+	schema *srclient.Schema,
 	brokerAddrs []string,
 	logger *log.Logger,
 ) func(f *os.File, ctx context.Context) {
-	fmt.Printf("Broker: %s\n", brokerAddrs[0])
-	// Prepare kafka producer for the provided topic
-	w := kafka.NewWriter(kafka.WriterConfig{
-		Brokers: brokerAddrs,
-		Topic:   topic,
-		Logger:  logger,
-	})
-	// Get schema for the provided topic
-
-	schemaRegistryClient := srclient.CreateSchemaRegistryClient("http://localhost:8081")
-	schema, err := schemaRegistryClient.CreateSchema(topic, schemaText, "AVRO")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Schema '%d' retrieved successfully!\n", schema.ID())
 	schemaIDBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schema.ID()))
 
@@ -144,19 +139,42 @@ func main() {
 	}
 	defer f.Close()
 
+	// Get schema
 	schemaBytes, err := os.ReadFile(schemaPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+<<<<<<< Updated upstream
+=======
+	schemaRegistryClient := srclient.CreateSchemaRegistryClient("http://localhost:8081")
+	schema, err := schemaRegistryClient.CreateSchema(topic, string(schemaBytes), "AVRO")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Schema '%d' retrieved successfully!\n", schema.ID())
+>>>>>>> Stashed changes
 
 	logger := log.New(os.Stdout, "kafka writer: ", 0)
 	ctx := context.Background()
 
+<<<<<<< Updated upstream
 	// Compose the csv ingester
+=======
+	brokerAddrs := []string{brokerAddress}
+	fmt.Printf("Broker: %s\n", brokerAddrs[0])
+	// Prepare kafka producer for the provided topic
+	w := kafka.NewWriter(kafka.WriterConfig{
+		Brokers: brokerAddrs,
+		Topic:   topic,
+		Logger:  logger,
+	})
+
+>>>>>>> Stashed changes
 	csvIngester := composeCsvIngester(
 		topic,
-		rowToPerson,
-		string(schemaBytes),
+		w,
+		rowToOrganisation,
+		schema,
 		[]string{brokerAddress},
 		logger,
 	)
