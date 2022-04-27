@@ -1,0 +1,46 @@
+{
+	"name": "Subject",
+	"type": "record",
+	"namespace": "com.kidsloop.onboarding",
+	"fields": [{
+			"name": "payload",
+			"type": {
+				"name": "SubjectPayload",
+				"type": "record",
+				"fields": [{
+					"name": "uuid",
+					"type": "string",
+					"logicalType": "uuid"
+				}, {
+					"name": "organization_uuid",
+					"type": "string",
+					"logicalType": "uuid"
+				}, {
+					"name": "name",
+					"type": "string"
+				}]
+			}
+		},
+		{
+			"name": "metadata",
+			"type": {
+				"name": "SubjectMetadata",
+				"type": "record",
+				"fields": [{
+						"name": "origin_application",
+						"type": "string"
+					},
+					{
+						"name": "region",
+						"type": "string"
+					},
+					{
+						"name": "tracking_id",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		}
+	]
+}

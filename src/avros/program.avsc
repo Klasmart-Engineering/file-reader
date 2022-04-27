@@ -1,0 +1,80 @@
+{
+	"name": "Program",
+	"type": "record",
+	"namespace": "com.kidsloop.onboarding",
+	"fields": [{
+			"name": "payload",
+			"type": {
+				"name": "ProgramPayload",
+				"type": "record",
+				"fields": [{
+						"name": "uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "organization_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"name": "age_range_uuids",
+						"type": {
+							"type": "array",
+							"items": {
+								"name": "AgeRangeUuid",
+								"type": "string",
+								"logicalType": "uuid"
+							}
+						}
+					},
+					{
+						"name": "grade_uuids",
+						"type": {
+							"type": "array",
+							"items": {
+								"name": "GradeUuid",
+								"type": "string",
+								"logicalType": "uuid"
+							}
+						}
+					},
+					{
+						"name": "subject_uuids",
+						"type": {
+							"type": "array",
+							"items": {
+								"name": "SubjectUuid",
+								"type": "string",
+								"logicalType": "uuid"
+							}
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "metadata",
+			"type": {
+				"name": "ProgramMetadata",
+				"type": "record",
+				"fields": [{
+						"name": "origin_application",
+						"type": "string"
+					},
+					{
+						"name": "region",
+						"type": "string"
+					},
+					{
+						"name": "tracking_id",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		}
+	]
+}
