@@ -1,0 +1,54 @@
+{
+	"name": "Role",
+	"type": "record",
+	"namespace": "com.kidsloop.onboarding",
+	"fields": [{
+			"name": "payload",
+			"type": {
+				"name": "RolePayload",
+				"type": "record",
+				"fields": [{
+						"name": "uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "organization_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"name": "permission_ids",
+						"type": {
+							"type": "array",
+							"items": "string"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "metadata",
+			"type": {
+				"name": "RoleMetadata",
+				"type": "record",
+				"fields": [{
+						"name": "origin_application",
+						"type": "string"
+					},
+					{
+						"name": "region",
+						"type": "string"
+					},
+					{
+						"name": "tracking_id",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		}
+	]
+}

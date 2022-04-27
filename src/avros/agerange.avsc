@@ -1,0 +1,59 @@
+{
+	"name": "Agerange",
+	"type": "record",
+	"namespace": "com.kidsloop.onboarding",
+	"fields": [{
+			"name": "payload",
+			"type": {
+				"name": "AgerangePayload",
+				"type": "record",
+				"fields": [{
+						"name": "uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "organization_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"name": "low_value",
+						"type": "int"
+					},
+					{
+						"name": "high_value",
+						"type": "int"
+					},
+					{
+						"name": "unit",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "metadata",
+			"type": {
+				"name": "AgerangeMetadata",
+				"type": "record",
+				"fields": [{
+						"name": "origin_application",
+						"type": "string"
+					},
+					{
+						"name": "region",
+						"type": "string"
+					},
+					{
+						"name": "tracking_id",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		}
+	]
+}
