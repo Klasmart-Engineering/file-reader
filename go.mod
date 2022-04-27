@@ -1,8 +1,9 @@
-module file-reader
+module file_reader
 
 go 1.18
 
 require (
+	github.com/actgardner/gogen-avro/v10 v10.2.1
 	github.com/google/uuid v1.3.0
 	github.com/riferrei/srclient v0.5.2
 	github.com/segmentio/kafka-go v0.4.31
@@ -16,13 +17,13 @@ require (
 	github.com/derekparker/trie v0.0.0-20200317170641-1fdf38b7b0e9 // indirect
 	github.com/go-delve/delve v1.8.2 // indirect
 	github.com/go-delve/liner v1.2.2-1 // indirect
-	github.com/golang/snappy v0.0.1 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-dap v0.6.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
-	github.com/linkedin/goavro/v2 v2.9.7 // indirect
+	github.com/linkedin/goavro/v2 v2.11.1 // indirect
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
