@@ -26,7 +26,7 @@ func TestReadOrgCsv(t *testing.T) {
 	ctx := context.Background()
 
 	// Compose File reader for organization
-	csvIngester := src.CreateCsvIngester(brokerAddrs)
+	csvIngester := src.OrgCsvIngester(brokerAddrs)
 
 	// Actually put the csv rows onto the topic
 	csvIngester(f, ctx)

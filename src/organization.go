@@ -17,7 +17,7 @@ const (
 	schemaPath = "../src/avros/organisation.avsc"
 )
 
-func CreateCsvIngester(brokerAddrs []string) func(f *os.File, ctx context.Context) {
+func OrgCsvIngester(brokerAddrs []string) func(f *os.File, ctx context.Context) {
 	// schema logic will be part of build process
 	// and this will be replaced with a cache lookup
 	schemaBytes, err := os.ReadFile(schemaPath)
