@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+option go_package = "src/protos"; 
+
+message Organization {
+    Organization_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Organization_payload {
+    string uuid = 1;
+    string name = 2;
+}
+
+message Subject {
+    Metadata metadata = 1;
+    Subject_payload payload = 2;
+}
+
+message Subject_payload {
+    string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+}
+
+message Category {
+    Category_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Category_payload {
+    string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+    repeated string subcategory_uuids = 4;
+}
+
+message Subcategory {
+    Subcategory_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Subcategory_payload {
+    string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+}
+
+message Agerange {
+    Agerange_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Agerange_payload {
+    string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+    int32 low_value = 4;
+    int32 high_value = 5;
+    string unit = 6;
+}
+
+message Role {
+    Role_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Role_payload {
+    string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+    repeated string permission_ids = 4;
+}
+
+message School {
+    School_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message School_payload {
+    string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+}
+
+message User {
+    User_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message User_payload {
+    string uuid = 1;
+    string organization_uuid = 2;
+    string given_name = 3;
+    string family_name = 4;
+    string email = 5;
+    string phone_number = 6;
+    string date_of_birth = 7;
+    Gender gender = 8;
+}
+
+message Class {
+    Class_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Class_payload {
+    string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+}
+
+enum Gender {
+  MALE = 0;
+  FEMALE = 1;
+}
+
+message Metadata {
+    string origin_application = 1;
+    string region = 2;
+    string tracking_id = 3;
+}
