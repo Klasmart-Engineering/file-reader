@@ -7,7 +7,6 @@ import (
 	"encoding/csv"
 	"io"
 	"log"
-	"os"
 
 	"github.com/google/uuid"
 	"github.com/riferrei/srclient"
@@ -27,12 +26,12 @@ func ComposeCsvIngester[operation AvroRecord](
 	schema *srclient.Schema,
 	brokerAddrs []string,
 	logger *log.Logger,
-) func(f *os.File, ctx context.Context) {
+) func(r io.Reader, ctx context.Context) {
 	schemaIDBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schema.ID()))
 
-	return func(f *os.File, ctx context.Context) {
-		csvReader := csv.NewReader(f)
+	return func(r io.Reader, ctx context.Context) {
+		csvReader := csv.NewReader(r)
 		for {
 			row, err := csvReader.Read()
 			if err == io.EOF {
@@ -42,7 +41,7 @@ func ComposeCsvIngester[operation AvroRecord](
 				log.Fatal(err)
 			}
 
-			// Map row to bytes using schema
+			// Serialise row using schema
 			var buf bytes.Buffer
 			op := rowToOpConverter(row)
 			op.Serialize(&buf)

@@ -4,6 +4,7 @@ import (
 	"context"
 	avro "file_reader/avro_gencode"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -17,7 +18,7 @@ const (
 	schemaPath = "../src/avros/organisation.avsc"
 )
 
-func OrgCsvIngester(brokerAddrs []string) func(f *os.File, ctx context.Context) {
+func OrgCsvIngester(brokerAddrs []string) func(r io.Reader, ctx context.Context) {
 	// schema logic will be part of build process
 	// and this will be replaced with a cache lookup
 	schemaBytes, err := os.ReadFile(schemaPath)
@@ -32,14 +33,14 @@ func OrgCsvIngester(brokerAddrs []string) func(f *os.File, ctx context.Context) 
 	fmt.Printf("Schema '%d' retrieved successfully!\n", schema.ID())
 	// Prepare kafka producer for the provided topic
 	logger := log.New(os.Stdout, "kafka writer: ", 0)
-	w := kafka.NewWriter(kafka.WriterConfig{
-		Brokers: brokerAddrs,
-		Topic:   topic,
-		Logger:  logger,
-	})
+	w := kafka.Writer{
+		Addr:   kafka.TCP(brokerAddrs...),
+		Topic:  topic,
+		Logger: logger,
+	}
 	return ComposeCsvIngester(
 		topic,
-		w,
+		&w,
 		rowToOrganisation,
 		schema,
 		brokerAddrs,
