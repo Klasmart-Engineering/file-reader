@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
+	"os"
 	"testing"
 
 	avro "file_reader/avro_gencode"
@@ -27,23 +29,24 @@ func TestReadOrgCsv(t *testing.T) {
 	csv := fmt.Sprintf("%s,%s\n%s,%s", orgId1, orgName1, orgId2, orgName2)
 	reader := bytes.NewReader([]byte(csv))
 
-	ctx := context.Background()
+	brokerAddrs := []string{"localhost:9092"}
 
-	// Compose File reader for organization
-	csvIngester := src.OrgCsvIngester(brokerAddrs)
+	var config = src.Config{
+		BrokerAddrs: brokerAddrs,
+		Reader:      reader,
+		Context:     context.Background(),
+		Logger:      *log.New(os.Stdout, "kafka writer: ", 0),
+	}
+	src.Organization.IngestFile(config)
 
-	// Actually put the csv rows onto the topic
-	csvIngester(reader, ctx)
-
-	// Consume from the topic to prove it worked
+	// Until we have a fresh topic for testing,
+	// Not sure yet how to do assertions as consumer will have to read everything
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: brokerAddrs,
 		Topic:   "organization",
 	})
-
-	// Until we have a fresh topic for testing,
-	// Not sure yet how to do assertions as consumer will have to read everything
-	for i := 1; i < 5; i++ {
+	ctx := context.Background()
+	for i := 0; i < 2; i++ {
 		msg, err := r.ReadMessage(ctx)
 		if err == nil {
 			val, e := avro.DeserializeOrganization(bytes.NewReader(msg.Value[5:]))
