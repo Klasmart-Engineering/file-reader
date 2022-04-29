@@ -35,7 +35,7 @@ func TestReadOrgCsv(t *testing.T) {
 	// Consume from the topic to prove it worked
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: brokerAddrs,
-		Topic:   "organisation",
+		Topic:   "organization",
 	})
 
 	// Until we have a fresh topic for testing,

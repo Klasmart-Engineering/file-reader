@@ -14,13 +14,11 @@ import (
 )
 
 const (
-	topic      = "organisation"
-	schemaPath = "../src/avros/organisation.avsc"
+	topic      = "organization"
+	schemaPath = "../src/avros/organization.avsc"
 )
 
 func OrgCsvIngester(brokerAddrs []string) func(r io.Reader, ctx context.Context) {
-	// schema logic will be part of build process
-	// and this will be replaced with a cache lookup
 	schemaBytes, err := os.ReadFile(schemaPath)
 	if err != nil {
 		log.Fatal(err)
@@ -41,20 +39,20 @@ func OrgCsvIngester(brokerAddrs []string) func(r io.Reader, ctx context.Context)
 	return ComposeCsvIngester(
 		topic,
 		&w,
-		rowToOrganisation,
+		rowToOrganization,
 		schema,
 		brokerAddrs,
 		logger,
 	)
 }
 
-func rowToOrganisation(row []string) avro.Organization {
-	md := avro.Metadata{
+func rowToOrganization(row []string) avro.Organization {
+	md := avro.OrganizationMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:             os.Getenv("METADATA_REGION"),
 		Tracking_id:        uuid.NewString(),
 	}
-	pl := avro.Payload{
+	pl := avro.OrganizationPayload{
 		Guid:              row[0],
 		Organization_name: row[1],
 	}

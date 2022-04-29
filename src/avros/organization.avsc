@@ -5,7 +5,7 @@
 	"fields": [{
 			"name": "payload",
 			"type": {
-				"name": "payload",
+				"name": "OrganizationPayload",
 				"type": "record",
 				"fields": [{
 						"name": "organization_name",
@@ -22,7 +22,7 @@
 		{
 			"name": "metadata",
 			"type": {
-				"name": "metadata",
+				"name": "OrganizationMetadata",
 				"type": "record",
 				"fields": [{
 						"name": "origin_application",
