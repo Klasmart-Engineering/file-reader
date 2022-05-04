@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/wrappers.proto";
 
 option go_package = "src/protos"; 
 
@@ -8,8 +9,8 @@ message Organization {
 }
 
 message Organization_payload {
-    string uuid = 1;
-    string name = 2;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue name = 2;
 }
 
 message Subject {
@@ -18,9 +19,9 @@ message Subject {
 }
 
 message Subject_payload {
-    string uuid = 1;
-    string organization_uuid = 2;
-    string name = 3;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue organization_uuid = 2;
+    google.protobuf.StringValue name = 3;
 }
 
 message Category {
@@ -29,10 +30,10 @@ message Category {
 }
 
 message Category_payload {
-    string uuid = 1;
-    string organization_uuid = 2;
-    string name = 3;
-    repeated string subcategory_uuids = 4;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue organization_uuid = 2;
+    google.protobuf.StringValue name = 3;
+    repeated google.protobuf.StringValue subcategory_uuids = 4;
 }
 
 message Subcategory {
@@ -41,9 +42,9 @@ message Subcategory {
 }
 
 message Subcategory_payload {
-    string uuid = 1;
-    string organization_uuid = 2;
-    string name = 3;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue organization_uuid = 2;
+    google.protobuf.StringValue name = 3;
 }
 
 message Agerange {
@@ -52,12 +53,12 @@ message Agerange {
 }
 
 message Agerange_payload {
-    string uuid = 1;
-    string organization_uuid = 2;
-    string name = 3;
-    int32 low_value = 4;
-    int32 high_value = 5;
-    string unit = 6;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue organization_uuid = 2;
+    google.protobuf.StringValue name = 3;
+    google.protobuf.Int32Value low_value = 4;
+    google.protobuf.Int32Value high_value = 5;
+    google.protobuf.StringValue unit = 6;
 }
 
 message Role {
@@ -66,10 +67,10 @@ message Role {
 }
 
 message Role_payload {
-    string uuid = 1;
-    string organization_uuid = 2;
-    string name = 3;
-    repeated string permission_ids = 4;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue organization_uuid = 2;
+    google.protobuf.StringValue name = 3;
+    repeated google.protobuf.StringValue permission_ids = 4;
 }
 
 message School {
@@ -78,9 +79,9 @@ message School {
 }
 
 message School_payload {
-    string uuid = 1;
-    string organization_uuid = 2;
-    string name = 3;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue organization_uuid = 2;
+    google.protobuf.StringValue name = 3;
 }
 
 message User {
@@ -89,13 +90,13 @@ message User {
 }
 
 message User_payload {
-    string uuid = 1;
-    string organization_uuid = 2;
-    string given_name = 3;
-    string family_name = 4;
-    string email = 5;
-    string phone_number = 6;
-    string date_of_birth = 7;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue organization_uuid = 2;
+    google.protobuf.StringValue given_name = 3;
+    google.protobuf.StringValue family_name = 4;
+    google.protobuf.StringValue email = 5;
+    google.protobuf.StringValue phone_number = 6;
+    google.protobuf.StringValue date_of_birth = 7;
     Gender gender = 8;
 }
 
@@ -105,9 +106,9 @@ message Class {
 }
 
 message Class_payload {
-    string uuid = 1;
-    string organization_uuid = 2;
-    string name = 3;
+    google.protobuf.StringValue uuid = 1;
+    google.protobuf.StringValue organization_uuid = 2;
+    google.protobuf.StringValue name = 3;
 }
 
 enum Gender {
@@ -116,7 +117,7 @@ enum Gender {
 }
 
 message Metadata {
-    string origin_application = 1;
-    string region = 2;
-    string tracking_id = 3;
+    google.protobuf.StringValue origin_application = 1;
+    google.protobuf.StringValue region = 2;
+    google.protobuf.StringValue tracking_id = 3;
 }
