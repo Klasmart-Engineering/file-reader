@@ -143,7 +143,7 @@ func TestCsvProcessingServer(t *testing.T) {
 	addr := instrument.GetAddressForGrpc()
 
 	fc := &FakeCsvFileClient{}
-	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("Testing Csv Processing Server", addr, logger)
+	lis, grpcServer, err := instrument.GetGrpcServer(addr, logger)
 
 	if err != nil {
 
