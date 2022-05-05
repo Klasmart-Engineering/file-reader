@@ -7,9 +7,8 @@ import (
 	"file_reader/src/log"
 
 	"file_reader/src/protos"
-	"file_reader/src/services/organization/delivery/kafka"
 
-	orgGrpc "file_reader/src/services/organization/delivery/grpc"
+	csvGrpc "file_reader/src/services/organization/delivery/grpc"
 
 	"go.uber.org/zap"
 )
@@ -25,16 +24,10 @@ func NewServer(logger *log.ZapLogger, cfg *config.Config) *csvFileServer {
 		cfg:    cfg,
 	}
 }
+func (s *csvFileServer) Run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	validate := validator.New()
-	organizationProducer := kafka.NewOrganizationProducer(s.log, s.cfg)
-	organizationProducer.Run()
-
-	defer organizationProducer.Close()
-
-	organizationUC := usecase.NewOrganizationUC(s.log, organizationProducer)
 
 	s.logger.Infof(ctx, "GRPC Server is listening... at port %v\n", s.cfg.Server.Port)
 	addr := instrument.GetAddressForGrpc()
@@ -50,7 +43,7 @@ func NewServer(logger *log.ZapLogger, cfg *config.Config) *csvFileServer {
 
 	csvFileService := csvGrpc.NewCsvFileService(ctx, s.logger, s.cfg)
 
-	orgConsumeGroup := kafka.NewOrganizationsConsumerGroup(s.cfg.Kafka.Brokers, kafkaGroupID, s.log, s.cfg, organizationUC, validate)
+	protos.RegisterCsvFileServiceServer(grpcServer, csvFileService)
 
 	s.logger.Infof(ctx, "GRPC Server is listening...", zap.String("port", s.cfg.Server.Port))
 

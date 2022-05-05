@@ -53,6 +53,7 @@ func grpcServerInstrument() {
 
 	protos.RegisterCsvFileServiceServer(grpcServer, csvFileService)
 
+	//healthService := healthcheck.NewHealthChecker()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
 	healthServer.SetServingStatus(protos.CsvFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
 
