@@ -17,9 +17,7 @@ import (
 
 // Skip for now
 func TestReadOrgCsv(t *testing.T) {
-
 	t.Skip("Skip for now")
-	brokerAddrs := []string{"localhost:9092"}
 
 	// Fake CSV data
 	orgId1 := uuid.NewString()
