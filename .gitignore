@@ -13,3 +13,12 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+
+# Enviroment Variables File
+**/.env
+
+# NewRelic
+newrelic_agent.log
+
+.envrc
