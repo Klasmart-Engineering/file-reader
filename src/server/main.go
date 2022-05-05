@@ -59,6 +59,7 @@ func grpcServerInstrument(ctx context.Context) {
 
 	filepb.RegisterIngestFileServiceServer(grpcServer, ingestFileService)
 
+	//healthService := healthcheck.NewHealthChecker()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
 	healthServer.SetServingStatus(filepb.IngestFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
 
