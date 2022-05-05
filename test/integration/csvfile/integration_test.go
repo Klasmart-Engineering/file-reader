@@ -130,9 +130,8 @@ func TestCsvProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
-		"GRPC_SERVER":           "localhost",
-		"GRPC_SERVER_PORT":      "6000",
-		"NEW_RELIC_LICENSE_KEY": "000000",
+		"GRPC_SERVER":      "localhost",
+		"GRPC_SERVER_PORT": "6000",
 	})
 	t.Cleanup(closer) // In Go 1.14+
 
@@ -143,7 +142,7 @@ func TestCsvProcessingServer(t *testing.T) {
 	addr := instrument.GetAddressForGrpc()
 
 	fc := &FakeCsvFileClient{}
-	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("Testing Csv Processing Server", addr, logger)
+	lis, grpcServer, err := instrument.GetGrpcServer(addr, logger)
 
 	if err != nil {
 
