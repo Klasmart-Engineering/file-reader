@@ -37,7 +37,7 @@ func grpcServerInstrument() {
 	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("Csv health check", addr, logger)
 
 	if err != nil {
-		logger.Fatalf("Failed to start server. Error : %v", err)
+		logger.Fatalf(ctx, "Failed to start server. Error : %v", err)
 	}
 
 	cfg := &config.Config{
@@ -55,7 +55,7 @@ func grpcServerInstrument() {
 
 	//healthService := healthcheck.NewHealthChecker()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
-	healthServer.SetServingStatus(protos.HealthService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus(protos.CsvFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
 
 	logger.Infof(ctx, "Server starting to listen on %s", addr)
 
