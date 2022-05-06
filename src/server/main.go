@@ -5,7 +5,11 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	"file_reader/src/log"
+<<<<<<< HEAD
 	"file_reader/src/protos/csvfile"
+=======
+	csvpb "file_reader/src/protos/csvfile"
+>>>>>>> a4a7270 (resolve conflict)
 
 	csvGrpc "file_reader/src/services/organization/delivery/grpc"
 
