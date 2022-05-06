@@ -1,18 +1,13 @@
+export METADATA_REGION="GB"
+export METADATA_ORIGIN_APPLICATION="file-reader"
 export BROKERS="localhost:9091, localhost:9092, localhost:9093"
-
+export SCHEMA_REGISTRY_URL="http://localhost:8081"
 export GRPC_SERVER="localhost"
-
 export GRPC_HEALTH_PORT="9000"
-
 export GRPC_SERVER_PORT="6000"
 
-# Schema
-export AVRO_SCHEMA_DIRECTORY="avros/"
-
-export SCHEMA_CLIENT_ENDPOINT="http://localhost:8081"
-
 # New relic configuration variables
-
+export NEW_RELIC_LICENSE_KEY="00000"
 export NEW_RELIC_LICENSE_KEY="newrelic_license_key"
 export DISTRIBUTED_TRACER_ENABLED="true"
 export SPAN_EVENT_ENABLED="true"
@@ -36,9 +31,11 @@ export CREATE_ORGANIZATION_TOPIC="organization"
 export CREATE_ORGANIZATION_WORKDERS="3"
 export DEAD_LETTER_QUEUE_TOPIC="dead-letter-queue"
 export ORGANIZATION_GROUP_ID="organizations_group"
+export SCHEMA_CLIENT_ENDPOINT="http://localhost:8081"
+export AVRO_SCHEMA_DIRECTORY="../src/avros/"
 
-# Logging
+# AWS configuration variables
 
-export LOG_LEVEL="info"
-export SERVICE_LABEL="file-reader"
-export LOG_ENABLED="true"
+export AWS_ACCESS_KEY_ID="test"
+export AWS_SECRET_ACCESS_KEY="test"
+export AWS_DEFAULT_REGION="us-east-1"

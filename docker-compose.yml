@@ -23,3 +23,14 @@ services:
      - 29092:29092 
      - 8081:8081
      - 8082:8082
+
+  localstack:
+    image: localstack/localstack:0.14.2
+    container_name: localstack
+    restart: always
+    environment:
+        - SERVICES=s3
+    ports:
+        - 4566:4566
+    volumes:
+        - ./scripts:/docker-entrypoint-initaws.d
