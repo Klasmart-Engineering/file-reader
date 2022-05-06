@@ -106,10 +106,7 @@ func TestCsvProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
-<<<<<<< HEAD
 		"BROKERS":          "localhost:9091",
-=======
->>>>>>> 8d9bae6 (Fix/csi 355 old code breaks codebase (#20))
 		"GRPC_SERVER":      "localhost",
 		"GRPC_SERVER_PORT": "6000",
 	})
@@ -128,7 +125,6 @@ func TestCsvProcessingServer(t *testing.T) {
 	ctx := context.Background()
 	addr := instrument.GetAddressForGrpc()
 
-<<<<<<< HEAD
 	cfg := &config.Config{
 		Server: config.Server{Port: addr, Development: true},
 		Logger: Logger,
@@ -138,9 +134,6 @@ func TestCsvProcessingServer(t *testing.T) {
 	}
 
 	csvFileService := csvGrpc.NewCsvFileService(ctx, logger, cfg)
-=======
-	fc := &FakeCsvFileClient{}
->>>>>>> 8d9bae6 (Fix/csi 355 old code breaks codebase (#20))
 	lis, grpcServer, err := instrument.GetGrpcServer(addr, logger)
 
 	if err != nil {
