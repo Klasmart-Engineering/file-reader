@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"file_reader/src/log"
-	"file_reader/src/protos"
-	csvpb "file_reader/src/protos"
+	"file_reader/src/protos/csvfile"
+	csvpb "file_reader/src/protos/csvfile"
 )
 
 type Type string
@@ -33,32 +33,32 @@ type csvFileHandlers struct {
 }
 
 type RequestBuilder struct {
-	reqs []*protos.CsvFileRequest
+	reqs []*csvpb.CsvFileRequest
 }
 
-func (rb RequestBuilder) getCsvFile(fileId string, filePath string, t int) *protos.CsvFileRequest {
-	var typeName = protos.Type_UNKNOWN
+func (rb RequestBuilder) getCsvFile(fileId string, filePath string, t int) *csvpb.CsvFileRequest {
+	var typeName = csvpb.Type_UNKNOWN
 
 	switch t {
 	case 0:
-		typeName = protos.Type_ORGANIZATION
+		typeName = csvpb.Type_ORGANIZATION
 	case 1:
-		typeName = protos.Type_SCHOOL
+		typeName = csvpb.Type_SCHOOL
 	case 2:
-		typeName = protos.Type_CLASS
+		typeName = csvpb.Type_CLASS
 	case 3:
-		typeName = protos.Type_USER
+		typeName = csvpb.Type_USER
 	case 4:
-		typeName = protos.Type_ROLE
+		typeName = csvpb.Type_ROLE
 	case 5:
-		typeName = protos.Type_PROGRAM
+		typeName = csvpb.Type_PROGRAM
 	}
-	return &protos.CsvFileRequest{
+	return &csvfile.CsvFileRequest{
 		Type:    typeName,
-		Csvfile: &protos.CsvFile{FileId: fileId, Path: filePath},
+		Csvfile: &csvfile.CsvFile{FileId: fileId, Path: filePath},
 	}
 }
-func (rb RequestBuilder) initRequests(fileIds []string, filePaths []string, typeName Type) []*protos.CsvFileRequest {
+func (rb RequestBuilder) initRequests(fileIds []string, filePaths []string, typeName Type) []*csvpb.CsvFileRequest {
 
 	for i := range fileIds {
 		req := rb.getCsvFile(fileIds[i], filePaths[i], int(TypeName[typeName]))
@@ -75,7 +75,7 @@ func NewCsvFileHandlers(
 	}
 }
 
-func (ch *csvFileHandlers) ProcessRequests(csvClient protos.CsvFileServiceClient, req []*csvpb.CsvFileRequest) (*csvpb.CsvFileResponse, error) {
+func (ch *csvFileHandlers) ProcessRequests(csvClient csvpb.CsvFileServiceClient, req []*csvpb.CsvFileRequest) (*csvpb.CsvFileResponse, error) {
 	ctx := context.Background()
 	stream, err := csvClient.IngestCSV(ctx)
 	if err != nil {
@@ -99,7 +99,7 @@ func (ch *csvFileHandlers) ProcessRequests(csvClient protos.CsvFileServiceClient
 	return res, err
 }
 
-func (ch *csvFileHandlers) process(csvClient protos.CsvFileServiceClient, fileNames []string, filePaths []string, typeKey int32) {
+func (ch *csvFileHandlers) process(csvClient csvfile.CsvFileServiceClient, fileNames []string, filePaths []string, typeKey int32) {
 
 	// Create a request for retrieving csv file
 

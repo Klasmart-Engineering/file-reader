@@ -5,7 +5,7 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	"file_reader/src/log"
-	"file_reader/src/protos"
+	"file_reader/src/protos/csvfile"
 
 	csvGrpc "file_reader/src/services/organization/delivery/grpc"
 
@@ -51,11 +51,11 @@ func grpcServerInstrument() {
 	csvFileService := csvGrpc.NewCsvFileService(ctx, logger, cfg)
 	healthServer := health.NewServer()
 
-	protos.RegisterCsvFileServiceServer(grpcServer, csvFileService)
+	csvfile.RegisterCsvFileServiceServer(grpcServer, csvFileService)
 
 	//healthService := healthcheck.NewHealthChecker()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
-	healthServer.SetServingStatus(protos.CsvFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus(csvfile.CsvFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
 
 	logger.Infof(ctx, "Server starting to listen on %s", addr)
 

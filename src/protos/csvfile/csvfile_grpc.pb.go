@@ -4,7 +4,7 @@
 // - protoc             v3.19.4
 // source: csvfile.proto
 
-package protos
+package csvfile
 
 import (
 	context "context"

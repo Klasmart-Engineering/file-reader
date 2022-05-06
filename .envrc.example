@@ -7,9 +7,9 @@ export GRPC_HEALTH_PORT="9000"
 export GRPC_SERVER_PORT="6000"
 
 # Schema
-export AVRO_SCHEMA_DIRECTORY="../src/avros/"
+export AVRO_SCHEMA_DIRECTORY="avros/"
 
-export SCHEMA_REGISTRY_ENDPOINT="http://localhost:8081"
+export SCHEMA_CLIENT_ENDPOINT="http://localhost:8081"
 
 # New relic configuration variables
 

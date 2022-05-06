@@ -5,7 +5,7 @@ import (
 	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/log"
-	"file_reader/src/protos"
+	"file_reader/src/protos/csvfile"
 	"fmt"
 	"io"
 	"os"
@@ -16,7 +16,7 @@ type csvFileService struct {
 	ctx    context.Context
 	logger *log.ZapLogger
 	cfg    *config.Config
-	protos.UnimplementedCsvFileServiceServer
+	csvfile.UnimplementedCsvFileServiceServer
 }
 
 // NewOrganizationService organizationServer constructor
@@ -37,20 +37,22 @@ func (c *csvFileService) processCsv(filePath string) error {
 	if err != nil {
 		return err
 	}
-
+	config := src.Config{
+		BrokerAddrs: c.cfg.Kafka.Brokers,
+		Reader:      f,
+		Context:     context.Background(),
+		//Logger:      ,
+	}
 	// Compose File reader for organization
-	csvIngester := src.OrgCsvIngester(c.cfg.Kafka.Brokers)
-
-	// Actually put the csv rows onto the topic
-	csvIngester(f, c.ctx)
+	src.Organization.IngestFile(config)
 
 	return nil
 }
 
 // Ingest a new csv file
-func (c *csvFileService) IngestCSV(stream protos.CsvFileService_IngestCSVServer) error {
+func (c *csvFileService) IngestCSV(stream csvfile.CsvFileService_IngestCSVServer) error {
 
-	errors := []*protos.CsvError{}
+	errors := []*csvfile.CsvError{}
 	for {
 		// Start receiving stream messages from client
 
@@ -61,7 +63,7 @@ func (c *csvFileService) IngestCSV(stream protos.CsvFileService_IngestCSVServer)
 			if len(errors) > 0 {
 				succeed = false
 			}
-			return stream.SendAndClose(&protos.CsvFileResponse{Success: succeed, Errors: errors})
+			return stream.SendAndClose(&csvfile.CsvFileResponse{Success: succeed, Errors: errors})
 		}
 
 		//Handle any possible errors when streaming requests
@@ -81,7 +83,7 @@ func (c *csvFileService) IngestCSV(stream protos.CsvFileService_IngestCSVServer)
 			if err := c.processCsv(filePath); err != nil {
 				c.logger.Errorf(c.ctx, "Failed to process csv file: %v, %v", filePath, err.Error())
 
-				e := &protos.CsvError{
+				e := &csvfile.CsvError{
 					FileId:  fileId,
 					Message: []string{"Failed to process csv file", fmt.Sprint("Error: %v", err.Error())},
 				}

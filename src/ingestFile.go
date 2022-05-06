@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"file_reader/src/instrument"
 	"io"
 	"log"
+	"strconv"
+	"time"
 
 	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/compress"
 )
 
 type avroCodec interface {
@@ -28,13 +32,30 @@ type Operation struct {
 	rowToSchema   func(row []string) avroCodec
 }
 
+func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
+
+	writerRequiredAcks, _ := strconv.Atoi(instrument.MustGetEnv("WRITE_REQUIRED_ACKS"))
+	writerMaxAttempts, _ := strconv.Atoi(instrument.MustGetEnv("WRITE_MAX_ATTEMPTS"))
+	writerReadTimeout, _ := strconv.Atoi(instrument.MustGetEnv("WRITE_READ_TIMEOUT"))
+
+	writerWriteTimeout, _ := strconv.Atoi(instrument.MustGetEnv("WRITE_WRITE_TIMEOUT"))
+	w := &kafka.Writer{
+		Addr:         kafka.TCP(config.BrokerAddrs...),
+		Topic:        op.topic,
+		Balancer:     &kafka.LeastBytes{},
+		RequiredAcks: kafka.RequiredAcks(writerRequiredAcks),
+		MaxAttempts:  writerMaxAttempts,
+		//Logger:       kafka.LoggerFunc(config.Logger.),
+		Compression:  compress.Snappy,
+		ReadTimeout:  time.Duration(writerReadTimeout * int(time.Second)),
+		WriteTimeout: time.Duration(writerWriteTimeout * int(time.Second)),
+	}
+	return w
+}
+
 func (op Operation) IngestFile(config Config) {
 	csvReader := csv.NewReader(config.Reader)
-	w := kafka.Writer{
-		Addr:   kafka.TCP(config.BrokerAddrs...),
-		Topic:  op.topic,
-		Logger: &config.Logger,
-	}
+	w := op.GetNewKafkaWriter(config)
 	for {
 		row, err := csvReader.Read()
 		if err == io.EOF {

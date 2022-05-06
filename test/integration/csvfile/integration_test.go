@@ -2,10 +2,11 @@ package integration_test
 
 import (
 	"context"
-	"errors"
+	"file_reader/src/config"
 	"file_reader/src/instrument"
-	"file_reader/src/protos"
-	csvpb "file_reader/src/protos"
+	csvpb "file_reader/src/protos/csvfile"
+
+	csvGrpc "file_reader/src/services/organization/delivery/grpc"
 	"sync"
 
 	"file_reader/src/log"
@@ -24,35 +25,22 @@ import (
 
 var testCases = []struct {
 	name        string
-	req         []*protos.CsvFileRequest
-	expectedRes protos.CsvFileResponse
+	req         []*csvpb.CsvFileRequest
+	expectedRes csvpb.CsvFileResponse
 }{
 	{
 		name: "req ok",
-		req: []*protos.CsvFileRequest{
+		req: []*csvpb.CsvFileRequest{
 
-			&protos.CsvFileRequest{
-				Type:    protos.Type_ORGANIZATION,
-				Csvfile: &protos.CsvFile{FileId: "file_id1", Path: ".././test/data/good/organization.csv"},
+			&csvpb.CsvFileRequest{
+				Type:    csvpb.Type_ORGANIZATION,
+				Csvfile: &csvpb.CsvFile{FileId: "file_id1", Path: ".././test/data/good/organization.csv"},
 			},
 		},
-		expectedRes: protos.CsvFileResponse{Success: true, Errors: nil},
+		expectedRes: csvpb.CsvFileResponse{Success: true, Errors: nil},
 	},
 }
 
-type StreamMock struct {
-	grpc.ServerStream
-	ctx            context.Context
-	recvToServer   chan *protos.CsvFileRequest
-	sentFromClient *protos.CsvFileResponse
-}
-
-func makeStreamMock() *StreamMock {
-	return &StreamMock{
-		ctx:          context.Background(),
-		recvToServer: make(chan *protos.CsvFileRequest, 1),
-	}
-}
 func envSetter(envs map[string]string) (closer func()) {
 	originalEnvs := map[string]string{}
 
@@ -73,18 +61,6 @@ func envSetter(envs map[string]string) (closer func()) {
 			}
 		}
 	}
-}
-
-type FakeCsvFileClient struct {
-	protos.UnimplementedCsvFileServiceServer
-	ingestFileFn func(protos.CsvFileService_IngestCSVServer) error
-}
-
-func (fc *FakeCsvFileClient) IngestCSV(in protos.CsvFileService_IngestCSVServer) error {
-	if fc.ingestFileFn != nil {
-		return fc.ingestFileFn(in)
-	}
-	return errors.New("fakeCsvFileClient was not set up with a response - must set fc.getFileFn")
 }
 
 func startClient(ctx context.Context, logger *log.ZapLogger, addr string, opts grpc.DialOption) csvpb.CsvFileServiceClient {
@@ -130,9 +106,9 @@ func TestCsvProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
-		"GRPC_SERVER":           "localhost",
-		"GRPC_SERVER_PORT":      "6000",
-		"NEW_RELIC_LICENSE_KEY": "000000",
+		"BROKERS":          "localhost:9091",
+		"GRPC_SERVER":      "localhost",
+		"GRPC_SERVER_PORT": "6000",
 	})
 	t.Cleanup(closer) // In Go 1.14+
 
@@ -140,9 +116,24 @@ func TestCsvProcessingServer(t *testing.T) {
 
 	logger := log.Wrap(l)
 
+	Logger := config.Logger{
+		DisableCaller:     false,
+		DisableStacktrace: false,
+		Encoding:          "json",
+		Level:             "info",
+	}
+	ctx := context.Background()
 	addr := instrument.GetAddressForGrpc()
 
-	fc := &FakeCsvFileClient{}
+	cfg := &config.Config{
+		Server: config.Server{Port: addr, Development: true},
+		Logger: Logger,
+		Kafka: config.Kafka{
+			Brokers: instrument.GetBrokers(),
+		},
+	}
+
+	csvFileService := csvGrpc.NewCsvFileService(ctx, logger, cfg)
 	lis, grpcServer, err := instrument.GetGrpcServer(addr, logger)
 
 	if err != nil {
@@ -152,18 +143,17 @@ func TestCsvProcessingServer(t *testing.T) {
 
 	defer lis.Close()
 
-	protos.RegisterCsvFileServiceServer(grpcServer, fc)
+	csvpb.RegisterCsvFileServiceServer(grpcServer, csvFileService)
 	// Start service client
 
-	fakeCsvFileAddr := lis.Addr().String()
+	csvFileAddr := lis.Addr().String()
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
 			panic(err)
 		}
 	}()
 
-	ctx := context.Background()
-	start(ctx, logger, fakeCsvFileAddr, t)
+	start(ctx, logger, csvFileAddr, t)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

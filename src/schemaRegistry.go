@@ -1,6 +1,7 @@
 package src
 
 import (
+	"embed"
 	"encoding/binary"
 	"log"
 	"os"
@@ -8,6 +9,9 @@ import (
 
 	"github.com/riferrei/srclient"
 )
+
+//go:embed avros
+var content embed.FS
 
 type schemaRegistry struct {
 	c *srclient.SchemaRegistryClient
@@ -18,8 +22,10 @@ var schemaRegistryClient = &schemaRegistry{
 }
 
 func (*schemaRegistry) getSchemaIdBytes(schemaFileName string, topic string) []byte {
+
 	schemaPath := path.Join(os.Getenv("AVRO_SCHEMA_DIRECTORY"), schemaFileName)
-	schemaBytes, err := os.ReadFile(schemaPath)
+
+	schemaBytes, err := content.ReadFile(schemaPath)
 	if err != nil {
 		log.Fatal(err)
 	}
