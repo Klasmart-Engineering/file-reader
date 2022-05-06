@@ -1,5 +1,5 @@
-PATH_add bin
-export GOBIN=$PWD/bin
+export METADATA_REGION="GB"
+export METADATA_ORIGIN_APPLICATION="file-reader"
 export BROKERS="localhost:9091, localhost:9092, localhost:9093"
 export SCHEMA_REGISTRY_URL="http://localhost:8081"
 export GRPC_SERVER="localhost"
@@ -31,6 +31,8 @@ export CREATE_ORGANIZATION_TOPIC="organization"
 export CREATE_ORGANIZATION_WORKDERS="3"
 export DEAD_LETTER_QUEUE_TOPIC="dead-letter-queue"
 export ORGANIZATION_GROUP_ID="organizations_group"
+export SCHEMA_CLIENT_ENDPOINT="http://localhost:8081"
+export AVRO_SCHEMA_DIRECTORY="../src/avros/"
 
 # AWS configuration variables
 
