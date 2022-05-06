@@ -33,7 +33,11 @@ type csvFileHandlers struct {
 }
 
 type RequestBuilder struct {
+<<<<<<< HEAD
 	reqs []*csvpb.CsvFileRequest
+=======
+	reqs []*protos.CsvFileRequest
+>>>>>>> 8d9bae6 (Fix/csi 355 old code breaks codebase (#20))
 }
 
 func (rb RequestBuilder) getCsvFile(fileId string, filePath string, t int) *csvpb.CsvFileRequest {
@@ -78,6 +82,7 @@ func NewCsvFileHandlers(
 func (ch *csvFileHandlers) ProcessRequests(csvClient csvpb.CsvFileServiceClient, req []*csvpb.CsvFileRequest) (*csvpb.CsvFileResponse, error) {
 	ctx := context.Background()
 	stream, err := csvClient.IngestCSV(ctx)
+
 	if err != nil {
 		ch.logger.Errorf(ctx, "Failed to get csv file: %v", err.Error())
 	}
