@@ -87,10 +87,16 @@ func TestFileProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
+<<<<<<< HEAD
 		"BROKERS":                "localhost:9092",
 		"GRPC_SERVER":            "localhost",
 		"GRPC_SERVER_PORT":       "6000",
 		"PROTO_SCHEMA_DIRECTORY": "protos/onboarding",
+=======
+		"BROKERS":          "localhost:9092",
+		"GRPC_SERVER":      "localhost",
+		"GRPC_SERVER_PORT": "6000",
+>>>>>>> 7267a7f (Add proto schema cache, refactor proto service)
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+
@@ -146,6 +152,7 @@ func TestFileProcessingServer(t *testing.T) {
 				g.Expect(res.Success).To(gomega.BeTrue())
 
 			}
+<<<<<<< HEAD
 			// Testing for kafka messages
 			r := kafka.NewReader(kafka.ReaderConfig{
 				Brokers: instrument.GetBrokers(),
@@ -174,6 +181,8 @@ func TestFileProcessingServer(t *testing.T) {
 					break
 				}
 			}
+=======
+>>>>>>> 7267a7f (Add proto schema cache, refactor proto service)
 
 		})
 	}
