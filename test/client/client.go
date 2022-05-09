@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"file_reader/src/log"
-	"file_reader/src/protos/csvfile"
-	csvpb "file_reader/src/protos/csvfile"
+	filepb "file_reader/src/protos/inputfile"
 )
 
 type Type string
@@ -28,65 +27,82 @@ var IntToType = map[int32]Type{
 	5: "PROGRAM",
 }
 
-type csvFileHandlers struct {
+type InputFileType string
+
+var InputFileTypeName = map[InputFileType]int32{
+	"CSV": 0,
+}
+
+var IntToFileType = map[int32]InputFileType{
+	0: "CSV",
+}
+
+type inputFileHandlers struct {
 	logger *log.ZapLogger
 }
 
 type RequestBuilder struct {
-	reqs []*csvpb.CsvFileRequest
+	reqs []*filepb.InputFileRequest
 }
 
-func (rb RequestBuilder) getCsvFile(fileId string, filePath string, t int) *csvpb.CsvFileRequest {
-	var typeName = csvpb.Type_UNKNOWN
+func (rb RequestBuilder) getInputFile(fileId string, filePath string, entity int, fileType int) *filepb.InputFileRequest {
+	var typeName = filepb.Type_UNKNOWN
+	var fileTypeName = filepb.InputFileType_CSV
 
-	switch t {
+	switch entity {
 	case 0:
-		typeName = csvpb.Type_ORGANIZATION
+		typeName = filepb.Type_ORGANIZATION
 	case 1:
-		typeName = csvpb.Type_SCHOOL
+		typeName = filepb.Type_SCHOOL
 	case 2:
-		typeName = csvpb.Type_CLASS
+		typeName = filepb.Type_CLASS
 	case 3:
-		typeName = csvpb.Type_USER
+		typeName = filepb.Type_USER
 	case 4:
-		typeName = csvpb.Type_ROLE
+		typeName = filepb.Type_ROLE
 	case 5:
-		typeName = csvpb.Type_PROGRAM
+		typeName = filepb.Type_PROGRAM
 	}
-	return &csvfile.CsvFileRequest{
-		Type:    typeName,
-		Csvfile: &csvfile.CsvFile{FileId: fileId, Path: filePath},
+
+	switch fileType {
+	case 0:
+		fileTypeName = filepb.InputFileType_CSV
+	}
+
+	return &filepb.InputFileRequest{
+		Type:      typeName,
+		InputFile: &filepb.InputFile{FileId: fileId, InputFileType: fileTypeName, Path: filePath},
 	}
 }
-func (rb RequestBuilder) initRequests(fileIds []string, filePaths []string, typeName Type) []*csvpb.CsvFileRequest {
+func (rb RequestBuilder) initRequests(fileIds []string, filePaths []string, entityTypeName Type, fileTypeName InputFileType) []*filepb.InputFileRequest {
 
 	for i := range fileIds {
-		req := rb.getCsvFile(fileIds[i], filePaths[i], int(TypeName[typeName]))
+		req := rb.getInputFile(fileIds[i], filePaths[i], int(TypeName[entityTypeName]), int(InputFileTypeName[fileTypeName]))
 		rb.reqs = append(rb.reqs, req)
 	}
 	return rb.reqs
 }
 
-func NewCsvFileHandlers(
+func NewInputFileHandlers(
 	logger *log.ZapLogger,
-) *csvFileHandlers {
-	return &csvFileHandlers{
+) *inputFileHandlers {
+	return &inputFileHandlers{
 		logger: logger,
 	}
 }
 
-func (ch *csvFileHandlers) ProcessRequests(csvClient csvpb.CsvFileServiceClient, req []*csvpb.CsvFileRequest) (*csvpb.CsvFileResponse, error) {
+func (h *inputFileHandlers) ProcessRequests(fileClient filepb.InputFileServiceClient, req []*filepb.InputFileRequest) (*filepb.InputFileResponse, error) {
 	ctx := context.Background()
-	stream, err := csvClient.IngestCSV(ctx)
+	stream, err := fileClient.IngestFile(ctx)
 	if err != nil {
-		ch.logger.Errorf(ctx, "Failed to get csv file: %v", err.Error())
+		h.logger.Errorf(ctx, "Error on IngestFile rpc call: %v", err.Error())
 	}
 
 	// Iterate over the request message
 	for _, v := range req {
 		// Start making streaming requests by sending
 		// each object inside the request message
-		ch.logger.Infof(ctx, "Client streaming request: \n", v)
+		h.logger.Infof(ctx, "Client streaming request: \n", v)
 		stream.Send(v)
 	}
 
@@ -94,19 +110,21 @@ func (ch *csvFileHandlers) ProcessRequests(csvClient csvpb.CsvFileServiceClient,
 	// and get the response and a potential error
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		ch.logger.Fatalf(ctx, "Error when closing the stream and receiving the response: %v", err)
+		h.logger.Fatalf(ctx, "Error when closing the stream and receiving the response: %v", err)
 	}
 	return res, err
 }
 
-func (ch *csvFileHandlers) process(csvClient csvpb.CsvFileServiceClient, fileNames []string, filePaths []string, typeKey int32) {
+func (h *inputFileHandlers) process(fileClient filepb.InputFileServiceClient, fileNames []string, filePaths []string, entityTypeKey int32, inputFileTypeKey int32) {
 
 	// Create a request for retrieving csv file
 
-	typeName := IntToType[typeKey]
-	req := RequestBuilder{}.initRequests(fileNames, filePaths, typeName)
+	entityTypeName := IntToType[entityTypeKey]
+	inputFileTypeName := IntToFileType[inputFileTypeKey]
+
+	req := RequestBuilder{}.initRequests(fileNames, filePaths, entityTypeName, inputFileTypeName)
 
 	// Process request
-	ch.ProcessRequests(csvClient, req)
+	h.ProcessRequests(fileClient, req)
 
 }

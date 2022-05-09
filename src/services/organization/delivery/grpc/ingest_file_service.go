@@ -5,31 +5,31 @@ import (
 	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/log"
-	"file_reader/src/protos/csvfile"
+	"file_reader/src/protos/inputfile"
 	"fmt"
 	"io"
 	"os"
 )
 
-// organizationService grpc service
-type csvFileService struct {
+// ingestFileService grpc service
+type IngestFileService struct {
 	ctx    context.Context
 	logger *log.ZapLogger
 	cfg    *config.Config
-	csvfile.UnimplementedCsvFileServiceServer
+	inputfile.UnimplementedInputFileServiceServer
 }
 
-// NewOrganizationService organizationServer constructor
-func NewCsvFileService(ctx context.Context, logger *log.ZapLogger, cfg *config.Config) *csvFileService {
-	return &csvFileService{ctx: ctx, logger: logger, cfg: cfg}
+// NewIngestFileService organizationServer constructor
+func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *config.Config) *IngestFileService {
+	return &IngestFileService{ctx: ctx, logger: logger, cfg: cfg}
 }
 
-func (c *csvFileService) processCsv(filePath string) error {
+func (c *IngestFileService) processInputFile(filePath string, fileTypeName string) error {
 	//Setup
-	c.logger.Infof(c.ctx, "Processing csv file in ", filePath)
+	c.logger.Infof(c.ctx, "Processing input file in ", filePath)
 	f, err := os.Open(filePath)
 	if err != nil {
-		c.logger.Errorf(c.ctx, "failed to open csv file: ", err.Error())
+		c.logger.Errorf(c.ctx, "failed to open input file: ", err.Error())
 		return err
 	}
 	defer f.Close()
@@ -44,15 +44,15 @@ func (c *csvFileService) processCsv(filePath string) error {
 		//Logger:      ,
 	}
 	// Compose File reader for organization
-	src.Organization.IngestFile(config)
+	src.Organization.IngestFile(config, fileTypeName)
 
 	return nil
 }
 
-// Ingest a new csv file
-func (c *csvFileService) IngestCSV(stream csvfile.CsvFileService_IngestCSVServer) error {
+// Ingest a new input file
+func (c *IngestFileService) IngestFile(stream inputfile.InputFileService_IngestFileServer) error {
 
-	errors := []*csvfile.CsvError{}
+	errors := []*inputfile.InputFileError{}
 	for {
 		// Start receiving stream messages from client
 
@@ -63,7 +63,7 @@ func (c *csvFileService) IngestCSV(stream csvfile.CsvFileService_IngestCSVServer
 			if len(errors) > 0 {
 				succeed = false
 			}
-			return stream.SendAndClose(&csvfile.CsvFileResponse{Success: succeed, Errors: errors})
+			return stream.SendAndClose(&inputfile.InputFileResponse{Success: succeed, Errors: errors})
 		}
 
 		//Handle any possible errors when streaming requests
@@ -71,8 +71,10 @@ func (c *csvFileService) IngestCSV(stream csvfile.CsvFileService_IngestCSVServer
 			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
 		}
 
-		filePath := req.Csvfile.GetPath()
-		fileId := req.Csvfile.GetFileId()
+		filePath := req.InputFile.GetPath()
+		fileId := req.InputFile.GetFileId()
+		fileTypeName := req.InputFile.GetInputFileType().String()
+
 		t := req.GetType().String()
 
 		switch t {
@@ -80,10 +82,10 @@ func (c *csvFileService) IngestCSV(stream csvfile.CsvFileService_IngestCSVServer
 		case "ORGANIZATION":
 
 			// process organization
-			if err := c.processCsv(filePath); err != nil {
+			if err := c.processInputFile(filePath, fileTypeName); err != nil {
 				c.logger.Errorf(c.ctx, "Failed to process csv file: %v, %v", filePath, err.Error())
 
-				e := &csvfile.CsvError{
+				e := &inputfile.InputFileError{
 					FileId:  fileId,
 					Message: []string{"Failed to process csv file", fmt.Sprint("Error: %v", err.Error())},
 				}

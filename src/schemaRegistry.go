@@ -24,7 +24,6 @@ var schemaRegistryClient = &schemaRegistry{
 func (*schemaRegistry) getSchemaIdBytes(schemaFileName string, topic string) []byte {
 
 	schemaPath := path.Join(os.Getenv("AVRO_SCHEMA_DIRECTORY"), schemaFileName)
-
 	schemaBytes, err := content.ReadFile(schemaPath)
 	if err != nil {
 		log.Fatal(err)

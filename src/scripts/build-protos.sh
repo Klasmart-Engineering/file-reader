@@ -1,7 +1,7 @@
 #!/bin/sh
 
-protoc -I ./src/protos/csvfile/ \
-    ./src/protos/csvfile/*.proto \
+protoc -I ./src/protos/inputfile/ \
+    ./src/protos/inputfile/*.proto \
     --go_out==grpc:./ \
     --go-grpc_out=.
 

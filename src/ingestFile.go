@@ -53,40 +53,45 @@ func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
 	return w
 }
 
-func (op Operation) IngestFile(config Config) {
-	csvReader := csv.NewReader(config.Reader)
-	w := op.GetNewKafkaWriter(config)
-	for {
-		row, err := csvReader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
+func (op Operation) IngestFile(config Config, fileTypeName string) {
+	switch fileTypeName {
 
-		// Serialise row using schema
-		var buf bytes.Buffer
-		schemaCodec := op.rowToSchema(row)
-		schemaCodec.Serialize(&buf)
-		valueBytes := buf.Bytes()
+	case "CSV":
+		csvReader := csv.NewReader(config.Reader)
+		w := op.GetNewKafkaWriter(config)
+		for {
+			row, err := csvReader.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		//Combine row bytes with schema id to make a record
-		var recordValue []byte
-		recordValue = append(recordValue, byte(0))
-		recordValue = append(recordValue, op.schemaIDBytes...)
-		recordValue = append(recordValue, valueBytes...)
+			// Serialise row using schema
+			var buf bytes.Buffer
+			schemaCodec := op.rowToSchema(row)
+			schemaCodec.Serialize(&buf)
+			valueBytes := buf.Bytes()
 
-		// Put the row on the topic
-		err = w.WriteMessages(
-			config.Context,
-			kafka.Message{
-				Key:   []byte(op.key),
-				Value: recordValue,
-			},
-		)
-		if err != nil {
-			panic("could not write message " + err.Error())
+			//Combine row bytes with schema id to make a record
+			var recordValue []byte
+			recordValue = append(recordValue, byte(0))
+			recordValue = append(recordValue, op.schemaIDBytes...)
+			recordValue = append(recordValue, valueBytes...)
+
+			// Put the row on the topic
+			err = w.WriteMessages(
+				config.Context,
+				kafka.Message{
+					Key:   []byte(op.key),
+					Value: recordValue,
+				},
+			)
+			if err != nil {
+				panic("could not write message " + err.Error())
+			}
 		}
 	}
+
 }
