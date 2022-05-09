@@ -65,7 +65,6 @@ func GetSchemaIdBytes(schema *srclient.Schema) []byte {
 
 }
 func (client *schemaRegistry) getProtoSchema(schemaFileName string, topic string) *srclient.Schema {
-	fmt.Printf("come now")
 	// First check if the schema is already cached
 	cacheKey := cacheKey(schemaFileName,
 		topic)

@@ -35,7 +35,7 @@ func TestReadOrgCsv(t *testing.T) {
 		Context:     context.Background(),
 		Logger:      *log.New(os.Stdout, "kafka writer: ", 0),
 	}
-	src.Organization.IngestFile(config)
+	src.Organization.IngestFilePROTO(config, "PROTO")
 
 	// Until we have a fresh topic for testing,
 	// Not sure yet how to do assertions as consumer will have to read everything
@@ -59,4 +59,3 @@ func TestReadOrgCsv(t *testing.T) {
 		}
 	}
 }
-
