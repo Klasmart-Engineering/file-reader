@@ -16,7 +16,7 @@ type IngestFileService struct {
 	ctx    context.Context
 	logger *log.ZapLogger
 	cfg    *config.Config
-	inputfile.UnimplementedInputFileServiceServer
+	inputfile.UnimplementedIngestFileServiceServer
 }
 
 // NewIngestFileService organizationServer constructor
@@ -24,7 +24,7 @@ func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *confi
 	return &IngestFileService{ctx: ctx, logger: logger, cfg: cfg}
 }
 
-func (c *IngestFileService) processInputFile(filePath string, fileTypeName string) error {
+func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, schemaType string) error {
 	//Setup
 	c.logger.Infof(c.ctx, "Processing input file in ", filePath)
 	f, err := os.Open(filePath)
@@ -44,13 +44,19 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 		//Logger:      ,
 	}
 	// Compose File reader for organization
-	src.Organization.IngestFile(config, fileTypeName)
+	switch schemaType {
+	case "AVROS":
+		src.Organization.IngestFileAVROS(config, fileTypeName)
+	case "PROTO":
+
+		src.OrganizationProto.IngestFilePROTO(config, fileTypeName)
+	}
 
 	return nil
 }
 
 // Ingest a new input file
-func (c *IngestFileService) IngestFile(stream inputfile.InputFileService_IngestFileServer) error {
+func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_IngestFilePROTOServer) error {
 
 	errors := []*inputfile.InputFileError{}
 	for {
@@ -82,7 +88,57 @@ func (c *IngestFileService) IngestFile(stream inputfile.InputFileService_IngestF
 		case "ORGANIZATION":
 
 			// process organization
-			if err := c.processInputFile(filePath, fileTypeName); err != nil {
+			if err := c.processInputFile(filePath, fileTypeName, "PROTO"); err != nil {
+				c.logger.Errorf(c.ctx, "Failed to process csv file: %v, %v", filePath, err.Error())
+
+				e := &inputfile.InputFileError{
+					FileId:  fileId,
+					Message: []string{"Failed to process csv file", fmt.Sprint("Error: %v", err.Error())},
+				}
+
+				// Append new error message
+				errors = append(errors, e)
+
+			}
+
+		}
+	}
+}
+
+// Ingest a new input file
+func (c *IngestFileService) IngestFileAVROS(stream inputfile.IngestFileService_IngestFileAVROSServer) error {
+
+	errors := []*inputfile.InputFileError{}
+	for {
+		// Start receiving stream messages from client
+
+		req, err := stream.Recv()
+		succeed := true
+		if err == io.EOF {
+			// Close the connection and return response to client
+			if len(errors) > 0 {
+				succeed = false
+			}
+			return stream.SendAndClose(&inputfile.InputFileResponse{Success: succeed, Errors: errors})
+		}
+
+		//Handle any possible errors when streaming requests
+		if err != nil {
+			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
+		}
+
+		filePath := req.InputFile.GetPath()
+		fileId := req.InputFile.GetFileId()
+		fileTypeName := req.InputFile.GetInputFileType().String()
+
+		t := req.GetType().String()
+
+		switch t {
+
+		case "ORGANIZATION":
+
+			// process organization
+			if err := c.processInputFile(filePath, fileTypeName, "AVROS"); err != nil {
 				c.logger.Errorf(c.ctx, "Failed to process csv file: %v, %v", filePath, err.Error())
 
 				e := &inputfile.InputFileError{

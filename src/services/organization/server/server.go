@@ -6,25 +6,25 @@ import (
 	"file_reader/src/instrument"
 	"file_reader/src/log"
 
-	"file_reader/src/protos"
+	filepb "file_reader/src/protos/inputfile"
 
-	csvGrpc "file_reader/src/services/organization/delivery/grpc"
+	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 
 	"go.uber.org/zap"
 )
 
-type csvFileServer struct {
+type ingestFileServer struct {
 	logger *log.ZapLogger
 	cfg    *config.Config
 }
 
-func NewServer(logger *log.ZapLogger, cfg *config.Config) *csvFileServer {
-	return &csvFileServer{
+func NewServer(logger *log.ZapLogger, cfg *config.Config) *ingestFileServer {
+	return &ingestFileServer{
 		logger: logger,
 		cfg:    cfg,
 	}
 }
-func (s *csvFileServer) Run() error {
+func (s *ingestFileServer) Run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -32,7 +32,7 @@ func (s *csvFileServer) Run() error {
 	s.logger.Infof(ctx, "GRPC Server is listening... at port %v\n", s.cfg.Server.Port)
 	addr := instrument.GetAddressForGrpc()
 
-	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("Csv Processing Server", addr, s.logger)
+	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("File Processing Server", addr, s.logger)
 
 	if err != nil {
 
@@ -41,9 +41,9 @@ func (s *csvFileServer) Run() error {
 
 	defer lis.Close()
 
-	csvFileService := csvGrpc.NewCsvFileService(ctx, s.logger, s.cfg)
+	ingestFileService := fileGrpc.NewIngestFileService(ctx, s.logger, s.cfg)
 
-	protos.RegisterCsvFileServiceServer(grpcServer, csvFileService)
+	filepb.RegisterIngestFileServiceServer(grpcServer, ingestFileService)
 
 	s.logger.Infof(ctx, "GRPC Server is listening...", zap.String("port", s.cfg.Server.Port))
 
@@ -54,3 +54,29 @@ func (s *csvFileServer) Run() error {
 	return nil
 
 }
+
+/*
+func main() {
+	l, _ := zap.NewDevelopment()
+
+	logger := log.Wrap(l)
+
+	Logger := config.Logger{
+		DisableCaller:     false,
+		DisableStacktrace: false,
+		Encoding:          "json",
+		Level:             "info",
+	}
+	addr := instrument.GetAddressForGrpc()
+
+	cfg := &config.Config{
+		Server: config.Server{Port: addr, Development: true},
+		Logger: Logger,
+		Kafka: config.Kafka{
+			Brokers: instrument.GetBrokers(),
+		},
+	}
+
+	s := ingestFileServer{logger: logger, cfg: cfg}
+	s.Run()
+}*/

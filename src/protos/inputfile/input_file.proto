@@ -34,6 +34,7 @@ message InputFileError {
 	
   repeated string message = 2;
 }
-service InputFileService {
-	rpc IngestFile (stream InputFileRequest) returns (InputFileResponse) {}
+service IngestFileService {
+	rpc IngestFilePROTO (stream InputFileRequest) returns (InputFileResponse) {}
+	rpc IngestFileAVROS (stream InputFileRequest) returns (InputFileResponse) {}
  }
