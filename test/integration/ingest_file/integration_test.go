@@ -2,57 +2,43 @@ package integration_test
 
 import (
 	"context"
-	"errors"
+	"file_reader/src/config"
 	"file_reader/src/instrument"
-	"file_reader/src/protos"
-	csvpb "file_reader/src/protos"
+	filepb "file_reader/src/protos/inputfile"
+	"flag"
 	"sync"
 
 	"file_reader/src/log"
+	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
-	"flag"
 	"os"
 	"testing"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
-
-	"go.uber.org/zap"
 )
 
 var testCases = []struct {
 	name        string
-	req         []*protos.CsvFileRequest
-	expectedRes protos.CsvFileResponse
+	req         []*filepb.InputFileRequest
+	expectedRes filepb.InputFileResponse
 }{
 	{
 		name: "req ok",
-		req: []*protos.CsvFileRequest{
+		req: []*filepb.InputFileRequest{
 
-			&protos.CsvFileRequest{
-				Type:    protos.Type_ORGANIZATION,
-				Csvfile: &protos.CsvFile{FileId: "file_id1", Path: ".././test/data/good/organization.csv"},
+			&filepb.InputFileRequest{
+				Type:      filepb.Type_ORGANIZATION,
+				InputFile: &filepb.InputFile{FileId: "file_id1", Path: ".././test/data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
 			},
 		},
-		expectedRes: protos.CsvFileResponse{Success: true, Errors: nil},
+		expectedRes: filepb.InputFileResponse{Success: true, Errors: nil},
 	},
 }
 
-type StreamMock struct {
-	grpc.ServerStream
-	ctx            context.Context
-	recvToServer   chan *protos.CsvFileRequest
-	sentFromClient *protos.CsvFileResponse
-}
-
-func makeStreamMock() *StreamMock {
-	return &StreamMock{
-		ctx:          context.Background(),
-		recvToServer: make(chan *protos.CsvFileRequest, 1),
-	}
-}
 func envSetter(envs map[string]string) (closer func()) {
 	originalEnvs := map[string]string{}
 
@@ -75,19 +61,7 @@ func envSetter(envs map[string]string) (closer func()) {
 	}
 }
 
-type FakeCsvFileClient struct {
-	protos.UnimplementedCsvFileServiceServer
-	ingestFileFn func(protos.CsvFileService_IngestCSVServer) error
-}
-
-func (fc *FakeCsvFileClient) IngestCSV(in protos.CsvFileService_IngestCSVServer) error {
-	if fc.ingestFileFn != nil {
-		return fc.ingestFileFn(in)
-	}
-	return errors.New("fakeCsvFileClient was not set up with a response - must set fc.getFileFn")
-}
-
-func startClient(ctx context.Context, logger *log.ZapLogger, addr string, opts grpc.DialOption) csvpb.CsvFileServiceClient {
+func startClient(ctx context.Context, logger *log.ZapLogger, addr string, opts grpc.DialOption) filepb.InputFileServiceClient {
 	con, err := grpc.Dial(addr, opts)
 	if err != nil {
 		logger.Fatalf(ctx, "Error connecting: %v \n", err)
@@ -95,13 +69,13 @@ func startClient(ctx context.Context, logger *log.ZapLogger, addr string, opts g
 
 	defer con.Close()
 
-	c := csvpb.NewCsvFileServiceClient(con)
+	c := filepb.NewInputFileServiceClient(con)
 	return c
 
 }
 
 func start(ctx context.Context, logger *log.ZapLogger, addr string, t *testing.T) {
-	csvFh := test.NewCsvFileHandlers(logger)
+	csvFh := test.NewInputFileHandlers(logger)
 
 	opts := grpc.WithInsecure()
 
@@ -126,10 +100,11 @@ func start(ctx context.Context, logger *log.ZapLogger, addr string, t *testing.T
 	}
 
 }
-func TestCsvProcessingServer(t *testing.T) {
+func TestFileProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
+		"BROKERS":          "localhost:9091",
 		"GRPC_SERVER":      "localhost",
 		"GRPC_SERVER_PORT": "6000",
 	})
@@ -139,9 +114,24 @@ func TestCsvProcessingServer(t *testing.T) {
 
 	logger := log.Wrap(l)
 
+	Logger := config.Logger{
+		DisableCaller:     false,
+		DisableStacktrace: false,
+		Encoding:          "json",
+		Level:             "info",
+	}
+	ctx := context.Background()
 	addr := instrument.GetAddressForGrpc()
 
-	fc := &FakeCsvFileClient{}
+	cfg := &config.Config{
+		Server: config.Server{Port: addr, Development: true},
+		Logger: Logger,
+		Kafka: config.Kafka{
+			Brokers: instrument.GetBrokers(),
+		},
+	}
+
+	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
 	lis, grpcServer, err := instrument.GetGrpcServer(addr, logger)
 
 	if err != nil {
@@ -150,19 +140,20 @@ func TestCsvProcessingServer(t *testing.T) {
 	}
 
 	defer lis.Close()
+	t.Log(ingestFileService)
+	t.Log(grpcServer)
 
-	protos.RegisterCsvFileServiceServer(grpcServer, fc)
+	filepb.RegisterInputFileServiceServer(grpcServer, ingestFileService)
 	// Start service client
 
-	fakeCsvFileAddr := lis.Addr().String()
+	csvFileAddr := lis.Addr().String()
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
 			panic(err)
 		}
 	}()
 
-	ctx := context.Background()
-	start(ctx, logger, fakeCsvFileAddr, t)
+	start(ctx, logger, csvFileAddr, t)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
