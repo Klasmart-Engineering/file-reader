@@ -37,14 +37,20 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	if err != nil {
 		return err
 	}
-	config := src.Config{
+	config := src.IngestConfig{
 		BrokerAddrs: c.cfg.Kafka.Brokers,
 		Reader:      f,
 		Context:     context.Background(),
 		//Logger:      ,
 	}
 	// Compose File reader for organization
-	src.Organization.IngestFile(config, fileTypeName)
+	var Organization := Operation{
+		topic:         src.organizationTopic,
+		key:           "",
+		schemaIDBytes: src.GetOrganizationSchemaIdBytes(),
+		rowToSchema:   rowToOrganization,
+	}
+	Organization.IngestFile(config, fileTypeName)
 
 	return nil
 }

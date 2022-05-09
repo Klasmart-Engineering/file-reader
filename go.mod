@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/actgardner/gogen-avro/v10 v10.2.1
+	github.com/aws/aws-sdk-go v1.44.9
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/newrelic/go-agent v3.15.2+incompatible
@@ -19,6 +20,7 @@ require (
 require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/linkedin/goavro/v2 v2.11.1 // indirect

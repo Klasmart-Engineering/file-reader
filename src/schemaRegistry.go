@@ -1,34 +1,22 @@
 package src
 
 import (
-	"embed"
 	"encoding/binary"
 	"log"
-	"os"
-	"path"
 
 	"github.com/riferrei/srclient"
 )
 
-//go:embed avros
-var content embed.FS
-
-type schemaRegistry struct {
-	c *srclient.SchemaRegistryClient
+type SchemaRegistry struct {
+	C *srclient.SchemaRegistryClient
 }
 
-var schemaRegistryClient = &schemaRegistry{
-	c: srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
-}
+// var SchemaRegistryClient = &schemaRegistry{
+// 	c: srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
+// }
 
-func (*schemaRegistry) getSchemaIdBytes(schemaFileName string, topic string) []byte {
-
-	schemaPath := path.Join(os.Getenv("AVRO_SCHEMA_DIRECTORY"), schemaFileName)
-	schemaBytes, err := content.ReadFile(schemaPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	schema, err := schemaRegistryClient.c.CreateSchema(topic, string(schemaBytes), "AVRO")
+func (SchemaRegistryClient *SchemaRegistry) GetSchemaIdBytes(schemaBody string, topic string) []byte {
+	schema, err := SchemaRegistryClient.C.CreateSchema(topic, schemaBody, "AVRO")
 	if err != nil {
 		log.Fatal(err)
 	}

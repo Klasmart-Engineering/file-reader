@@ -8,19 +8,23 @@ import (
 )
 
 const (
-	organizationTopic = "organization"
-	orgSchemaFilename = "organization.avsc"
+	OrganizationTopic = "organization"
 )
 
-var Organization = Operation{
-	topic:         organizationTopic,
-	key:           "",
-	schemaIDBytes: schemaRegistryClient.getSchemaIdBytes(orgSchemaFilename, organizationTopic),
-	rowToSchema:   rowToOrganization,
+// var Organization := Operation{
+//  topic:         organizationTopic,
+//  key:           "",
+//  schemaIDBytes: SchemaRegistryClient.GetSchemaIdBytes(orgSchemaFilename, organizationTopic),
+//  rowToSchema:   rowToOrganization,
+// }
+
+func GetOrganizationSchemaIdBytes(schemaRegistryClient *SchemaRegistry) []byte {
+	schemaBody := avro.Organization.Schema(avro.NewOrganization())
+	return schemaRegistryClient.GetSchemaIdBytes(schemaBody, OrganizationTopic)
 }
 
 // ToDo: add logic for stripping header and figuring out column order
-func rowToOrganization(row []string) avroCodec {
+func RowToOrganization(row []string) avroCodec {
 	md := avro.OrganizationMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:             os.Getenv("METADATA_REGION"),
