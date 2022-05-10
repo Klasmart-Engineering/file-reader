@@ -5,6 +5,7 @@ import (
 	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/log"
+	proto "file_reader/src/pkg/proto"
 	"file_reader/src/protos/inputfile"
 	"fmt"
 	"io"
@@ -37,19 +38,25 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	if err != nil {
 		return err
 	}
-	config := src.Config{
-		BrokerAddrs: c.cfg.Kafka.Brokers,
-		Reader:      f,
-		Context:     context.Background(),
-		//Logger:      ,
-	}
 	// Compose File reader for organization
 	switch schemaType {
 	case "AVROS":
+
+		config := src.Config{
+			BrokerAddrs: c.cfg.Kafka.Brokers,
+			Reader:      f,
+			Context:     context.Background(),
+			//Logger:      ,
+		}
 		src.Organization.IngestFileAVROS(config, fileTypeName)
 	case "PROTO":
-
-		src.OrganizationProto.IngestFilePROTO(config, fileTypeName)
+		config := proto.Config{
+			BrokerAddrs: c.cfg.Kafka.Brokers,
+			Reader:      f,
+			Context:     context.Background(),
+			//Logger:      ,
+		}
+		proto.OrganizationProto.IngestFilePROTO(config, fileTypeName)
 	}
 
 	return nil

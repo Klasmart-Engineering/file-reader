@@ -1,7 +1,6 @@
-package src
+package proto
 
 import (
-	"bytes"
 	"context"
 	"encoding/csv"
 	"file_reader/src/instrument"
@@ -14,11 +13,9 @@ import (
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/compress"
-)
 
-type avroCodec interface {
-	Serialize(io.Writer) error
-}
+	"google.golang.org/protobuf/proto"
+)
 
 type Config struct {
 	BrokerAddrs []string
@@ -31,7 +28,6 @@ type Operation struct {
 	topic            string
 	key              string
 	schema           *srclient.Schema
-	rowToSchema      func(row []string) avroCodec
 	rowToProtoSchema func(row []string) *orgPb.Organization
 }
 
@@ -56,7 +52,8 @@ func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
 	return w
 }
 
-func (op Operation) IngestFileAVROS(config Config, fileTypeName string) {
+func (op Operation) IngestFilePROTO(config Config, fileTypeName string) {
+
 	switch fileTypeName {
 
 	case "CSV":
@@ -70,16 +67,14 @@ func (op Operation) IngestFileAVROS(config Config, fileTypeName string) {
 			if err != nil {
 				log.Fatal(err)
 			}
-
 			// Serialise row using schema
-			var buf bytes.Buffer
-			schemaCodec := op.rowToSchema(row)
-			schemaCodec.Serialize(&buf)
-			valueBytes := buf.Bytes()
+			orgSchema := op.rowToProtoSchema(row)
+			value, err := proto.Marshal(orgSchema)
+			valueBytes, _ := op.schema.Codec().BinaryFromNative(nil, value)
 
-			schemaIDBytes := GetSchemaIdBytes(op.schema)
 			//Combine row bytes with schema id to make a record
 			var recordValue []byte
+			schemaIDBytes := GetSchemaIdBytes(op.schema)
 			recordValue = append(recordValue, byte(0))
 			recordValue = append(recordValue, schemaIDBytes...)
 			recordValue = append(recordValue, valueBytes...)
@@ -97,5 +92,4 @@ func (op Operation) IngestFileAVROS(config Config, fileTypeName string) {
 			}
 		}
 	}
-
 }

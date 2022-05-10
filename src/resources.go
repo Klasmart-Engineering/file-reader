@@ -5,7 +5,7 @@ import (
 )
 
 //go:embed avros
-var avrosSchemaDir embed.FS
+var AvrosSchemaDir embed.FS
 
 //go:embed protos/onboarding
-var protoSchemaDir embed.FS
+var ProtoSchemaDir embed.FS
