@@ -3,6 +3,7 @@ package src
 import (
 	"bytes"
 	"context"
+	"encoding/csv"
 	avro "file_reader/avro_gencode"
 	"fmt"
 	"log"
@@ -15,15 +16,11 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-// <- also generally need to think about how all this will work given:
-// there are multiple operations and it needs to find the right one
-// there could be other file types than csv
-
-type ConsumeS3Config struct {
-	Topic       string
-	BrokerAddrs []string
-	AwsSession  *session.Session
-	Logger      log.Logger
+type ConsumeToIngestConfig struct {
+	BrokerAddrs     []string
+	AwsSession      *session.Session
+	OutputDirectory string
+	Logger             log.Logger
 }
 
 func CreateOperationMap(schemaRegistryClient *SchemaRegistry) map[string]Operation {
@@ -37,18 +34,14 @@ func CreateOperationMap(schemaRegistryClient *SchemaRegistry) map[string]Operati
 	}
 }
 
-func ConsumeToIngest(ctx context.Context, config ConsumeS3Config, operationMap map[string]Operation) {
-	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: config.BrokerAddrs,
-		Topic:   config.Topic,
-	})
+func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config ConsumeToIngestConfig, operationMap map[string]Operation) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			// Read file create message off kafka topic
-			msg, err := r.ReadMessage(ctx) // test that ctx works for kill
+			// Read file-create message off kafka topic
+			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
 				panic("could not read message " + err.Error())
 			}
@@ -61,8 +54,8 @@ func ConsumeToIngest(ctx context.Context, config ConsumeS3Config, operationMap m
 				panic("could not deserialize message " + err.Error())
 			}
 
-			// For now have s3 download write to disk
-			file, err := os.Create("./data/downloaded/" + s3FileCreated.Payload.Key)
+			// For now have the s3 downloader write to disk
+			file, err := os.Create(config.OutputDirectory + s3FileCreated.Payload.Key)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -80,22 +73,29 @@ func ConsumeToIngest(ctx context.Context, config ConsumeS3Config, operationMap m
 
 			fmt.Println("Downloaded", s3FileCreated.Payload.Key, numBytes, "bytes")
 			file.Close()
-
-			// Ingest downloaded file
-			f, _ := os.Open("./data/downloaded/" + s3FileCreated.Payload.Key)
+			// Reopen the same file for ingest (until thought of alternative)
+			f, _ := os.Open(config.OutputDirectory + s3FileCreated.Payload.Key)
 			defer f.Close()
 
-			var ingestConfig = IngestConfig{
-				BrokerAddrs: config.BrokerAddrs,
-				Reader:      f,
-				Context:     context.Background(),
-				Logger:      config.Logger,
+			// Compose the ingestFile() with different reader depending on file type
+			var reader Reader
+			switch s3FileCreated.Payload.Content_type {
+			default:
+				reader = csv.NewReader(f)
 			}
+
+			// Map to operation based on operation type
 			operation, exists := operationMap[s3FileCreated.Payload.Operation_type]
+			kafkaWriter := kafka.Writer{
+				Addr:   kafka.TCP(config.BrokerAddrs...),
+				Topic:  operation.Topic,
+				Logger: &config.Logger,
+			}
 			if !exists {
 				panic("invalid operation_type on file create message ")
 			}
-			operation.IngestFile(ingestConfig, s3FileCreated.Payload.Content_type)
+
+			operation.IngestFile(ctx, reader, kafkaWriter)
 		}
 	}
 }

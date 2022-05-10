@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/csv"
 	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/log"
@@ -9,6 +10,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/riferrei/srclient"
+	"github.com/segmentio/kafka-go"
 )
 
 // ingestFileService grpc service
@@ -37,20 +41,23 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	if err != nil {
 		return err
 	}
-	config := src.IngestConfig{
-		BrokerAddrs: c.cfg.Kafka.Brokers,
-		Reader:      f,
-		Context:     context.Background(),
-		//Logger:      ,
+
+	kafkaWriter := kafka.Writer{
+		Addr:  kafka.TCP(c.cfg.Kafka.Brokers...),
+		Topic: src.OrganizationTopic,
+		//Logger: &config.Logger,
+	}
+	schemaRegistryClient := &src.SchemaRegistry{
+		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 	}
 	// Compose File reader for organization
-	var Organization := Operation{
-		topic:         src.organizationTopic,
-		key:           "",
-		schemaIDBytes: src.GetOrganizationSchemaIdBytes(),
-		rowToSchema:   rowToOrganization,
+	var Organization = src.Operation{
+		Topic:         src.OrganizationTopic,
+		Key:           "",
+		SchemaIDBytes: src.GetOrganizationSchemaIdBytes(schemaRegistryClient),
+		RowToSchema:   src.RowToOrganization,
 	}
-	Organization.IngestFile(config, fileTypeName)
+	Organization.IngestFile(context.Background(), csv.NewReader(f), kafkaWriter)
 
 	return nil
 }
