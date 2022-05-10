@@ -142,6 +142,8 @@ func TestFileProcessingServer(t *testing.T) {
 
 			}
 
+			// Check proto messages on topic
+
 		})
 	}
 

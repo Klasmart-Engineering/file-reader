@@ -29,18 +29,15 @@ func cacheKey(fileName string, topic string) string {
 
 func registerProtoSchemas(topic string) map[string]*srclient.Schema {
 	var fileSchemaCache = make(map[string]*srclient.Schema)
+	files, err := protoSchemaDir.ReadDir(os.Getenv("PROTO_SCHEMA_DIRECTORY"))
 
-	/*files, err := protoSchemaDir.ReadDir(os.Getenv("PROTO_SCHEMA_DIRECTORY"))
-	fmt.Printf("files = %v", files)
 	if err != nil {
-		fmt.Printf("error here")
 		log.Fatal(err)
-	}*/
+	}
 
-	files := []string{"onboarding.proto"}
+	//files := []string{"onboarding.proto"}
 	for _, file := range files {
-
-		schemaPath := path.Join(os.Getenv("PROTO_SCHEMA_DIRECTORY"), file)
+		schemaPath := path.Join(os.Getenv("PROTO_SCHEMA_DIRECTORY"), file.Name())
 		schemaBytes, err := protoSchemaDir.ReadFile(schemaPath)
 
 		if err != nil {
@@ -50,7 +47,7 @@ func registerProtoSchemas(topic string) map[string]*srclient.Schema {
 		schema, err := schemaRegistryClient.c.CreateSchema(topic, string(schemaBytes), srclient.Protobuf)
 		// Cache the schema
 		if cachingEnabled {
-			cacheKey := cacheKey(file,
+			cacheKey := cacheKey(file.Name(),
 				topic)
 			fileSchemaCache[cacheKey] = schema
 		}

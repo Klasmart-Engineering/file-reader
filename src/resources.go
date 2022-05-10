@@ -4,7 +4,7 @@ import (
 	"embed"
 )
 
-//go:embed avros/*.avsc
+//go:embed avros
 var avrosSchemaDir embed.FS
 
 //go:embed protos/onboarding
