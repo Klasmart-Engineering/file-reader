@@ -184,6 +184,8 @@ func TestFileProcessingServer(t *testing.T) {
 =======
 >>>>>>> 7267a7f (Add proto schema cache, refactor proto service)
 
+			// Check proto messages on topic
+
 		})
 	}
 
