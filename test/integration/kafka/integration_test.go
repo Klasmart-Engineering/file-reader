@@ -1,12 +1,19 @@
 package integration_test
 
 import (
-	"file_reader/src/services/organization/delivery/kafka"
 	"fmt"
+
+	"github.com/segmentio/kafka-go"
 )
+
+type testmsgType struct {
+	msg           kafka.Message
+	expectedError kafka.Error
+}
 
 var testMsgsInit = false
 var p0TestMsgs []*testmsgType // partition 0 test messages
+
 // pAllTestMsgs holds messages for various partitions including PartitionAny and  invalid partitions
 var pAllTestMsgs []*testmsgType
 

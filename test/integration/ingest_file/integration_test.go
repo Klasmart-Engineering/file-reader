@@ -45,7 +45,6 @@ var testCases = []struct {
 
 func envSetter(envs map[string]string) (closer func()) {
 	originalEnvs := map[string]string{}
-
 	for name, value := range envs {
 		if originalValue, ok := os.LookupEnv(name); ok {
 			originalEnvs[name] = originalValue
@@ -84,11 +83,13 @@ func TestFileProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
-		"BROKERS":          "localhost:9092",
-		"GRPC_SERVER":      "localhost",
-		"GRPC_SERVER_PORT": "6000",
+		"BROKERS":                "localhost:9092",
+		"GRPC_SERVER":            "localhost",
+		"GRPC_SERVER_PORT":       "6000",
+		"PROTO_SCHEMA_DIRECTORY": "protos/onboarding",
 	})
-	t.Cleanup(closer) // In Go 1.14+
+
+	defer t.Cleanup(closer) // In Go 1.14+
 
 	l, _ := zap.NewDevelopment()
 
@@ -141,8 +142,6 @@ func TestFileProcessingServer(t *testing.T) {
 				g.Expect(res.Success).To(gomega.BeTrue())
 
 			}
-
-			// Check proto messages on topic
 
 		})
 	}

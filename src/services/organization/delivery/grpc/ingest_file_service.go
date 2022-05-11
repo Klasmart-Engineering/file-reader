@@ -56,7 +56,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			Context:     context.Background(),
 			//Logger:      ,
 		}
-		proto.OrganizationProto.IngestFilePROTO(config, fileTypeName)
+		return proto.OrganizationProto.IngestFilePROTO(config, fileTypeName)
 	}
 
 	return nil

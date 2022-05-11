@@ -4,31 +4,46 @@ import (
 	orgPb "file_reader/src/protos/onboarding"
 	"os"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
-	organizationProtoTopic = "organization_proto"
+	organizationProtoTopic = "organization-proto"
 	orgProtoSchemaFileName = "onboarding.proto"
+	organizationSchemaName = "organization"
 )
+
+var validate *validator.Validate
+
+type ValidatedOrganization struct {
+	Uuid string `validate:required,uuid4`
+}
 
 var OrganizationProto = Operation{
 	topic:            organizationProtoTopic,
 	key:              "",
-	schema:           schemaRegistryClient.getProtoSchema(orgProtoSchemaFileName, organizationProtoTopic),
 	rowToProtoSchema: rowToOrganizationProto,
 }
 
-func rowToOrganizationProto(row []string) *orgPb.Organization {
+func rowToOrganizationProto(row []string) (*orgPb.Organization, error) {
 	md := orgPb.Metadata{
-		OriginApplication: wrapperspb.String(os.Getenv("METADATA_ORIGIN_APPLICATION")),
-		Region:            wrapperspb.String(os.Getenv("METADATA_REGION")),
-		TrackingId:        wrapperspb.String(uuid.NewString()),
+		OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")}, //wrapperspb.String(os.Getenv("METADATA_ORIGIN_APPLICATION")),
+		Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},             //wrapperspb.String(os.Getenv("METADATA_REGION")),
+		TrackingId:        &orgPb.StringValue{Value: uuid.NewString()},                         //wrapperspb.String(uuid.NewString()),
+	}
+
+	// Validate uuid format
+	validate = validator.New()
+	validatedOrg := ValidatedOrganization{Uuid: row[0]}
+	err := validate.Struct(validatedOrg)
+	if err != nil {
+		return nil, err
 	}
 	pl := orgPb.OrganizationPayload{
-		Uuid: wrapperspb.String(row[0]),
-		Name: wrapperspb.String(row[1]),
+		Uuid: &orgPb.StringValue{Value: row[0]}, //wrapperspb.String(row[0]),
+		Name: &orgPb.StringValue{Value: row[1]}, //wrapperspb.String(row[1]),
 	}
-	return &orgPb.Organization{Payload: &pl, Metadata: &md}
+
+	return &orgPb.Organization{Payload: &pl, Metadata: &md}, nil
 }

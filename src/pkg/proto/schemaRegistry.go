@@ -1,104 +1,96 @@
 package proto
 
 import (
+	"context"
 	"encoding/binary"
-	"file_reader/src"
+	"file_reader/src/instrument"
+	"file_reader/src/protos/onboarding"
+	"file_reader/src/third_party/protobuf"
+	"file_reader/src/third_party/protobuf/srclient"
 	"fmt"
-	"log"
-	"os"
-	"path"
-
-	"github.com/riferrei/srclient"
 )
 
 var cachingEnabled = true
 var fileSchemaCache = registerProtoSchemas(organizationProtoTopic)
 
 type schemaRegistry struct {
-	c *srclient.SchemaRegistryClient
+	c   srclient.Client
+	ctx context.Context
 }
 
 var schemaRegistryClient = &schemaRegistry{
-	c: srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
+	c:   srclient.NewClient(srclient.WithURL(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT"))),
+	ctx: context.Background(),
 }
 
-var protoSchema *srclient.Schema = nil
-
-func cacheKey(fileName string, topic string) string {
-	return fmt.Sprintf("%s-%s", fileName, topic)
+func cacheKey(schemaName string, topic string) string {
+	return fmt.Sprintf("%s-%s", schemaName, topic)
 }
 
-func registerProtoSchemas(topic string) map[string]*srclient.Schema {
-	var fileSchemaCache = make(map[string]*srclient.Schema)
-	files, err := src.ProtoSchemaDir.ReadDir(os.Getenv("PROTO_SCHEMA_DIRECTORY"))
+func registerProtoSchemas(topic string) map[string]int {
+
+	registrator := protobuf.NewSchemaRegistrator(schemaRegistryClient.c)
+
+	schemaID, err := registrator.RegisterValue(schemaRegistryClient.ctx, topic, &onboarding.Organization{})
 
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Errorf("error registering schema: %w", err))
 	}
 
-	for _, file := range files {
-		schemaPath := path.Join(os.Getenv("PROTO_SCHEMA_DIRECTORY"), file.Name())
-		schemaBytes, err := src.ProtoSchemaDir.ReadFile(schemaPath)
+	var fileSchemaCache = make(map[string]int)
 
-		if err != nil {
-			panic(err)
-		}
-
-		schema, err := schemaRegistryClient.c.CreateSchema(topic, string(schemaBytes), srclient.Protobuf)
-		// Cache the schema
-		if cachingEnabled {
-			cacheKey := cacheKey(file.Name(),
-				topic)
-			fileSchemaCache[cacheKey] = schema
-		}
-
+	// Cache the schema
+	if cachingEnabled {
+		cacheKey := cacheKey("organization",
+			topic)
+		fileSchemaCache[cacheKey] = schemaID
 	}
 	return fileSchemaCache
 }
-func GetSchemaIdBytes(schema *srclient.Schema) []byte {
+func GetSchemaIdBytes(schemaID int) []byte {
 	schemaIDBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schema.ID()))
+	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schemaID))
 	return schemaIDBytes
 
 }
-func (client *schemaRegistry) getProtoSchema(schemaFileName string, topic string) *srclient.Schema {
+func (client *schemaRegistry) GetProtoSchemaID(schemaName string, topic string) int {
 	// First check if the schema is already cached
-	cacheKey := cacheKey(schemaFileName,
+	cacheKey := cacheKey(schemaName,
 		topic)
 	if cachingEnabled {
 
 		// Retrieve the schema from cache
-		cachedSchema := fileSchemaCache[cacheKey]
-
-		if cachedSchema != nil {
-			return cachedSchema
+		if schemaID, ok := fileSchemaCache[cacheKey]; ok {
+			return schemaID
 		}
 
 	}
 
 	// Retrieve the lastest schema
-	schema, err := schemaRegistryClient.c.GetLatestSchema(topic)
+	schema, err := schemaRegistryClient.c.GetLatestSchema(schemaRegistryClient.ctx, topic)
 
-	// If it does not exist then create a new one and cache it
+	// If it does not exist then register a new one and cache it
+
 	if schema == nil || err != nil {
 
-		schemaPath := path.Join(os.Getenv("PROTO_SCHEMA_DIRECTORY"), schemaFileName)
+		registrator := protobuf.NewSchemaRegistrator(schemaRegistryClient.c)
 
-		schemaBytes, err := src.ProtoSchemaDir.ReadFile(schemaPath)
+		schemaID, err := registrator.RegisterValue(schemaRegistryClient.ctx, topic, &onboarding.Organization{})
 
 		if err != nil {
-			panic(err)
+			panic(fmt.Errorf("error registering schema: %w", err))
 		}
-		schema, err = schemaRegistryClient.c.CreateSchema(topic, string(schemaBytes), srclient.Protobuf)
-		if err != nil {
-			panic(fmt.Sprintf("Error creating the schema: %s", err))
+		// Cache the schema
+		if cachingEnabled {
+			fileSchemaCache[cacheKey] = schemaID
 		}
+		return schemaID
 	}
 	// Cache the schema
 	if cachingEnabled {
-		fileSchemaCache[cacheKey] = schema
+		fileSchemaCache[cacheKey] = schema.ID
 	}
 
-	return schema
+	return schema.ID
 
 }

@@ -4,31 +4,32 @@ import (
 	"context"
 	"encoding/csv"
 	"file_reader/src/instrument"
+	"file_reader/src/log"
 	orgPb "file_reader/src/protos/onboarding"
+	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"time"
+
+	"file_reader/src/third_party/protobuf"
 
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/compress"
-
-	"google.golang.org/protobuf/proto"
 )
 
 type Config struct {
 	BrokerAddrs []string
 	Reader      io.Reader
 	Context     context.Context
-	Logger      log.Logger
+	Logger      *log.ZapLogger
 }
 
 type Operation struct {
 	topic            string
 	key              string
 	schema           *srclient.Schema
-	rowToProtoSchema func(row []string) *orgPb.Organization
+	rowToProtoSchema func(row []string) (*orgPb.Organization, error)
 }
 
 func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
@@ -52,7 +53,7 @@ func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
 	return w
 }
 
-func (op Operation) IngestFilePROTO(config Config, fileTypeName string) {
+func (op Operation) IngestFilePROTO(config Config, fileTypeName string) error {
 
 	switch fileTypeName {
 
@@ -65,16 +66,25 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string) {
 				break
 			}
 			if err != nil {
-				log.Fatal(err)
+				config.Logger.Fatalf(config.Context, err.Error())
+				return err
 			}
 			// Serialise row using schema
-			orgSchema := op.rowToProtoSchema(row)
-			value, err := proto.Marshal(orgSchema)
-			valueBytes, _ := op.schema.Codec().BinaryFromNative(nil, value)
+			orgSchema, err := op.rowToProtoSchema(row)
+			if err != nil {
+				config.Logger.Fatalf(config.Context, err.Error())
+			}
+			schemaID := schemaRegistryClient.GetProtoSchemaID(organizationSchemaName, organizationProtoTopic)
+			serde := protobuf.NewProtoSerDe()
 
+			valueBytes, err := serde.Serialize(schemaID, orgSchema)
+
+			if err != nil {
+				config.Logger.Fatalf(config.Context, fmt.Sprintf("error serializing message: %w", err))
+			}
 			//Combine row bytes with schema id to make a record
 			var recordValue []byte
-			schemaIDBytes := GetSchemaIdBytes(op.schema)
+			schemaIDBytes := GetSchemaIdBytes(schemaID)
 			recordValue = append(recordValue, byte(0))
 			recordValue = append(recordValue, schemaIDBytes...)
 			recordValue = append(recordValue, valueBytes...)
@@ -89,7 +99,9 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string) {
 			)
 			if err != nil {
 				panic("could not write message " + err.Error())
+				return err
 			}
 		}
 	}
+	return nil
 }
