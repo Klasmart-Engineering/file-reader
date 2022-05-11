@@ -3,55 +3,36 @@ package test
 import (
 	"bytes"
 	"context"
+	avro "file_reader/avro_gencode"
+	"file_reader/src"
 	"fmt"
 	"log"
 	"os"
 	"testing"
 
-	avro "file_reader/avro_gencode"
-	src "file_reader/src"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 )
 
-func CreateBucket(sess *session.Session, bucket string) {
-	svc := s3.New(sess)
-	_, err := svc.CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(bucket),
-	})
-	if err != nil {
-		panic(fmt.Sprintf("Unable to create bucket %q, %v", bucket, err))
-	}
-	fmt.Printf("Waiting for bucket %q to be created...\n", bucket)
-	err = svc.WaitUntilBucketExists(&s3.HeadBucketInput{
-		Bucket: aws.String(bucket),
-	})
-	if err != nil {
-		panic(fmt.Sprintf("Error occurred while waiting for bucket to be created, %v", bucket))
-	}
-	fmt.Printf("Bucket %q successfully created\n", bucket)
-}
-
 func TestConsume(t *testing.T) {
+	// This will be refactored into an integration test
 	//t.Skip("f")
 	schemaRegistryClient := &src.SchemaRegistry{
-		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
+		C: srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 	}
-	s3FileCreationTopic := "s3filecreation"
+	s3FileCreationTopic := os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC")
 	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
 	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaIdBytes(schemaBody, s3FileCreationTopic)
-	kafkakey := "fakekey"
-	brokerAddrs := []string{"localhost:9092"}
+	kafkakey := ""
+	brokerAddrs := []string{os.Getenv("KAFKA_BROKER")}
 
-	awsRegion := "eu-west-1"
+	awsRegion := os.Getenv("AWS_DEFAULT_REGION")
 
-	bucket := "testbucket"
+	bucket := "organization"
 	fileDir := "./data/good/"
 	filename := "organization.csv"
 	s3key := filename
@@ -61,9 +42,13 @@ func TestConsume(t *testing.T) {
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Profile: "localstack",
 		Config: aws.Config{
-			Credentials:      credentials.NewStaticCredentials("fakekey", "fakesecretkey", ""),
-			Region:           aws.String(awsRegion),
-			Endpoint:         aws.String("http://localhost:4566"),
+			Credentials: credentials.NewStaticCredentials(
+				os.Getenv("AWS_ACCESS_KEY_ID"),
+				os.Getenv("AWS_SECRET_ACCESS_KEY"),
+				"",
+			),
+			Region:           aws.String(os.Getenv("AWS_DEFAULT_REGION")),
+			Endpoint:         aws.String(os.Getenv("AWS_ENDPOINT")),
 			S3ForcePathStyle: aws.Bool(true),
 		},
 	})
@@ -71,8 +56,6 @@ func TestConsume(t *testing.T) {
 		fmt.Printf("Failed to initialize new session: %v", err)
 		return
 	}
-
-	//CreateBucket(sess, bucket)
 
 	// Upload file to s3
 	file, err := os.Open(fileDir + filename)
@@ -111,7 +94,7 @@ func TestConsume(t *testing.T) {
 	s3FileCreatedCodec.Serialize(&buf)
 	valueBytes := buf.Bytes()
 
-	//Combine row bytes with schema id to make a record
+	// Combine row bytes with schema id to make a record
 	var recordValue []byte
 	recordValue = append(recordValue, byte(0))
 	recordValue = append(recordValue, s3FileCreationSchemaId...)
@@ -132,20 +115,4 @@ func TestConsume(t *testing.T) {
 	if err != nil {
 		panic("could not write message " + err.Error())
 	}
-
-	// Start the Kafka consumer -> ingest file process
-	operationMap := src.CreateOperationMap(schemaRegistryClient)
-	var config = src.ConsumeToIngestConfig{
-		BrokerAddrs:     brokerAddrs,
-		AwsSession:      sess,
-		OutputDirectory: "./data/downloaded/",
-		Logger:          *log.New(os.Stdout, "kafka writer: ", 0),
-	}
-	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: brokerAddrs,
-		Topic:   s3FileCreationTopic,
-	})
-
-	src.ConsumeToIngest(ctx, r, config, operationMap)
-
 }

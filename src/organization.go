@@ -11,13 +11,6 @@ const (
 	OrganizationTopic = "organization"
 )
 
-// var Organization := Operation{
-//  topic:         organizationTopic,
-//  key:           "",
-//  schemaIDBytes: SchemaRegistryClient.GetSchemaIdBytes(orgSchemaFilename, organizationTopic),
-//  rowToSchema:   rowToOrganization,
-// }
-
 func GetOrganizationSchemaIdBytes(schemaRegistryClient *SchemaRegistry) []byte {
 	schemaBody := avro.Organization.Schema(avro.NewOrganization())
 	return schemaRegistryClient.GetSchemaIdBytes(schemaBody, OrganizationTopic)

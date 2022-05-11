@@ -20,7 +20,7 @@ type ConsumeToIngestConfig struct {
 	BrokerAddrs     []string
 	AwsSession      *session.Session
 	OutputDirectory string
-	Logger             log.Logger
+	Logger          log.Logger
 }
 
 func CreateOperationMap(schemaRegistryClient *SchemaRegistry) map[string]Operation {
@@ -48,8 +48,8 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			fmt.Println("received: ", string(msg.Value))
 
 			// Deserialize file create message
-			r := bytes.NewReader(msg.Value[5:])
-			s3FileCreated, err := avro.DeserializeS3FileCreated(r)
+			r := bytes.NewReader(msg.Value[5:]) // need to make consumer which checks/pulls schema from registry
+			s3FileCreated, err := avro.DeserializeS3FileCreated(r) // then pass actual schema into the _FromSchema version
 			if err != nil {
 				panic("could not deserialize message " + err.Error())
 			}
