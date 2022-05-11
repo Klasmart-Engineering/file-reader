@@ -27,7 +27,6 @@ type Config struct {
 
 type Operation struct {
 	topic            string
-	key              string
 	schema           *srclient.Schema
 	rowToProtoSchema func(row []string) (*orgPb.Organization, error)
 }
@@ -82,24 +81,17 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string) error {
 			if err != nil {
 				config.Logger.Fatalf(config.Context, fmt.Sprintf("error serializing message: %w", err))
 			}
-			//Combine row bytes with schema id to make a record
-			var recordValue []byte
-			schemaIDBytes := GetSchemaIdBytes(schemaID)
-			recordValue = append(recordValue, byte(0))
-			recordValue = append(recordValue, schemaIDBytes...)
-			recordValue = append(recordValue, valueBytes...)
 
 			// Put the row on the topic
 			err = w.WriteMessages(
 				config.Context,
 				kafka.Message{
-					Key:   []byte(op.key),
-					Value: recordValue,
+					Key:   []byte(""),
+					Value: valueBytes,
 				},
 			)
 			if err != nil {
 				panic("could not write message " + err.Error())
-				return err
 			}
 		}
 	}
