@@ -92,7 +92,6 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string) error {
 			)
 			if err != nil {
 				panic("could not write message " + err.Error())
-				return err
 			}
 		}
 	}
