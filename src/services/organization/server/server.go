@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func (s *ingestFileServer) Run() error {
 
 	ingestFileService := fileGrpc.NewIngestFileService(ctx, s.logger, s.cfg)
 
-	filepb.RegisterInputFileServiceServer(grpcServer, ingestFileService)
+	filepb.RegisterIngestFileServiceServer(grpcServer, ingestFileService)
 
 	s.logger.Infof(ctx, "GRPC Server is listening...", zap.String("port", s.cfg.Server.Port))
 
@@ -55,6 +55,7 @@ func (s *ingestFileServer) Run() error {
 
 }
 
+/*
 func main() {
 	l, _ := zap.NewDevelopment()
 
@@ -78,4 +79,4 @@ func main() {
 
 	s := ingestFileServer{logger: logger, cfg: cfg}
 	s.Run()
-}
+}*/

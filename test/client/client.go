@@ -1,8 +1,7 @@
-package test
+package client
 
 import (
 	"context"
-
 	"file_reader/src/log"
 	filepb "file_reader/src/protos/inputfile"
 )
@@ -91,9 +90,16 @@ func NewInputFileHandlers(
 	}
 }
 
-func (h *inputFileHandlers) ProcessRequests(fileClient filepb.InputFileServiceClient, req []*filepb.InputFileRequest) (*filepb.InputFileResponse, error) {
-	ctx := context.Background()
-	stream, err := fileClient.IngestFile(ctx)
+func (h *inputFileHandlers) ProcessRequests(ctx context.Context, fileClient filepb.IngestFileServiceClient, schemaType string, req []*filepb.InputFileRequest) (*filepb.InputFileResponse, error) {
+	var stream filepb.IngestFileService_IngestFilePROTOClient
+	var err error
+
+	switch schemaType {
+	case "AVROS":
+		stream, err = fileClient.IngestFileAVROS(ctx)
+	case "PROTO":
+		stream, err = fileClient.IngestFilePROTO(ctx)
+	}
 	if err != nil {
 		h.logger.Errorf(ctx, "Error on IngestFile rpc call: %v", err.Error())
 	}
@@ -115,7 +121,7 @@ func (h *inputFileHandlers) ProcessRequests(fileClient filepb.InputFileServiceCl
 	return res, err
 }
 
-func (h *inputFileHandlers) process(fileClient filepb.InputFileServiceClient, fileNames []string, filePaths []string, entityTypeKey int32, inputFileTypeKey int32) {
+func (h *inputFileHandlers) process(ctx context.Context, fileClient filepb.IngestFileServiceClient, schemaType string, fileNames []string, filePaths []string, entityTypeKey int32, inputFileTypeKey int32) (*filepb.InputFileResponse, error) {
 
 	// Create a request for retrieving csv file
 
@@ -123,8 +129,30 @@ func (h *inputFileHandlers) process(fileClient filepb.InputFileServiceClient, fi
 	inputFileTypeName := IntToFileType[inputFileTypeKey]
 
 	req := RequestBuilder{}.initRequests(fileNames, filePaths, entityTypeName, inputFileTypeName)
-
 	// Process request
-	h.ProcessRequests(fileClient, req)
+	return h.ProcessRequests(ctx, fileClient, schemaType, req)
 
 }
+
+/*func main() {
+
+	l, _ := zap.NewDevelopment()
+	logger := log.Wrap(l)
+	opts := grpc.WithInsecure()
+
+	ctx := context.Background()
+	con, err := grpc.Dial("localhost:6000", opts)
+	if err != nil {
+		logger.Errorf(ctx, "Error connecting: %v \n", err)
+	}
+	defer con.Close()
+
+	client := filepb.NewInputFileServiceClient(con)
+	csvFh := NewInputFileHandlers(logger)
+
+	fileNames := []string{"organization.csv"}
+	filePaths := []string{"/Users/annguyen/file-reader/test/data/good/organization.csv"}
+
+	res, err := csvFh.process(ctx, client, fileNames, filePaths, 0, 0)
+	logger.Infof(ctx, "res = %v", res)
+}*/

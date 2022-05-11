@@ -51,11 +51,11 @@ func grpcServerInstrument() {
 	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
 	healthServer := health.NewServer()
 
-	filepb.RegisterInputFileServiceServer(grpcServer, ingestFileService)
+	filepb.RegisterIngestFileServiceServer(grpcServer, ingestFileService)
 
 	//healthService := healthcheck.NewHealthChecker()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
-	healthServer.SetServingStatus(filepb.InputFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus(filepb.IngestFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
 
 	logger.Infof(ctx, "Server starting to listen on %s", addr)
 

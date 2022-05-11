@@ -13,10 +13,9 @@ const (
 )
 
 var Organization = Operation{
-	topic:         organizationTopic,
-	key:           "",
-	schemaIDBytes: schemaRegistryClient.getSchemaIdBytes(orgSchemaFilename, organizationTopic),
-	rowToSchema:   rowToOrganization,
+	topic:       organizationTopic,
+	key:         "",
+	rowToSchema: rowToOrganization,
 }
 
 // ToDo: add logic for stripping header and figuring out column order
