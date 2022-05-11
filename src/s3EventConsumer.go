@@ -48,7 +48,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			fmt.Println("received: ", string(msg.Value))
 
 			// Deserialize file create message
-			r := bytes.NewReader(msg.Value[5:]) // need to make consumer which checks/pulls schema from registry
+			r := bytes.NewReader(msg.Value[5:])                    // need to make consumer which checks/pulls schema from registry
 			s3FileCreated, err := avro.DeserializeS3FileCreated(r) // then pass actual schema into the _FromSchema version
 			if err != nil {
 				panic("could not deserialize message " + err.Error())
@@ -86,13 +86,13 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 
 			// Map to operation based on operation type
 			operation, exists := operationMap[s3FileCreated.Payload.Operation_type]
+			if !exists {
+				panic("invalid operation_type on file create message ")
+			}
 			kafkaWriter := kafka.Writer{
 				Addr:   kafka.TCP(config.BrokerAddrs...),
 				Topic:  operation.Topic,
 				Logger: &config.Logger,
-			}
-			if !exists {
-				panic("invalid operation_type on file create message ")
 			}
 
 			operation.IngestFile(ctx, reader, kafkaWriter)

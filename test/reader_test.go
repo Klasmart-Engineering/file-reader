@@ -20,7 +20,7 @@ import (
 
 func TestConsume(t *testing.T) {
 	// This will be refactored into an integration test
-	//t.Skip("f")
+	t.Skip("f")
 	schemaRegistryClient := &src.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 	}
