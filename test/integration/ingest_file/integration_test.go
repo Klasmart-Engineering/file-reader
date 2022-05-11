@@ -88,15 +88,21 @@ func TestFileProcessingServer(t *testing.T) {
 	// set up env variables
 	closer := envSetter(map[string]string{
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ac1d7d6 (Resolve issues with proto schema, add third_party lib)
 		"BROKERS":                "localhost:9092",
 		"GRPC_SERVER":            "localhost",
 		"GRPC_SERVER_PORT":       "6000",
 		"PROTO_SCHEMA_DIRECTORY": "protos/onboarding",
+<<<<<<< HEAD
 =======
 		"BROKERS":          "localhost:9092",
 		"GRPC_SERVER":      "localhost",
 		"GRPC_SERVER_PORT": "6000",
 >>>>>>> 7267a7f (Add proto schema cache, refactor proto service)
+=======
+>>>>>>> ac1d7d6 (Resolve issues with proto schema, add third_party lib)
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+
@@ -183,8 +189,6 @@ func TestFileProcessingServer(t *testing.T) {
 			}
 =======
 >>>>>>> 7267a7f (Add proto schema cache, refactor proto service)
-
-			// Check proto messages on topic
 
 		})
 	}
