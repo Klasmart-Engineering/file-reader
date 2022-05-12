@@ -159,10 +159,17 @@ func TestFileProcessingServer(t *testing.T) {
 
 			}
 <<<<<<< HEAD
+<<<<<<< HEAD
 			// Testing for kafka messages
 			r := kafka.NewReader(kafka.ReaderConfig{
 				Brokers: instrument.GetBrokers(),
 				Topic:   "organization-proto-12",
+=======
+			// Testing for kafka messages
+			r := kafka.NewReader(kafka.ReaderConfig{
+				Brokers: instrument.GetBrokers(),
+				Topic:   "organization-proto",
+>>>>>>> c768011 (cleaning up)
 			})
 			ctx := context.Background()
 			serde := protobuf.NewProtoSerDe()
@@ -187,8 +194,11 @@ func TestFileProcessingServer(t *testing.T) {
 					break
 				}
 			}
+<<<<<<< HEAD
 =======
 >>>>>>> 7267a7f (Add proto schema cache, refactor proto service)
+=======
+>>>>>>> c768011 (cleaning up)
 
 		})
 	}
