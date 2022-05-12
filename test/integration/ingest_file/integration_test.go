@@ -1,15 +1,20 @@
 package integration_test
 
 import (
+	"bytes"
 	"context"
+	"embed"
+	"encoding/csv"
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
 
 	"file_reader/src/protos/onboarding"
+	orgPb "file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 
 	"file_reader/src/log"
@@ -25,9 +30,13 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	"github.com/onsi/gomega"
 	"github.com/segmentio/kafka-go"
 )
+
+//go:embed test/data/good
+var testGoodDataDir embed.FS
 
 var testCases = []struct {
 	name        string
@@ -83,26 +92,52 @@ func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(conte
 		return listener.Dial()
 	}
 }
+func getCSVToProto(entity string) (*onboarding.Organization, error) {
+	switch entity {
+	case "ORGANIZATION":
+
+		content, _ := testGoodDataDir.ReadFile("data/good/organization.csv")
+		reader := csv.NewReader(bytes.NewBuffer(content))
+		_, err := reader.Read() // skip first line
+		if err != nil {
+			if err != io.EOF {
+				return nil, err
+			}
+		}
+		for {
+			row, err := reader.Read()
+			if err != nil {
+				if err == io.EOF {
+					fmt.Println(err)
+					break
+				}
+			}
+			md := orgPb.Metadata{
+				OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
+				Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},
+				TrackingId:        &orgPb.StringValue{Value: uuid.NewString()},
+			}
+
+			pl := orgPb.OrganizationPayload{
+				Uuid: &orgPb.StringValue{Value: row[0]}, //wrapperspb.String(row[0]),
+				Name: &orgPb.StringValue{Value: row[1]}, //wrapperspb.String(row[1]),
+			}
+
+			return &orgPb.Organization{Payload: &pl, Metadata: &md}, nil
+			fmt.Println(row)
+		}
+
+	}
+	return nil
+}
 func TestFileProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ac1d7d6 (Resolve issues with proto schema, add third_party lib)
 		"BROKERS":                "localhost:9092",
 		"GRPC_SERVER":            "localhost",
 		"GRPC_SERVER_PORT":       "6000",
 		"PROTO_SCHEMA_DIRECTORY": "protos/onboarding",
-<<<<<<< HEAD
-=======
-		"BROKERS":          "localhost:9092",
-		"GRPC_SERVER":      "localhost",
-		"GRPC_SERVER_PORT": "6000",
->>>>>>> 7267a7f (Add proto schema cache, refactor proto service)
-=======
->>>>>>> ac1d7d6 (Resolve issues with proto schema, add third_party lib)
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+
@@ -158,18 +193,10 @@ func TestFileProcessingServer(t *testing.T) {
 				g.Expect(res.Success).To(gomega.BeTrue())
 
 			}
-<<<<<<< HEAD
-<<<<<<< HEAD
 			// Testing for kafka messages
 			r := kafka.NewReader(kafka.ReaderConfig{
 				Brokers: instrument.GetBrokers(),
-				Topic:   "organization-proto-12",
-=======
-			// Testing for kafka messages
-			r := kafka.NewReader(kafka.ReaderConfig{
-				Brokers: instrument.GetBrokers(),
-				Topic:   "organization-proto",
->>>>>>> c768011 (cleaning up)
+				Topic:   "organization-proto-11",
 			})
 			ctx := context.Background()
 			serde := protobuf.NewProtoSerDe()
@@ -194,11 +221,6 @@ func TestFileProcessingServer(t *testing.T) {
 					break
 				}
 			}
-<<<<<<< HEAD
-=======
->>>>>>> 7267a7f (Add proto schema cache, refactor proto service)
-=======
->>>>>>> c768011 (cleaning up)
 
 		})
 	}

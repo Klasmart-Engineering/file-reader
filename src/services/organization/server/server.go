@@ -50,29 +50,3 @@ func (s *ingestFileServer) Run(ctx context.Context) error {
 	return nil
 
 }
-
-/*
-func main() {
-	l, _ := zap.NewDevelopment()
-
-	logger := log.Wrap(l)
-
-	Logger := config.Logger{
-		DisableCaller:     false,
-		DisableStacktrace: false,
-		Encoding:          "json",
-		Level:             "info",
-	}
-	addr := instrument.GetAddressForGrpc()
-
-	cfg := &config.Config{
-		Server: config.Server{Port: addr, Development: true},
-		Logger: Logger,
-		Kafka: config.Kafka{
-			Brokers: instrument.GetBrokers(),
-		},
-	}
-
-	s := ingestFileServer{logger: logger, cfg: cfg}
-	s.Run()
-}*/
