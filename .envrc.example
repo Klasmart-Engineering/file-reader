@@ -1,13 +1,18 @@
-PATH_add bin
-export GOBIN=$PWD/bin
-export BROKERS="localhost:9091, localhost:9092, localhost:9093"
-export SCHEMA_REGISTRY_URL="http://localhost:8081"
+export METADATA_REGION="GB"
+export METADATA_ORIGIN_APPLICATION="file-reader"
+
+
 export GRPC_SERVER="localhost"
 export GRPC_HEALTH_PORT="9000"
 export GRPC_SERVER_PORT="6000"
 
+# Schema
+export AVRO_SCHEMA_DIRECTORY="avros"
+export PROTO_SCHEMA_DIRECTORY="protos/onboarding"
+export SCHEMA_CLIENT_ENDPOINT="http://localhost:8081"
+
 # New relic configuration variables
-export NEW_RELIC_LICENSE_KEY="00000"
+
 export NEW_RELIC_LICENSE_KEY="newrelic_license_key"
 export DISTRIBUTED_TRACER_ENABLED="true"
 export SPAN_EVENT_ENABLED="true"
@@ -15,6 +20,7 @@ export ERROR_COLLECTOR_ENABLED="true"
 
 # Kafka configuration variables
 
+export BROKERS="localhost:9091, localhost:9092, localhost:9093"
 export MIN_BYTES="1000"
 export MAX_BYTES="1000000"
 export QUEUE_CAPACITY="100"

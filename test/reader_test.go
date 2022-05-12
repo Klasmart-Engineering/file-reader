@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
-	"os"
 	"testing"
 
 	avro "file_reader/avro_gencode"
-	src "file_reader/src"
+	"file_reader/src/pkg/proto"
 
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
@@ -29,13 +27,13 @@ func TestReadOrgCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 
-	var config = src.Config{
+	var config = proto.Config{
 		BrokerAddrs: brokerAddrs,
 		Reader:      reader,
 		Context:     context.Background(),
-		Logger:      *log.New(os.Stdout, "kafka writer: ", 0),
+		//Logger:      *log.New(os.Stdout, "kafka writer: ", 0),
 	}
-	src.Organization.IngestFile(config)
+	proto.OrganizationProto.IngestFilePROTO(config, "PROTO")
 
 	// Until we have a fresh topic for testing,
 	// Not sure yet how to do assertions as consumer will have to read everything
@@ -59,4 +57,3 @@ func TestReadOrgCsv(t *testing.T) {
 		}
 	}
 }
-

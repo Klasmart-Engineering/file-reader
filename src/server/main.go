@@ -5,9 +5,9 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	"file_reader/src/log"
-	"file_reader/src/protos"
+	filepb "file_reader/src/protos/inputfile"
 
-	csvGrpc "file_reader/src/services/organization/delivery/grpc"
+	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 
 	"go.uber.org/zap"
 
@@ -34,10 +34,10 @@ func grpcServerInstrument() {
 	addr := instrument.GetAddressForHealthCheck()
 
 	// grpc Server instrument
-	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("Csv health check", addr, logger)
+	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("File service health check", addr, logger)
 
 	if err != nil {
-		logger.Fatalf("Failed to start server. Error : %v", err)
+		logger.Fatalf(ctx, "Failed to start server. Error : %v", err)
 	}
 
 	cfg := &config.Config{
@@ -48,14 +48,14 @@ func grpcServerInstrument() {
 		},
 	}
 
-	csvFileService := csvGrpc.NewCsvFileService(ctx, logger, cfg)
+	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
 	healthServer := health.NewServer()
 
-	protos.RegisterCsvFileServiceServer(grpcServer, csvFileService)
+	filepb.RegisterIngestFileServiceServer(grpcServer, ingestFileService)
 
 	//healthService := healthcheck.NewHealthChecker()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
-	healthServer.SetServingStatus(protos.HealthService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus(filepb.IngestFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
 
 	logger.Infof(ctx, "Server starting to listen on %s", addr)
 

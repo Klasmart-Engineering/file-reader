@@ -62,7 +62,6 @@ func GetGrpcServer(address string, logger *log.ZapLogger) (net.Listener, *grpc.S
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "net.Listen")
 	}
-
 	grpcServer := grpc.NewServer()
 	return l, grpcServer, nil
 }
