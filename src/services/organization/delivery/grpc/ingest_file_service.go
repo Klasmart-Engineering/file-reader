@@ -38,7 +38,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	if err != nil {
 		return err
 	}
-	// Compose File reader for organization
+	// Ingest file depending on schema type
 	switch schemaType {
 	case "AVROS":
 
