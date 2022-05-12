@@ -22,15 +22,14 @@ type ValidatedOrganization struct {
 
 var OrganizationProto = Operation{
 	topic:            organizationProtoTopic,
-	key:              "",
 	rowToProtoSchema: rowToOrganizationProto,
 }
 
 func rowToOrganizationProto(row []string) (*orgPb.Organization, error) {
 	md := orgPb.Metadata{
-		OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")}, //wrapperspb.String(os.Getenv("METADATA_ORIGIN_APPLICATION")),
-		Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},             //wrapperspb.String(os.Getenv("METADATA_REGION")),
-		TrackingId:        &orgPb.StringValue{Value: uuid.NewString()},                         //wrapperspb.String(uuid.NewString()),
+		OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
+		Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},
+		TrackingId:        &orgPb.StringValue{Value: uuid.NewString()},
 	}
 
 	// Validate uuid format
@@ -41,8 +40,8 @@ func rowToOrganizationProto(row []string) (*orgPb.Organization, error) {
 		return nil, err
 	}
 	pl := orgPb.OrganizationPayload{
-		Uuid: &orgPb.StringValue{Value: row[0]}, //wrapperspb.String(row[0]),
-		Name: &orgPb.StringValue{Value: row[1]}, //wrapperspb.String(row[1]),
+		Uuid: &orgPb.StringValue{Value: row[0]},
+		Name: &orgPb.StringValue{Value: row[1]},
 	}
 
 	return &orgPb.Organization{Payload: &pl, Metadata: &md}, nil
