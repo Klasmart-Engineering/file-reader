@@ -17,12 +17,18 @@ require (
 	google.golang.org/protobuf v1.28.0
 )
 
+require github.com/goburrow/cache v0.1.3
+
 require (
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/go-playground/locales v0.14.0 // indirect
+	github.com/go-playground/universal-translator v0.18.0 // indirect
+	github.com/go-playground/validator/v10 v10.11.0
+	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/jhump/protoreflect v1.12.0
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
-	github.com/kr/pretty v0.2.1 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/linkedin/goavro/v2 v2.11.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.0.0 // indirect

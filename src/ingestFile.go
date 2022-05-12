@@ -21,10 +21,10 @@ type Operation struct {
 	Topic         string
 	Key           string
 	SchemaIDBytes []byte
-	RowToSchema   func(row []string) avroCodec
+	RowToSchema   func(row []string, tracking_id string) avroCodec
 }
 
-func (op Operation) IngestFile(ctx context.Context, reader Reader, kafkaWriter kafka.Writer) {
+func (op Operation) IngestFile(ctx context.Context, reader Reader, kafkaWriter kafka.Writer, tracking_id string) {
 	for {
 		row, err := reader.Read()
 		if err == io.EOF {
@@ -36,7 +36,7 @@ func (op Operation) IngestFile(ctx context.Context, reader Reader, kafkaWriter k
 
 		// Serialise row using schema
 		var buf bytes.Buffer
-		schemaCodec := op.RowToSchema(row)
+		schemaCodec := op.RowToSchema(row, tracking_id)
 		schemaCodec.Serialize(&buf)
 		valueBytes := buf.Bytes()
 

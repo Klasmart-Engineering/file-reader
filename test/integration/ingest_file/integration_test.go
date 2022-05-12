@@ -5,20 +5,28 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
+
+	"file_reader/src/protos/onboarding"
+	"file_reader/src/third_party/protobuf"
 	"flag"
-	"sync"
+	"fmt"
+	"net"
 
 	"file_reader/src/log"
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
+
 	"os"
 	"testing"
+
+	"google.golang.org/grpc/test/bufconn"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
+	"github.com/segmentio/kafka-go"
 )
 
 var testCases = []struct {
@@ -32,7 +40,7 @@ var testCases = []struct {
 
 			&filepb.InputFileRequest{
 				Type:      filepb.Type_ORGANIZATION,
-				InputFile: &filepb.InputFile{FileId: "file_id1", Path: ".././test/data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
+				InputFile: &filepb.InputFile{FileId: "file_id1", Path: "/Users/annguyen/file-reader/test/data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
 			},
 		},
 		expectedRes: filepb.InputFileResponse{Success: true, Errors: nil},
@@ -41,7 +49,6 @@ var testCases = []struct {
 
 func envSetter(envs map[string]string) (closer func()) {
 	originalEnvs := map[string]string{}
-
 	for name, value := range envs {
 		if originalValue, ok := os.LookupEnv(name); ok {
 			originalEnvs[name] = originalValue
@@ -61,54 +68,32 @@ func envSetter(envs map[string]string) (closer func()) {
 	}
 }
 
-func startClient(ctx context.Context, logger *log.ZapLogger, addr string, opts grpc.DialOption) filepb.InputFileServiceClient {
-	con, err := grpc.Dial(addr, opts)
-	if err != nil {
-		logger.Fatalf(ctx, "Error connecting: %v \n", err)
+func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(context.Context, string) (net.Conn, error) {
+	listener := bufconn.Listen(1024 * 1024)
+
+	filepb.RegisterIngestFileServiceServer(server, service)
+
+	go func() {
+		if err := server.Serve(listener); err != nil {
+			fmt.Printf("Error: %v", err)
+		}
+	}()
+
+	return func(context.Context, string) (net.Conn, error) {
+		return listener.Dial()
 	}
-
-	defer con.Close()
-
-	c := filepb.NewInputFileServiceClient(con)
-	return c
-
-}
-
-func start(ctx context.Context, logger *log.ZapLogger, addr string, t *testing.T) {
-	csvFh := test.NewInputFileHandlers(logger)
-
-	opts := grpc.WithInsecure()
-
-	c := startClient(ctx, logger, addr, opts)
-	for _, tc := range testCases {
-		testCase := tc
-		t.Run(testCase.name, func(t *testing.T) {
-			t.Parallel()
-			g := gomega.NewWithT(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			// grpc call
-			res, err := csvFh.ProcessRequests(c, testCase.req)
-			if testCase.name == "req ok" {
-
-				g.Expect(res).ToNot(gomega.BeNil(), "Result should not be nil")
-				g.Expect(err).ToNot(gomega.BeNil(), "Error should be nil")
-			}
-
-		})
-	}
-
 }
 func TestFileProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
-		"BROKERS":          "localhost:9091",
-		"GRPC_SERVER":      "localhost",
-		"GRPC_SERVER_PORT": "6000",
+		"BROKERS":                "localhost:9092",
+		"GRPC_SERVER":            "localhost",
+		"GRPC_SERVER_PORT":       "6000",
+		"PROTO_SCHEMA_DIRECTORY": "protos/onboarding",
 	})
-	t.Cleanup(closer) // In Go 1.14+
+
+	defer t.Cleanup(closer) // In Go 1.14+
 
 	l, _ := zap.NewDevelopment()
 
@@ -132,31 +117,65 @@ func TestFileProcessingServer(t *testing.T) {
 	}
 
 	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
-	lis, grpcServer, err := instrument.GetGrpcServer(addr, logger)
 
+	_, grpcServer, _ := instrument.GetGrpcServer(addr, logger)
+
+	conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
 	if err != nil {
-
-		t.Fatal(err)
+		fmt.Errorf(err.Error())
 	}
 
-	defer lis.Close()
-	t.Log(ingestFileService)
-	t.Log(grpcServer)
+	client := filepb.NewIngestFileServiceClient(conn)
+	csvFh := test.NewInputFileHandlers(logger)
 
-	filepb.RegisterInputFileServiceServer(grpcServer, ingestFileService)
-	// Start service client
+	schemaType := "PROTO"
+	for _, tc := range testCases {
+		testCase := tc
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			g := gomega.NewWithT(t)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-	csvFileAddr := lis.Addr().String()
-	go func() {
-		if err := grpcServer.Serve(lis); err != nil {
-			panic(err)
-		}
-	}()
+			// grpc call
+			res, err := csvFh.ProcessRequests(ctx, client, schemaType, testCase.req)
+			if testCase.name == "req ok" {
 
-	start(ctx, logger, csvFileAddr, t)
+				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
+				g.Expect(err).To(gomega.BeNil(), "Error should be nil")
+				g.Expect(res.Success).To(gomega.BeTrue())
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	wg.Wait()
+			}
+			// Testing for kafka messages
+			r := kafka.NewReader(kafka.ReaderConfig{
+				Brokers: instrument.GetBrokers(),
+				Topic:   "organization-proto-12",
+			})
+			ctx := context.Background()
+			serde := protobuf.NewProtoSerDe()
+			org := &onboarding.Organization{}
+			for i := 0; i < 5; i++ {
+				msg, err := r.ReadMessage(ctx)
+
+				if err != nil {
+					fmt.Printf("Error deserializing message: %v\n", err)
+				}
+
+				_, err = serde.Deserialize(msg.Value, org)
+
+				if err != nil {
+					fmt.Printf("Error deserializing message: %v\n", err)
+				}
+
+				if err == nil {
+					fmt.Printf("Received message: %v\n", org)
+				} else {
+					t.Logf("Error consuming the message: %v (%v)\n", err, msg)
+					break
+				}
+			}
+
+		})
+	}
 
 }

@@ -95,7 +95,9 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				Logger: &config.Logger,
 			}
 
-			operation.IngestFile(ctx, reader, kafkaWriter)
+			trackingId := s3FileCreated.Metadata.Tracking_id
+
+			operation.IngestFile(ctx, reader, kafkaWriter, trackingId)
 		}
 	}
 }

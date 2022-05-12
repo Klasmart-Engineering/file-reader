@@ -18,45 +18,46 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// InputFileServiceClient is the client API for InputFileService service.
+// IngestFileServiceClient is the client API for IngestFileService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type InputFileServiceClient interface {
-	IngestFile(ctx context.Context, opts ...grpc.CallOption) (InputFileService_IngestFileClient, error)
+type IngestFileServiceClient interface {
+	IngestFilePROTO(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFilePROTOClient, error)
+	IngestFileAVROS(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFileAVROSClient, error)
 }
 
-type inputFileServiceClient struct {
+type ingestFileServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewInputFileServiceClient(cc grpc.ClientConnInterface) InputFileServiceClient {
-	return &inputFileServiceClient{cc}
+func NewIngestFileServiceClient(cc grpc.ClientConnInterface) IngestFileServiceClient {
+	return &ingestFileServiceClient{cc}
 }
 
-func (c *inputFileServiceClient) IngestFile(ctx context.Context, opts ...grpc.CallOption) (InputFileService_IngestFileClient, error) {
-	stream, err := c.cc.NewStream(ctx, &InputFileService_ServiceDesc.Streams[0], "/protos.inputfile.InputFileService/IngestFile", opts...)
+func (c *ingestFileServiceClient) IngestFilePROTO(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFilePROTOClient, error) {
+	stream, err := c.cc.NewStream(ctx, &IngestFileService_ServiceDesc.Streams[0], "/protos.inputfile.IngestFileService/IngestFilePROTO", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &inputFileServiceIngestFileClient{stream}
+	x := &ingestFileServiceIngestFilePROTOClient{stream}
 	return x, nil
 }
 
-type InputFileService_IngestFileClient interface {
+type IngestFileService_IngestFilePROTOClient interface {
 	Send(*InputFileRequest) error
 	CloseAndRecv() (*InputFileResponse, error)
 	grpc.ClientStream
 }
 
-type inputFileServiceIngestFileClient struct {
+type ingestFileServiceIngestFilePROTOClient struct {
 	grpc.ClientStream
 }
 
-func (x *inputFileServiceIngestFileClient) Send(m *InputFileRequest) error {
+func (x *ingestFileServiceIngestFilePROTOClient) Send(m *InputFileRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *inputFileServiceIngestFileClient) CloseAndRecv() (*InputFileResponse, error) {
+func (x *ingestFileServiceIngestFilePROTOClient) CloseAndRecv() (*InputFileResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -67,53 +68,91 @@ func (x *inputFileServiceIngestFileClient) CloseAndRecv() (*InputFileResponse, e
 	return m, nil
 }
 
-// InputFileServiceServer is the server API for InputFileService service.
-// All implementations must embed UnimplementedInputFileServiceServer
+func (c *ingestFileServiceClient) IngestFileAVROS(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFileAVROSClient, error) {
+	stream, err := c.cc.NewStream(ctx, &IngestFileService_ServiceDesc.Streams[1], "/protos.inputfile.IngestFileService/IngestFileAVROS", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &ingestFileServiceIngestFileAVROSClient{stream}
+	return x, nil
+}
+
+type IngestFileService_IngestFileAVROSClient interface {
+	Send(*InputFileRequest) error
+	CloseAndRecv() (*InputFileResponse, error)
+	grpc.ClientStream
+}
+
+type ingestFileServiceIngestFileAVROSClient struct {
+	grpc.ClientStream
+}
+
+func (x *ingestFileServiceIngestFileAVROSClient) Send(m *InputFileRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *ingestFileServiceIngestFileAVROSClient) CloseAndRecv() (*InputFileResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(InputFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// IngestFileServiceServer is the server API for IngestFileService service.
+// All implementations must embed UnimplementedIngestFileServiceServer
 // for forward compatibility
-type InputFileServiceServer interface {
-	IngestFile(InputFileService_IngestFileServer) error
-	mustEmbedUnimplementedInputFileServiceServer()
+type IngestFileServiceServer interface {
+	IngestFilePROTO(IngestFileService_IngestFilePROTOServer) error
+	IngestFileAVROS(IngestFileService_IngestFileAVROSServer) error
+	mustEmbedUnimplementedIngestFileServiceServer()
 }
 
-// UnimplementedInputFileServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedInputFileServiceServer struct {
+// UnimplementedIngestFileServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedIngestFileServiceServer struct {
 }
 
-func (UnimplementedInputFileServiceServer) IngestFile(InputFileService_IngestFileServer) error {
-	return status.Errorf(codes.Unimplemented, "method IngestFile not implemented")
+func (UnimplementedIngestFileServiceServer) IngestFilePROTO(IngestFileService_IngestFilePROTOServer) error {
+	return status.Errorf(codes.Unimplemented, "method IngestFilePROTO not implemented")
 }
-func (UnimplementedInputFileServiceServer) mustEmbedUnimplementedInputFileServiceServer() {}
+func (UnimplementedIngestFileServiceServer) IngestFileAVROS(IngestFileService_IngestFileAVROSServer) error {
+	return status.Errorf(codes.Unimplemented, "method IngestFileAVROS not implemented")
+}
+func (UnimplementedIngestFileServiceServer) mustEmbedUnimplementedIngestFileServiceServer() {}
 
-// UnsafeInputFileServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to InputFileServiceServer will
+// UnsafeIngestFileServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to IngestFileServiceServer will
 // result in compilation errors.
-type UnsafeInputFileServiceServer interface {
-	mustEmbedUnimplementedInputFileServiceServer()
+type UnsafeIngestFileServiceServer interface {
+	mustEmbedUnimplementedIngestFileServiceServer()
 }
 
-func RegisterInputFileServiceServer(s grpc.ServiceRegistrar, srv InputFileServiceServer) {
-	s.RegisterService(&InputFileService_ServiceDesc, srv)
+func RegisterIngestFileServiceServer(s grpc.ServiceRegistrar, srv IngestFileServiceServer) {
+	s.RegisterService(&IngestFileService_ServiceDesc, srv)
 }
 
-func _InputFileService_IngestFile_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(InputFileServiceServer).IngestFile(&inputFileServiceIngestFileServer{stream})
+func _IngestFileService_IngestFilePROTO_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(IngestFileServiceServer).IngestFilePROTO(&ingestFileServiceIngestFilePROTOServer{stream})
 }
 
-type InputFileService_IngestFileServer interface {
+type IngestFileService_IngestFilePROTOServer interface {
 	SendAndClose(*InputFileResponse) error
 	Recv() (*InputFileRequest, error)
 	grpc.ServerStream
 }
 
-type inputFileServiceIngestFileServer struct {
+type ingestFileServiceIngestFilePROTOServer struct {
 	grpc.ServerStream
 }
 
-func (x *inputFileServiceIngestFileServer) SendAndClose(m *InputFileResponse) error {
+func (x *ingestFileServiceIngestFilePROTOServer) SendAndClose(m *InputFileResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *inputFileServiceIngestFileServer) Recv() (*InputFileRequest, error) {
+func (x *ingestFileServiceIngestFilePROTOServer) Recv() (*InputFileRequest, error) {
 	m := new(InputFileRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -121,17 +160,48 @@ func (x *inputFileServiceIngestFileServer) Recv() (*InputFileRequest, error) {
 	return m, nil
 }
 
-// InputFileService_ServiceDesc is the grpc.ServiceDesc for InputFileService service.
+func _IngestFileService_IngestFileAVROS_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(IngestFileServiceServer).IngestFileAVROS(&ingestFileServiceIngestFileAVROSServer{stream})
+}
+
+type IngestFileService_IngestFileAVROSServer interface {
+	SendAndClose(*InputFileResponse) error
+	Recv() (*InputFileRequest, error)
+	grpc.ServerStream
+}
+
+type ingestFileServiceIngestFileAVROSServer struct {
+	grpc.ServerStream
+}
+
+func (x *ingestFileServiceIngestFileAVROSServer) SendAndClose(m *InputFileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *ingestFileServiceIngestFileAVROSServer) Recv() (*InputFileRequest, error) {
+	m := new(InputFileRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// IngestFileService_ServiceDesc is the grpc.ServiceDesc for IngestFileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var InputFileService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "protos.inputfile.InputFileService",
-	HandlerType: (*InputFileServiceServer)(nil),
+var IngestFileService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "protos.inputfile.IngestFileService",
+	HandlerType: (*IngestFileServiceServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "IngestFile",
-			Handler:       _InputFileService_IngestFile_Handler,
+			StreamName:    "IngestFilePROTO",
+			Handler:       _IngestFileService_IngestFilePROTO_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "IngestFileAVROS",
+			Handler:       _IngestFileService_IngestFileAVROS_Handler,
 			ClientStreams: true,
 		},
 	},
