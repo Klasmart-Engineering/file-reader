@@ -4,7 +4,7 @@ import (
 	"context"
 	"file_reader/src/config"
 	"file_reader/src/instrument"
-	"file_reader/src/log"
+	zaplogger "file_reader/src/log"
 
 	filepb "file_reader/src/protos/inputfile"
 
@@ -14,21 +14,17 @@ import (
 )
 
 type ingestFileServer struct {
-	logger *log.ZapLogger
+	logger *zaplogger.ZapLogger
 	cfg    *config.Config
 }
 
-func NewServer(logger *log.ZapLogger, cfg *config.Config) *ingestFileServer {
+func NewServer(logger *zaplogger.ZapLogger, cfg *config.Config) *ingestFileServer {
 	return &ingestFileServer{
 		logger: logger,
 		cfg:    cfg,
 	}
 }
-func (s *ingestFileServer) Run() error {
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func (s *ingestFileServer) Run(ctx context.Context) error {
 	s.logger.Infof(ctx, "GRPC Server is listening... at port %v\n", s.cfg.Server.Port)
 	addr := instrument.GetAddressForGrpc()
 
@@ -54,29 +50,3 @@ func (s *ingestFileServer) Run() error {
 	return nil
 
 }
-
-/*
-func main() {
-	l, _ := zap.NewDevelopment()
-
-	logger := log.Wrap(l)
-
-	Logger := config.Logger{
-		DisableCaller:     false,
-		DisableStacktrace: false,
-		Encoding:          "json",
-		Level:             "info",
-	}
-	addr := instrument.GetAddressForGrpc()
-
-	cfg := &config.Config{
-		Server: config.Server{Port: addr, Development: true},
-		Logger: Logger,
-		Kafka: config.Kafka{
-			Brokers: instrument.GetBrokers(),
-		},
-	}
-
-	s := ingestFileServer{logger: logger, cfg: cfg}
-	s.Run()
-}*/

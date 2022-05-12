@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	organizationProtoTopic = "organization-proto"
+	organizationProtoTopic = "organization-proto-12"
 	orgProtoSchemaFileName = "onboarding.proto"
 	organizationSchemaName = "organization"
 )

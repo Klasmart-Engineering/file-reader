@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/csv"
 	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/log"
@@ -10,6 +11,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/google/uuid"
+	"github.com/riferrei/srclient"
+	"github.com/segmentio/kafka-go"
 )
 
 // ingestFileService grpc service
@@ -26,6 +31,8 @@ func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *confi
 }
 
 func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, schemaType string) error {
+	// ToDo: include tracking id in proto file?
+	trackingid := uuid.NewString()
 	//Setup
 	c.logger.Infof(c.ctx, "Processing input file in ", filePath)
 	f, err := os.Open(filePath)
@@ -41,14 +48,22 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	// Ingest file depending on schema type
 	switch schemaType {
 	case "AVROS":
-
-		config := src.Config{
-			BrokerAddrs: c.cfg.Kafka.Brokers,
-			Reader:      f,
-			Context:     context.Background(),
-			//Logger:      ,
+		kafkaWriter := kafka.Writer{
+			Addr:  kafka.TCP(c.cfg.Kafka.Brokers...),
+			Topic: src.OrganizationTopic,
+			//Logger: &config.Logger,
 		}
-		src.Organization.IngestFileAVROS(config, fileTypeName)
+		schemaRegistryClient := &src.SchemaRegistry{
+			C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
+		}
+		// Compose File reader for organization
+		var Organization = src.Operation{
+			Topic:         src.OrganizationTopic,
+			Key:           "",
+			SchemaIDBytes: src.GetOrganizationSchemaIdBytes(schemaRegistryClient),
+			RowToSchema:   src.RowToOrganization,
+		}
+		Organization.IngestFile(context.Background(), csv.NewReader(f), kafkaWriter, trackingid)
 	case "PROTO":
 		config := proto.Config{
 			BrokerAddrs: c.cfg.Kafka.Brokers,

@@ -18,7 +18,7 @@ import (
 
 var _ = fmt.Printf
 
-type OrganizationMetadata struct {
+type S3FileCreatedMetadata struct {
 	Origin_application string `json:"origin_application"`
 
 	Region string `json:"region"`
@@ -26,15 +26,15 @@ type OrganizationMetadata struct {
 	Tracking_id string `json:"tracking_id"`
 }
 
-const OrganizationMetadataAvroCRC64Fingerprint = "9R\xbf\x96Į\xff\xf7"
+const S3FileCreatedMetadataAvroCRC64Fingerprint = "\an\x84p1\xdd\xd5\""
 
-func NewOrganizationMetadata() OrganizationMetadata {
-	r := OrganizationMetadata{}
+func NewS3FileCreatedMetadata() S3FileCreatedMetadata {
+	r := S3FileCreatedMetadata{}
 	return r
 }
 
-func DeserializeOrganizationMetadata(r io.Reader) (OrganizationMetadata, error) {
-	t := NewOrganizationMetadata()
+func DeserializeS3FileCreatedMetadata(r io.Reader) (S3FileCreatedMetadata, error) {
+	t := NewS3FileCreatedMetadata()
 	deser, err := compiler.CompileSchemaBytes([]byte(t.Schema()), []byte(t.Schema()))
 	if err != nil {
 		return t, err
@@ -44,8 +44,8 @@ func DeserializeOrganizationMetadata(r io.Reader) (OrganizationMetadata, error) 
 	return t, err
 }
 
-func DeserializeOrganizationMetadataFromSchema(r io.Reader, schema string) (OrganizationMetadata, error) {
-	t := NewOrganizationMetadata()
+func DeserializeS3FileCreatedMetadataFromSchema(r io.Reader, schema string) (S3FileCreatedMetadata, error) {
+	t := NewS3FileCreatedMetadata()
 
 	deser, err := compiler.CompileSchemaBytes([]byte(schema), []byte(t.Schema()))
 	if err != nil {
@@ -56,7 +56,7 @@ func DeserializeOrganizationMetadataFromSchema(r io.Reader, schema string) (Orga
 	return t, err
 }
 
-func writeOrganizationMetadata(r OrganizationMetadata, w io.Writer) error {
+func writeS3FileCreatedMetadata(r S3FileCreatedMetadata, w io.Writer) error {
 	var err error
 	err = vm.WriteString(r.Origin_application, w)
 	if err != nil {
@@ -73,28 +73,28 @@ func writeOrganizationMetadata(r OrganizationMetadata, w io.Writer) error {
 	return err
 }
 
-func (r OrganizationMetadata) Serialize(w io.Writer) error {
-	return writeOrganizationMetadata(r, w)
+func (r S3FileCreatedMetadata) Serialize(w io.Writer) error {
+	return writeS3FileCreatedMetadata(r, w)
 }
 
-func (r OrganizationMetadata) Schema() string {
-	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.OrganizationMetadata\",\"type\":\"record\"}"
+func (r S3FileCreatedMetadata) Schema() string {
+	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.S3FileCreatedMetadata\",\"type\":\"record\"}"
 }
 
-func (r OrganizationMetadata) SchemaName() string {
-	return "com.kidsloop.onboarding.OrganizationMetadata"
+func (r S3FileCreatedMetadata) SchemaName() string {
+	return "com.kidsloop.onboarding.S3FileCreatedMetadata"
 }
 
-func (_ OrganizationMetadata) SetBoolean(v bool)    { panic("Unsupported operation") }
-func (_ OrganizationMetadata) SetInt(v int32)       { panic("Unsupported operation") }
-func (_ OrganizationMetadata) SetLong(v int64)      { panic("Unsupported operation") }
-func (_ OrganizationMetadata) SetFloat(v float32)   { panic("Unsupported operation") }
-func (_ OrganizationMetadata) SetDouble(v float64)  { panic("Unsupported operation") }
-func (_ OrganizationMetadata) SetBytes(v []byte)    { panic("Unsupported operation") }
-func (_ OrganizationMetadata) SetString(v string)   { panic("Unsupported operation") }
-func (_ OrganizationMetadata) SetUnionElem(v int64) { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) SetBoolean(v bool)    { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) SetInt(v int32)       { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) SetLong(v int64)      { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) SetFloat(v float32)   { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) SetDouble(v float64)  { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) SetBytes(v []byte)    { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) SetString(v string)   { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) SetUnionElem(v int64) { panic("Unsupported operation") }
 
-func (r *OrganizationMetadata) Get(i int) types.Field {
+func (r *S3FileCreatedMetadata) Get(i int) types.Field {
 	switch i {
 	case 0:
 		w := types.String{Target: &r.Origin_application}
@@ -115,28 +115,28 @@ func (r *OrganizationMetadata) Get(i int) types.Field {
 	panic("Unknown field index")
 }
 
-func (r *OrganizationMetadata) SetDefault(i int) {
+func (r *S3FileCreatedMetadata) SetDefault(i int) {
 	switch i {
 	}
 	panic("Unknown field index")
 }
 
-func (r *OrganizationMetadata) NullField(i int) {
+func (r *S3FileCreatedMetadata) NullField(i int) {
 	switch i {
 	}
 	panic("Not a nullable field index")
 }
 
-func (_ OrganizationMetadata) AppendMap(key string) types.Field { panic("Unsupported operation") }
-func (_ OrganizationMetadata) AppendArray() types.Field         { panic("Unsupported operation") }
-func (_ OrganizationMetadata) HintSize(int)                     { panic("Unsupported operation") }
-func (_ OrganizationMetadata) Finalize()                        {}
+func (_ S3FileCreatedMetadata) AppendMap(key string) types.Field { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) AppendArray() types.Field         { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) HintSize(int)                     { panic("Unsupported operation") }
+func (_ S3FileCreatedMetadata) Finalize()                        {}
 
-func (_ OrganizationMetadata) AvroCRC64Fingerprint() []byte {
-	return []byte(OrganizationMetadataAvroCRC64Fingerprint)
+func (_ S3FileCreatedMetadata) AvroCRC64Fingerprint() []byte {
+	return []byte(S3FileCreatedMetadataAvroCRC64Fingerprint)
 }
 
-func (r OrganizationMetadata) MarshalJSON() ([]byte, error) {
+func (r S3FileCreatedMetadata) MarshalJSON() ([]byte, error) {
 	var err error
 	output := make(map[string]json.RawMessage)
 	output["origin_application"], err = json.Marshal(r.Origin_application)
@@ -154,7 +154,7 @@ func (r OrganizationMetadata) MarshalJSON() ([]byte, error) {
 	return json.Marshal(output)
 }
 
-func (r *OrganizationMetadata) UnmarshalJSON(data []byte) error {
+func (r *S3FileCreatedMetadata) UnmarshalJSON(data []byte) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return err

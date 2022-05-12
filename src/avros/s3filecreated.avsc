@@ -1,0 +1,54 @@
+{
+	"name": "S3FileCreated",
+	"type": "record",
+	"namespace": "com.kidsloop.onboarding",
+	"fields": [{
+			"name": "payload",
+			"type": {
+				"name": "S3FileCreatedPayload",
+				"type": "record",
+				"fields": [{
+						"name": "key",
+						"type": "string"
+					}, {
+						"name": "aws_region",
+						"type": "string"
+					}, {
+						"name": "bucket_name",
+						"type": "string"
+					}, {
+						"name": "content_length",
+						"type": "long"
+					}, {
+                        "name": "content_type",
+						"type": "string"
+                    }, {
+                        "name": "operation_type",
+						"type": "string"
+                    }
+				]
+			}
+		},
+		{
+			"name": "metadata",
+			"type": {
+				"name": "S3FileCreatedMetadata",
+				"type": "record",
+				"fields": [{
+						"name": "origin_application",
+						"type": "string"
+					},
+					{
+						"name": "region",
+						"type": "string"
+					},
+					{
+						"name": "tracking_id",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		}
+	]
+}
