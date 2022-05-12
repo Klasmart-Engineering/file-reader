@@ -28,7 +28,7 @@ type Config struct {
 type Operation struct {
 	topic            string
 	schema           *srclient.Schema
-	rowToProtoSchema func(row []string) (*orgPb.Organization, error)
+	rowToProtoSchema func(row []string, trackingId string) (*orgPb.Organization, error)
 }
 
 func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
@@ -52,7 +52,7 @@ func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
 	return w
 }
 
-func (op Operation) IngestFilePROTO(config Config, fileTypeName string) error {
+func (op Operation) IngestFilePROTO(config Config, fileTypeName string, trackingId string) error {
 
 	switch fileTypeName {
 
@@ -69,7 +69,7 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string) error {
 				return err
 			}
 			// Serialise row using schema
-			orgSchema, err := op.rowToProtoSchema(row)
+			orgSchema, err := op.rowToProtoSchema(row, trackingId)
 			if err != nil {
 				config.Logger.Fatalf(config.Context, err.Error())
 			}

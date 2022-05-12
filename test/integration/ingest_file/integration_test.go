@@ -18,11 +18,13 @@ import (
 	"net"
 
 	"file_reader/src/log"
+	"file_reader/src/pkg/proto"
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
-
 	"os"
 	"testing"
+
+	"github.com/go-playground/validator/v10"
 
 	"google.golang.org/grpc/test/bufconn"
 
@@ -35,7 +37,7 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-//go:embed test/data/good
+//go:embed data/good
 var testGoodDataDir embed.FS
 
 var testCases = []struct {
@@ -49,10 +51,21 @@ var testCases = []struct {
 
 			&filepb.InputFileRequest{
 				Type:      filepb.Type_ORGANIZATION,
-				InputFile: &filepb.InputFile{FileId: "file_id1", Path: "/Users/annguyen/file-reader/test/data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
+				InputFile: &filepb.InputFile{FileId: "file_id1", Path: "data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
 			},
 		},
 		expectedRes: filepb.InputFileResponse{Success: true, Errors: nil},
+	},
+	{
+		name: "one invalid uuid",
+		req: []*filepb.InputFileRequest{
+
+			&filepb.InputFileRequest{
+				Type:      filepb.Type_ORGANIZATION,
+				InputFile: &filepb.InputFile{FileId: "file_id2", Path: "data/bad/invalid_uuid.csv", InputFileType: filepb.InputFileType_CSV},
+			},
+		},
+		expectedRes: filepb.InputFileResponse{Success: false, Errors: nil},
 	},
 }
 
@@ -92,24 +105,19 @@ func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(conte
 		return listener.Dial()
 	}
 }
-func getCSVToProto(entity string) (*onboarding.Organization, error) {
+func getCSVToProtos(entity string) ([]*onboarding.Organization, error) {
+	var res []*onboarding.Organization
+
 	switch entity {
 	case "ORGANIZATION":
 
 		content, _ := testGoodDataDir.ReadFile("data/good/organization.csv")
 		reader := csv.NewReader(bytes.NewBuffer(content))
-		_, err := reader.Read() // skip first line
-		if err != nil {
-			if err != io.EOF {
-				return nil, err
-			}
-		}
 		for {
 			row, err := reader.Read()
 			if err != nil {
 				if err == io.EOF {
-					fmt.Println(err)
-					break
+					return res, nil
 				}
 			}
 			md := orgPb.Metadata{
@@ -119,16 +127,16 @@ func getCSVToProto(entity string) (*onboarding.Organization, error) {
 			}
 
 			pl := orgPb.OrganizationPayload{
-				Uuid: &orgPb.StringValue{Value: row[0]}, //wrapperspb.String(row[0]),
-				Name: &orgPb.StringValue{Value: row[1]}, //wrapperspb.String(row[1]),
+				Uuid: &orgPb.StringValue{Value: row[0]},
+				Name: &orgPb.StringValue{Value: row[1]},
 			}
 
-			return &orgPb.Organization{Payload: &pl, Metadata: &md}, nil
+			res = append(res, &orgPb.Organization{Payload: &pl, Metadata: &md})
 			fmt.Println(row)
 		}
 
 	}
-	return nil
+	return res, nil
 }
 func TestFileProcessingServer(t *testing.T) {
 	flag.Set("test.timeout", "0")
@@ -138,6 +146,7 @@ func TestFileProcessingServer(t *testing.T) {
 		"GRPC_SERVER":            "localhost",
 		"GRPC_SERVER_PORT":       "6000",
 		"PROTO_SCHEMA_DIRECTORY": "protos/onboarding",
+		"SCHEMA_CLIENT_ENDPOINT": "http://localhost:8081",
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+
@@ -176,6 +185,8 @@ func TestFileProcessingServer(t *testing.T) {
 	csvFh := test.NewInputFileHandlers(logger)
 
 	schemaType := "PROTO"
+	originals, _ := getCSVToProtos("ORGANIZATION")
+
 	for _, tc := range testCases {
 		testCase := tc
 		t.Run(testCase.name, func(t *testing.T) {
@@ -186,6 +197,11 @@ func TestFileProcessingServer(t *testing.T) {
 
 			// grpc call
 			res, err := csvFh.ProcessRequests(ctx, client, schemaType, testCase.req)
+			if testCase.name == "one invalid uuid" {
+				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
+				g.Expect(err).NotTo(gomega.BeNil(), "Error should be nil")
+				g.Expect(res.Success).To(gomega.BeFalse())
+			}
 			if testCase.name == "req ok" {
 
 				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
@@ -196,12 +212,15 @@ func TestFileProcessingServer(t *testing.T) {
 			// Testing for kafka messages
 			r := kafka.NewReader(kafka.ReaderConfig{
 				Brokers: instrument.GetBrokers(),
-				Topic:   "organization-proto-11",
+				Topic:   "organization-proto",
 			})
 			ctx := context.Background()
 			serde := protobuf.NewProtoSerDe()
 			org := &onboarding.Organization{}
-			for i := 0; i < 5; i++ {
+			validate := validator.New()
+
+			for _, original := range originals {
+
 				msg, err := r.ReadMessage(ctx)
 
 				if err != nil {
@@ -215,7 +234,18 @@ func TestFileProcessingServer(t *testing.T) {
 				}
 
 				if err == nil {
-					fmt.Printf("Received message: %v\n", org)
+					fmt.Printf("Received message: %v, original message is %v\n", org, original)
+
+					validatedOrg := proto.ValidateTrackingId{Uuid: org.Metadata.TrackingId.Value}
+					err := validate.Struct(validatedOrg)
+					if err != nil {
+						t.Fatalf("%s", err)
+					}
+					g.Expect(original.Metadata.Region.Value == org.Metadata.Region.Value).To(gomega.BeTrue())
+					g.Expect(original.Metadata.OriginApplication.Value == org.Metadata.OriginApplication.Value).To(gomega.BeTrue())
+					g.Expect(original.Payload.Uuid.Value == org.Payload.Uuid.Value).To(gomega.BeTrue())
+					g.Expect(original.Payload.Name.Value == org.Payload.Name.Value).To(gomega.BeTrue())
+
 				} else {
 					t.Logf("Error consuming the message: %v (%v)\n", err, msg)
 					break

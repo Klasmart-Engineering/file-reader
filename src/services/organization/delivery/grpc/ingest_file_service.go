@@ -32,7 +32,7 @@ func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *confi
 
 func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, schemaType string) error {
 	// ToDo: include tracking id in proto file?
-	trackingid := uuid.NewString()
+	trackingId := uuid.NewString()
 	//Setup
 	c.logger.Infof(c.ctx, "Processing input file in ", filePath)
 	f, err := os.Open(filePath)
@@ -63,7 +63,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			SchemaIDBytes: src.GetOrganizationSchemaIdBytes(schemaRegistryClient),
 			RowToSchema:   src.RowToOrganization,
 		}
-		Organization.IngestFile(context.Background(), csv.NewReader(f), kafkaWriter, trackingid)
+		Organization.IngestFile(context.Background(), csv.NewReader(f), kafkaWriter, trackingId)
 	case "PROTO":
 		config := proto.Config{
 			BrokerAddrs: c.cfg.Kafka.Brokers,
@@ -71,7 +71,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			Context:     context.Background(),
 			//Logger:      ,
 		}
-		return proto.OrganizationProto.IngestFilePROTO(config, fileTypeName)
+		return proto.OrganizationProto.IngestFilePROTO(config, fileTypeName, trackingId)
 	}
 
 	return nil
