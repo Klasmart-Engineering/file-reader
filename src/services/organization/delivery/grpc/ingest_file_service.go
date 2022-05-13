@@ -34,10 +34,10 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	// ToDo: include tracking id in proto file?
 	trackingId := uuid.NewString()
 	//Setup
-	c.logger.Infof(c.ctx, false, "Processing input file in ", filePath)
+	c.logger.Infof(c.ctx, "Processing input file in ", filePath)
 	f, err := os.Open(filePath)
 	if err != nil {
-		c.logger.Errorf(c.ctx, false, "failed to open input file: ", err.Error())
+		c.logger.Errorf(c.ctx, "failed to open input file: ", err.Error())
 		return err
 	}
 	defer f.Close()
@@ -96,7 +96,7 @@ func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_I
 
 		//Handle any possible errors when streaming requests
 		if err != nil {
-			c.logger.Fatalf(c.ctx, false, "Error when reading client request stream: %v", err)
+			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
 		}
 
 		filePath := req.InputFile.GetPath()
@@ -111,7 +111,7 @@ func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_I
 
 			// process organization
 			if err := c.processInputFile(filePath, fileTypeName, "PROTO"); err != nil {
-				c.logger.Errorf(c.ctx, false, "Failed to process csv file: %v, %v", filePath, err.Error())
+				c.logger.Errorf(c.ctx, "Failed to process csv file: %v, %v", filePath, err.Error())
 
 				e := &inputfile.InputFileError{
 					FileId:  fileId,
@@ -146,7 +146,7 @@ func (c *IngestFileService) IngestFileAVROS(stream inputfile.IngestFileService_I
 
 		//Handle any possible errors when streaming requests
 		if err != nil {
-			c.logger.Fatalf(c.ctx, false, "Error when reading client request stream: %v", err)
+			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
 		}
 
 		filePath := req.InputFile.GetPath()
@@ -161,11 +161,11 @@ func (c *IngestFileService) IngestFileAVROS(stream inputfile.IngestFileService_I
 
 			// process organization
 			if err := c.processInputFile(filePath, fileTypeName, "AVROS"); err != nil {
-				c.logger.Errorf(c.ctx, false, "Failed to process csv file: %v, %v", filePath, err.Error())
+				c.logger.Errorf(c.ctx, "Failed to process input file: %v, %v", filePath, err.Error())
 
 				e := &inputfile.InputFileError{
 					FileId:  fileId,
-					Message: []string{"Failed to process csv file", fmt.Sprint("Error: %v", err.Error())},
+					Message: []string{"Failed to process input file", fmt.Sprint("Error: %v", err.Error())},
 				}
 
 				// Append new error message

@@ -25,7 +25,7 @@ func NewServer(logger *zaplogger.ZapLogger, cfg *config.Config) *ingestFileServe
 	}
 }
 func (s *ingestFileServer) Run(ctx context.Context) error {
-	s.logger.Infof(ctx, false, "GRPC Server is listening... at port %v\n", s.cfg.Server.Port)
+	s.logger.Infof(ctx, "GRPC Server is listening... at port %v\n", s.cfg.Server.Port)
 	addr := instrument.GetAddressForGrpc()
 
 	lis, grpcServer, err := instrument.GetGrpcServer("File Processing Server", addr, s.logger)
@@ -41,10 +41,10 @@ func (s *ingestFileServer) Run(ctx context.Context) error {
 
 	filepb.RegisterIngestFileServiceServer(grpcServer, ingestFileService)
 
-	s.logger.Infof(ctx, false, "GRPC Server is listening...", zap.String("port", s.cfg.Server.Port))
+	s.logger.Infof(ctx, "GRPC Server is listening...", zap.String("port", s.cfg.Server.Port))
 
 	if err = grpcServer.Serve(lis); err != nil {
-		s.logger.Errorf(ctx, false, "Server issue.", zap.String("error", err.Error()))
+		s.logger.Errorf(ctx, "Server issue.", zap.String("error", err.Error()))
 	}
 
 	return nil

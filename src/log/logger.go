@@ -49,63 +49,39 @@ func Wrap(l *zap.Logger) *ZapLogger {
 	return &ZapLogger{zap: l}
 }
 
-func (l *ZapLogger) Error(ctx context.Context, newRelicEnabled bool, i ...interface{}) {
-	if newRelicEnabled {
-		l.WithCtxValue(ctx).Sugar().Error(fmt.Sprint(i...))
-	} else {
-		l.zap.Sugar().Error(fmt.Sprint(i...))
-	}
+func (l *ZapLogger) Error(ctx context.Context, i ...interface{}) {
+	l.WithCtxValue(ctx).Sugar().Error(fmt.Sprint(i...))
 }
 
-func (l *ZapLogger) Errorf(ctx context.Context, newRelicEnabled bool, s string, i ...interface{}) {
-	if newRelicEnabled {
-		l.WithCtxValue(ctx).Sugar().Errorf(fmt.Sprint(i...))
-	} else {
-		l.zap.Sugar().Errorf(fmt.Sprint(i...))
-	}
+func (l *ZapLogger) Errorf(ctx context.Context, s string, i ...interface{}) {
+	l.WithCtxValue(ctx).Sugar().Error(fmt.Sprintf(s, i...))
 }
 
-func (l *ZapLogger) Fatal(ctx context.Context, newRelicEnabled bool, i ...interface{}) {
-	if newRelicEnabled {
-		l.WithCtxValue(ctx).Fatal(fmt.Sprint(i...))
-	} else {
-		l.zap.Sugar().Fatal(fmt.Sprint(i...))
-	}
+func (l *ZapLogger) Fatal(ctx context.Context, i ...interface{}) {
+	l.WithCtxValue(ctx).Sugar().Fatal(fmt.Sprint(i...))
 }
 
-func (l *ZapLogger) Fatalf(ctx context.Context, newRelicEnabled bool, s string, i ...interface{}) {
-	if newRelicEnabled {
-		l.WithCtxValue(ctx).Error(fmt.Sprintf(s, i...))
-	} else {
-		l.zap.Sugar().Fatalf(fmt.Sprintf(s, i...))
-	}
+func (l *ZapLogger) Fatalf(ctx context.Context, s string, i ...interface{}) {
+	l.WithCtxValue(ctx).Sugar().Fatal(fmt.Sprintf(s, i...))
 }
 
-func (l *ZapLogger) Info(ctx context.Context, newRelicEnabled bool, i ...interface{}) {
-	if newRelicEnabled {
-		l.WithCtxValue(ctx).Info(fmt.Sprint(i...))
-	} else {
-		l.zap.Sugar().Info(fmt.Sprint(i...))
-	}
+func (l *ZapLogger) Info(ctx context.Context, i ...interface{}) {
+	l.WithCtxValue(ctx).Sugar().Info(fmt.Sprint(i...))
 }
 
-func (l *ZapLogger) Infof(ctx context.Context, newRelicEnabled bool, s string, i ...interface{}) {
-	if newRelicEnabled {
-		l.WithCtxValue(ctx).Info(fmt.Sprintf(s, i...))
-	} else {
-		l.zap.Sugar().Infof(fmt.Sprintf(s, i...))
-	}
+func (l *ZapLogger) Infof(ctx context.Context, s string, i ...interface{}) {
+	l.WithCtxValue(ctx).Sugar().Info(fmt.Sprintf(s, i...))
 }
 
-func (l *ZapLogger) Printf(ctx context.Context, newRelicEnabled bool, s string, i ...interface{}) {
+func (l *ZapLogger) Printf(ctx context.Context, s string, i ...interface{}) {
 	// Kafka writers need a Printf on loggers
-	l.WithCtxValue(ctx).Info(fmt.Sprintf(s, i...))
+	l.WithCtxValue(ctx).Sugar().Info(fmt.Sprintf(s, i...))
 }
 
 func (l *ZapLogger) Warn(i ...interface{}) {
-	l.zap.Warn(fmt.Sprint(i...))
+	l.zap.Sugar().Warn(fmt.Sprint(i...))
 }
 
 func (l *ZapLogger) Warnf(s string, i ...interface{}) {
-	l.zap.Warn(fmt.Sprintf(s, i...))
+	l.zap.Sugar().Warn(fmt.Sprintf(s, i...))
 }

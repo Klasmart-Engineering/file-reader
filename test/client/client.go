@@ -101,14 +101,14 @@ func (h *inputFileHandlers) ProcessRequests(ctx context.Context, fileClient file
 		stream, err = fileClient.IngestFilePROTO(ctx)
 	}
 	if err != nil {
-		h.logger.Errorf(ctx, false, "Error on IngestFile rpc call: %v", err.Error())
+		h.logger.Errorf(ctx, "Error on IngestFile rpc call: %v", err.Error())
 	}
 
 	// Iterate over the request message
 	for _, v := range req {
 		// Start making streaming requests by sending
 		// each object inside the request message
-		h.logger.Infof(ctx, false, "Client streaming request: \n", v)
+		h.logger.Infof(ctx, "Client streaming request: \n", v)
 		stream.Send(v)
 	}
 
@@ -116,7 +116,7 @@ func (h *inputFileHandlers) ProcessRequests(ctx context.Context, fileClient file
 	// and get the response and a potential error
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		h.logger.Fatalf(ctx, false, "Error when closing the stream and receiving the response: %v", err)
+		h.logger.Fatalf(ctx, "Error when closing the stream and receiving the response: %v", err)
 	}
 	return res, err
 }

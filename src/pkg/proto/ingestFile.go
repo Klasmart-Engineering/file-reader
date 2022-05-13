@@ -78,7 +78,7 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 				break
 			}
 			if err != nil {
-				config.Logger.Errorf(config.Context, false, err.Error())
+				config.Logger.Errorf(config.Context, err.Error())
 				// If there is an error when reading the current row then skip it
 				err = errors.Wrap(csvError.CSVRowError{RowNum: total, What: "Can't read the data"}, fmt.Sprintf("Error: %w", err))
 				fails += 1
@@ -87,7 +87,7 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 			// Process the row, if it fails then skip that row
 			orgSchema, err := op.rowToProtoSchema(row, trackingId)
 			if err != nil {
-				config.Logger.Errorf(config.Context, false, err.Error())
+				config.Logger.Errorf(config.Context, err.Error())
 				err = errors.Wrap(csvError.CSVRowError{RowNum: total, What: "Fail to process"}, fmt.Sprintf("Error: %w", err))
 				fails += 1
 				continue
@@ -96,7 +96,7 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 			valueBytes, err := serde.Serialize(schemaID, orgSchema)
 
 			if err != nil {
-				config.Logger.Errorf(config.Context, false, fmt.Sprintf("error serializing message: %w", err))
+				config.Logger.Errorf(config.Context, fmt.Sprintf("error serializing message: %w", err))
 				err = errors.Wrap(err, fmt.Sprintf("error serializing message: %w", err))
 				return err
 			}
@@ -110,14 +110,14 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 				},
 			)
 			if err != nil {
-				config.Logger.Errorf(config.Context, false, fmt.Sprintf("could not write message: %w", err))
+				config.Logger.Errorf(config.Context, fmt.Sprintf("could not write message: %w", err))
 				err = errors.Wrap(err, fmt.Sprintf("could not write message: %w", err))
 				return err
 			}
 		}
 		// If all the rows are failed to process then
 		if total == fails {
-			config.Logger.Errorf(config.Context, false, err.Error())
+			config.Logger.Errorf(config.Context, err.Error())
 			err = errors.Wrap(err, "All rows are invalid")
 			return err
 		}
