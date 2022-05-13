@@ -18,13 +18,11 @@ import (
 	"net"
 
 	"file_reader/src/log"
-	"file_reader/src/pkg/proto"
+	"file_reader/src/pkg/validation"
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
 	"os"
 	"testing"
-
-	"github.com/go-playground/validator/v10"
 
 	"google.golang.org/grpc/test/bufconn"
 
@@ -174,7 +172,7 @@ func TestFileProcessingServer(t *testing.T) {
 
 	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
 
-	_, grpcServer, _ := instrument.GetGrpcServer(addr, logger)
+	_, grpcServer, _ := instrument.GetGrpcServer("Mock service", addr, logger)
 
 	conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
 	if err != nil {
@@ -185,7 +183,7 @@ func TestFileProcessingServer(t *testing.T) {
 	csvFh := test.NewInputFileHandlers(logger)
 
 	schemaType := "PROTO"
-	originals, _ := getCSVToProtos("ORGANIZATION")
+	expectedValues, _ := getCSVToProtos("ORGANIZATION")
 
 	for _, tc := range testCases {
 		testCase := tc
@@ -197,59 +195,60 @@ func TestFileProcessingServer(t *testing.T) {
 
 			// grpc call
 			res, err := csvFh.ProcessRequests(ctx, client, schemaType, testCase.req)
-			if testCase.name == "one invalid uuid" {
-				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
-				g.Expect(err).NotTo(gomega.BeNil(), "Error should be nil")
-				g.Expect(res.Success).To(gomega.BeFalse())
-			}
-			if testCase.name == "req ok" {
+			switch testCase.name {
 
+			case "one invalid uuid":
+				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
+				g.Expect(err).NotTo(gomega.BeNil(), "Error should not be nil")
+				g.Expect(res.Success).To(gomega.BeFalse())
+
+			case "req ok":
 				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
 				g.Expect(err).To(gomega.BeNil(), "Error should be nil")
 				g.Expect(res.Success).To(gomega.BeTrue())
 
-			}
-			// Testing for kafka messages
-			r := kafka.NewReader(kafka.ReaderConfig{
-				Brokers: instrument.GetBrokers(),
-				Topic:   "organization-proto",
-			})
-			ctx := context.Background()
-			serde := protobuf.NewProtoSerDe()
-			org := &onboarding.Organization{}
-			validate := validator.New()
+				// Testing for kafka messages
+				r := kafka.NewReader(kafka.ReaderConfig{
+					Brokers: instrument.GetBrokers(),
+					Topic:   "organization-proto",
+				})
+				ctx := context.Background()
+				serde := protobuf.NewProtoSerDe()
+				org := &onboarding.Organization{}
 
-			for _, original := range originals {
+				for _, expected := range expectedValues {
 
-				msg, err := r.ReadMessage(ctx)
+					msg, err := r.ReadMessage(ctx)
 
-				if err != nil {
-					fmt.Printf("Error deserializing message: %v\n", err)
-				}
-
-				_, err = serde.Deserialize(msg.Value, org)
-
-				if err != nil {
-					fmt.Printf("Error deserializing message: %v\n", err)
-				}
-
-				if err == nil {
-					fmt.Printf("Received message: %v, original message is %v\n", org, original)
-
-					validatedOrg := proto.ValidateTrackingId{Uuid: org.Metadata.TrackingId.Value}
-					err := validate.Struct(validatedOrg)
 					if err != nil {
-						t.Fatalf("%s", err)
+						fmt.Printf("Error deserializing message: %v\n", err)
 					}
-					g.Expect(original.Metadata.Region.Value == org.Metadata.Region.Value).To(gomega.BeTrue())
-					g.Expect(original.Metadata.OriginApplication.Value == org.Metadata.OriginApplication.Value).To(gomega.BeTrue())
-					g.Expect(original.Payload.Uuid.Value == org.Payload.Uuid.Value).To(gomega.BeTrue())
-					g.Expect(original.Payload.Name.Value == org.Payload.Name.Value).To(gomega.BeTrue())
 
-				} else {
-					t.Logf("Error consuming the message: %v (%v)\n", err, msg)
-					break
+					_, err = serde.Deserialize(msg.Value, org)
+
+					if err != nil {
+						fmt.Printf("Error deserializing message: %v\n", err)
+					}
+
+					if err == nil {
+						fmt.Printf("Received message: %v, expected message is %v\n", org, expected)
+
+						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId.Value}
+						err := validation.UUIDValidate(validateTrackingId)
+						if err != nil {
+							t.Fatalf("%s", err)
+						}
+						g.Expect(expected.Metadata.Region.Value == org.Metadata.Region.Value).To(gomega.BeTrue())
+						g.Expect(expected.Metadata.OriginApplication.Value == org.Metadata.OriginApplication.Value).To(gomega.BeTrue())
+						g.Expect(expected.Payload.Uuid.Value == org.Payload.Uuid.Value).To(gomega.BeTrue())
+						g.Expect(expected.Payload.Name.Value == org.Payload.Name.Value).To(gomega.BeTrue())
+
+					} else {
+						t.Logf("Error consuming the message: %v (%v)\n", err, msg)
+						break
+					}
 				}
+
 			}
 
 		})

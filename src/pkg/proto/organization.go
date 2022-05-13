@@ -1,10 +1,9 @@
 package proto
 
 import (
+	"file_reader/src/pkg/validation"
 	orgPb "file_reader/src/protos/onboarding"
 	"os"
-
-	"github.com/go-playground/validator/v10"
 )
 
 const (
@@ -12,15 +11,6 @@ const (
 	orgProtoSchemaFileName = "onboarding.proto"
 	organizationSchemaName = "organization"
 )
-
-var validate *validator.Validate
-
-type ValidatedOrganizationID struct {
-	Uuid string `validate:required,uuid4`
-}
-type ValidateTrackingId struct {
-	Uuid string `validate:required,uuid4`
-}
 
 var OrganizationProto = Operation{
 	topic:            organizationProtoTopic,
@@ -35,9 +25,10 @@ func rowToOrganizationProto(row []string, trackingId string) (*orgPb.Organizatio
 	}
 
 	// Validate uuid format
-	validate = validator.New()
-	validatedOrg := ValidatedOrganizationID{Uuid: row[0]}
-	err := validate.Struct(validatedOrg)
+
+	validatedOrgId := validation.ValidatedOrganizationID{Uuid: row[0]}
+
+	err := validation.UUIDValidate(validatedOrgId)
 	if err != nil {
 		return nil, err
 	}

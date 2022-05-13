@@ -25,8 +25,14 @@ import (
 )
 
 func grpcServerInstrument(ctx context.Context) {
-
-	l, _ := zap.NewDevelopment()
+	var l *zap.Logger
+	mode := instrument.MustGetEnv("MODE")
+	switch mode {
+	case "debug":
+		l = zap.NewNop()
+	default:
+		l, _ = zap.NewDevelopment()
+	}
 
 	logger := zaplogger.Wrap(l)
 
@@ -40,10 +46,10 @@ func grpcServerInstrument(ctx context.Context) {
 	addr := instrument.GetAddressForHealthCheck()
 
 	// grpc Server instrument
-	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("File service health check", addr, logger)
+	lis, grpcServer, err := instrument.GetGrpcServer("File service health check", addr, logger)
 
 	if err != nil {
-		logger.Fatalf(ctx, "Failed to start server. Error : %v", err)
+		logger.Fatalf(ctx, false, "Failed to start server. Error : %v", err)
 	}
 
 	cfg := &config.Config{

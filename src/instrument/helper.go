@@ -39,29 +39,26 @@ func GetBrokers() []string {
 	return strings.Split(MustGetEnv("BROKERS"), ",")
 }
 
-func GetInstrumentGrpcServer(serviceName string, address string, logger *log.ZapLogger) (net.Listener, *grpc.Server, error) {
+func GetGrpcServer(serviceName string, address string, logger *log.ZapLogger) (net.Listener, *grpc.Server, error) {
 	l, err := net.Listen("tcp", address)
 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "net.Listen")
 	}
-	// grpc Server instrument
-	nr, _ := GetNewRelic(serviceName, logger)
+	newRelicEnabled := MustGetEnv("NEW_RELIC_ENABLED")
+	var grpcServer *grpc.Server
+	if newRelicEnabled == "true" {
+		// grpc Server instrument
+		nr, _ := GetNewRelic(serviceName, logger)
 
-	grpcServer := grpc.NewServer(
-		// Add the New Relic gRPC server instrumentation
-		grpc.UnaryInterceptor(nrgrpc.UnaryServerInterceptor(nr.app)),
-		grpc.StreamInterceptor(nrgrpc.StreamServerInterceptor(nr.app)),
-	)
-	return l, grpcServer, nil
-}
-
-func GetGrpcServer(address string, logger *log.ZapLogger) (net.Listener, *grpc.Server, error) {
-	l, err := net.Listen("tcp", address)
-
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "net.Listen")
+		grpcServer = grpc.NewServer(
+			// Add the New Relic gRPC server instrumentation
+			grpc.UnaryInterceptor(nrgrpc.UnaryServerInterceptor(nr.app)),
+			grpc.StreamInterceptor(nrgrpc.StreamServerInterceptor(nr.app)),
+		)
+	} else {
+		grpcServer = grpc.NewServer()
 	}
-	grpcServer := grpc.NewServer()
 	return l, grpcServer, nil
+
 }

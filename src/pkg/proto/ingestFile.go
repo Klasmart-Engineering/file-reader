@@ -11,7 +11,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"file_reader/src/third_party/protobuf"
+
+	csvError "file_reader/src/pkg"
 
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
@@ -59,27 +63,42 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 	case "CSV":
 		csvReader := csv.NewReader(config.Reader)
 		w := op.GetNewKafkaWriter(config)
+		schemaID, err := schemaRegistryClient.GetProtoSchemaID(organizationSchemaName, organizationProtoTopic)
+		if err != nil {
+			return err
+		}
+		serde := protobuf.NewProtoSerDe()
+
+		fails := 0 // Keep track of how many rows failed to process
+		total := 0 // Total of row
 		for {
 			row, err := csvReader.Read()
+			total += 1
 			if err == io.EOF {
 				break
 			}
 			if err != nil {
-				config.Logger.Fatalf(config.Context, err.Error())
-				return err
+				config.Logger.Errorf(config.Context, false, err.Error())
+				// If there is an error when reading the current row then skip it
+				err = errors.Wrap(csvError.CSVRowError{RowNum: total, What: "Can't read the data"}, fmt.Sprintf("Error: %w", err))
+				fails += 1
+				continue
 			}
-			// Serialise row using schema
+			// Process the row, if it fails then skip that row
 			orgSchema, err := op.rowToProtoSchema(row, trackingId)
 			if err != nil {
-				config.Logger.Fatalf(config.Context, err.Error())
+				config.Logger.Errorf(config.Context, false, err.Error())
+				err = errors.Wrap(csvError.CSVRowError{RowNum: total, What: "Fail to process"}, fmt.Sprintf("Error: %w", err))
+				fails += 1
+				continue
 			}
-			schemaID := schemaRegistryClient.GetProtoSchemaID(organizationSchemaName, organizationProtoTopic)
-			serde := protobuf.NewProtoSerDe()
 
 			valueBytes, err := serde.Serialize(schemaID, orgSchema)
 
 			if err != nil {
-				config.Logger.Fatalf(config.Context, fmt.Sprintf("error serializing message: %w", err))
+				config.Logger.Errorf(config.Context, false, fmt.Sprintf("error serializing message: %w", err))
+				err = errors.Wrap(err, fmt.Sprintf("error serializing message: %w", err))
+				return err
 			}
 
 			// Put the row on the topic
@@ -91,8 +110,16 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 				},
 			)
 			if err != nil {
-				panic("could not write message " + err.Error())
+				config.Logger.Errorf(config.Context, false, fmt.Sprintf("could not write message: %w", err))
+				err = errors.Wrap(err, fmt.Sprintf("could not write message: %w", err))
+				return err
 			}
+		}
+		// If all the rows are failed to process then
+		if total == fails {
+			config.Logger.Errorf(config.Context, false, err.Error())
+			err = errors.Wrap(err, "All rows are invalid")
+			return err
 		}
 	}
 	return nil
