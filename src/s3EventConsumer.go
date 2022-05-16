@@ -48,10 +48,10 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			// Read file-create message off kafka topic
 			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
-				logger.Error(ctx, "could not read message "+err.Error()) // replace with zap logger
+				logger.Error(ctx, "could not read message "+err.Error())
 				continue
 			}
-			logger.Info(ctx, "received message: ", string(msg.Value)) // replace with zap logger
+			logger.Info(ctx, "received message: ", string(msg.Value))
 
 			// Deserialize file create message
 			schemaIdBytes := msg.Value[1:5]
@@ -60,14 +60,14 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			r := bytes.NewReader(msg.Value[5:])
 			s3FileCreated, err := avro.DeserializeS3FileCreatedFromSchema(r, schema)
 			if err != nil {
-				logger.Error(ctx, "could not deserialize message "+err.Error()) // replace with zap logger
+				logger.Error(ctx, "could not deserialize message "+err.Error())
 				continue
 			}
 
 			// For now have the s3 downloader write to disk
 			file, err := os.Create(config.OutputDirectory + s3FileCreated.Payload.Key)
 			if err != nil {
-				logger.Error(ctx, err) // replace with zap logger
+				logger.Error(ctx, err)
 				continue
 			}
 			defer file.Close()
@@ -79,11 +79,11 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 					Key:    aws.String(s3FileCreated.Payload.Key),
 				})
 			if err != nil {
-				logger.Error(ctx, err) // replace with zap logger
+				logger.Error(ctx, err)
 				continue
 			}
 
-			fmt.Println("Downloaded", s3FileCreated.Payload.Key, numBytes, "bytes") // replace with zap logger
+			fmt.Println("Downloaded", s3FileCreated.Payload.Key, numBytes, "bytes")
 			file.Close()
 			// Reopen the same file for ingest (until thought of alternative)
 			f, _ := os.Open(config.OutputDirectory + s3FileCreated.Payload.Key)
@@ -99,7 +99,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			// Map to operation based on operation type
 			operation, exists := config.OperationMap[s3FileCreated.Payload.Operation_type]
 			if !exists {
-				logger.Error(ctx, "invalid operation_type on file create message ") // replace with zap logger
+				logger.Error(ctx, "invalid operation_type on file create message ")
 				continue
 			}
 			kafkaWriter := kafka.Writer{

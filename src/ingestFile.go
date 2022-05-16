@@ -55,7 +55,7 @@ func (op Operation) IngestFile(ctx context.Context, reader Reader, kafkaWriter k
 			},
 		)
 		if err != nil {
-			fmt.Printf("could not write message " + err.Error()) // replace with zap logger
+			fmt.Printf("could not write message " + err.Error())
 			continue
 		}
 	}
