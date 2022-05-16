@@ -73,9 +73,9 @@ func (l *ZapLogger) Infof(ctx context.Context, s string, i ...interface{}) {
 	l.WithCtxValue(ctx).Info(fmt.Sprintf(s, i...))
 }
 
-func (l *ZapLogger) Printf(ctx context.Context, s string, i ...interface{}) {
-	// Kafka writers need a Printf on loggers
-	l.WithCtxValue(ctx).Info(fmt.Sprintf(s, i...))
+func (l *ZapLogger) Printf(s string, i ...interface{}) {
+	// Kafka-go writers need a Printf on loggers
+	l.zap.Info(fmt.Sprintf(s, i...))
 }
 
 func (l *ZapLogger) Warn(i ...interface{}) {

@@ -3,8 +3,8 @@ package src
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
-	"log"
 
 	"github.com/segmentio/kafka-go"
 )
@@ -31,7 +31,7 @@ func (op Operation) IngestFile(ctx context.Context, reader Reader, kafkaWriter k
 			break
 		}
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 
 		// Serialise row using schema
@@ -55,7 +55,8 @@ func (op Operation) IngestFile(ctx context.Context, reader Reader, kafkaWriter k
 			},
 		)
 		if err != nil {
-			panic("could not write message " + err.Error())
+			fmt.Printf("could not write message " + err.Error()) // replace with zap logger
+			continue
 		}
 	}
 }

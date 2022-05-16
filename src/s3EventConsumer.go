@@ -3,10 +3,11 @@ package src
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/csv"
 	avro "file_reader/avro_gencode"
+	zaplogger "file_reader/src/log"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -17,13 +18,16 @@ import (
 )
 
 type ConsumeToIngestConfig struct {
-	BrokerAddrs     []string
-	AwsSession      *session.Session
-	OutputDirectory string
-	Logger          log.Logger
+	OutputBrokerAddrs []string
+	AwsSession        *session.Session
+	SchemaRegistry    *SchemaRegistry
+	OperationMap      map[string]Operation
+	OutputDirectory   string
+	Logger            *zaplogger.ZapLogger
 }
 
 func CreateOperationMap(schemaRegistryClient *SchemaRegistry) map[string]Operation {
+	// creates a map of key to Operation struct
 	return map[string]Operation{
 		"organization": {
 			Topic:         OrganizationTopic,
@@ -34,7 +38,8 @@ func CreateOperationMap(schemaRegistryClient *SchemaRegistry) map[string]Operati
 	}
 }
 
-func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config ConsumeToIngestConfig, operationMap map[string]Operation) {
+func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config ConsumeToIngestConfig) {
+	logger := config.Logger
 	for {
 		select {
 		case <-ctx.Done():
@@ -43,21 +48,27 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			// Read file-create message off kafka topic
 			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
-				panic("could not read message " + err.Error())
+				logger.Error(ctx, "could not read message "+err.Error()) // replace with zap logger
+				continue
 			}
-			fmt.Println("received: ", string(msg.Value))
+			logger.Info(ctx, "received message: ", string(msg.Value)) // replace with zap logger
 
 			// Deserialize file create message
-			r := bytes.NewReader(msg.Value[5:])                    // need to make consumer which checks/pulls schema from registry
-			s3FileCreated, err := avro.DeserializeS3FileCreated(r) // then pass actual schema into the _FromSchema version
+			schemaIdBytes := msg.Value[1:5]
+			schemaId := int(binary.BigEndian.Uint32(schemaIdBytes))
+			schema := config.SchemaRegistry.GetSchema(schemaId)
+			r := bytes.NewReader(msg.Value[5:])
+			s3FileCreated, err := avro.DeserializeS3FileCreatedFromSchema(r, schema)
 			if err != nil {
-				panic("could not deserialize message " + err.Error())
+				logger.Error(ctx, "could not deserialize message "+err.Error()) // replace with zap logger
+				continue
 			}
 
 			// For now have the s3 downloader write to disk
 			file, err := os.Create(config.OutputDirectory + s3FileCreated.Payload.Key)
 			if err != nil {
-				fmt.Println(err)
+				logger.Error(ctx, err) // replace with zap logger
+				continue
 			}
 			defer file.Close()
 
@@ -68,10 +79,11 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 					Key:    aws.String(s3FileCreated.Payload.Key),
 				})
 			if err != nil {
-				fmt.Println(err)
+				logger.Error(ctx, err) // replace with zap logger
+				continue
 			}
 
-			fmt.Println("Downloaded", s3FileCreated.Payload.Key, numBytes, "bytes")
+			fmt.Println("Downloaded", s3FileCreated.Payload.Key, numBytes, "bytes") // replace with zap logger
 			file.Close()
 			// Reopen the same file for ingest (until thought of alternative)
 			f, _ := os.Open(config.OutputDirectory + s3FileCreated.Payload.Key)
@@ -85,14 +97,15 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			}
 
 			// Map to operation based on operation type
-			operation, exists := operationMap[s3FileCreated.Payload.Operation_type]
+			operation, exists := config.OperationMap[s3FileCreated.Payload.Operation_type]
 			if !exists {
-				panic("invalid operation_type on file create message ")
+				logger.Error(ctx, "invalid operation_type on file create message ") // replace with zap logger
+				continue
 			}
 			kafkaWriter := kafka.Writer{
-				Addr:   kafka.TCP(config.BrokerAddrs...),
+				Addr:   kafka.TCP(config.OutputBrokerAddrs...),
 				Topic:  operation.Topic,
-				Logger: &config.Logger,
+				Logger: logger,
 			}
 
 			trackingId := s3FileCreated.Metadata.Tracking_id

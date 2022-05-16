@@ -24,7 +24,7 @@ import (
 func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 	organizations := [][]string{}
 	for i := 0; i < numOrgs; i++ {
-		// rows are `uuid, org{i}`
+		// rows are `uuid,org{i}`
 		organizations = append(organizations, []string{uuid.NewString(), "org" + strconv.Itoa(i)})
 	}
 	lines := []string{}
@@ -117,12 +117,11 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	assert.Nil(t, err, "error writing message to topic")
 
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: []string{"localhost:9092"},
-		//GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic: "organization",
-		//StartOffset: kafka.LastOffset,
+		Brokers:     []string{"localhost:9092"},
+		GroupID:     "consumer-group-" + uuid.NewString(),
+		Topic:       "organization",
+		StartOffset: kafka.LastOffset,
 	})
-	r.SetOffset(kafka.LastOffset)
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
@@ -136,8 +135,4 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		assert.Equal(t, orgInput[0], orgOutput.Payload.Guid)
 		assert.Equal(t, orgInput[1], orgOutput.Payload.Organization_name)
 	}
-	// Assert that we reached the end of the topic
-	lag, err := r.ReadLag(ctx)
-	assert.Nil(t, err, "error getting offset lag from topic")
-	assert.Equal(t, int64(0), lag)
 }
