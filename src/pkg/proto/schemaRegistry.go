@@ -13,7 +13,7 @@ import (
 )
 
 var cachingEnabled = true
-var fileSchemaCache = registerProtoSchemas(organizationProtoTopic)
+var fileSchemaCache = RegisterProtoSchemas(instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"))
 
 type schemaRegistry struct {
 	c   srclient.Client
@@ -29,7 +29,7 @@ func cacheKey(schemaName string, topic string) string {
 	return fmt.Sprintf("%s-%s", schemaName, topic)
 }
 
-func registerProtoSchemas(topic string) map[string]int {
+func RegisterProtoSchemas(topic string) map[string]int {
 
 	registrator := protobuf.NewSchemaRegistrator(schemaRegistryClient.c)
 

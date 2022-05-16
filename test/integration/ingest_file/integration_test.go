@@ -8,35 +8,43 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
+	"strings"
+	"time"
 
 	"file_reader/src/protos/onboarding"
 	orgPb "file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
-	"flag"
 	"fmt"
 	"io"
 	"net"
 
 	"file_reader/src/log"
+	"file_reader/src/pkg/proto"
 	"file_reader/src/pkg/validation"
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
 	"os"
+	"os/exec"
 	"testing"
 
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+
+	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	"github.com/segmentio/kafka-go"
 )
 
 //go:embed data/good
 var testGoodDataDir embed.FS
+
+//go:embed data/bad
+var testBadDataDir embed.FS
 
 var testCases = []struct {
 	name        string
@@ -103,13 +111,25 @@ func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(conte
 		return listener.Dial()
 	}
 }
-func getCSVToProtos(entity string) ([]*onboarding.Organization, error) {
+func deleteTopic(topic string) error {
+	cmd := exec.Command("tr", "a-z", "A-Z")
+	cmd.Stdin = strings.NewReader("some input")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	return err
+}
+func getCSVToProtos(entity string, filePath string, isGood bool) ([]*onboarding.Organization, error) {
 	var res []*onboarding.Organization
-
+	var content []byte
 	switch entity {
 	case "ORGANIZATION":
+		if isGood {
+			content, _ = testGoodDataDir.ReadFile(filePath)
+		} else {
+			content, _ = testBadDataDir.ReadFile(filePath)
+		}
 
-		content, _ := testGoodDataDir.ReadFile("data/good/organization.csv")
 		reader := csv.NewReader(bytes.NewBuffer(content))
 		for {
 			row, err := reader.Read()
@@ -117,6 +137,12 @@ func getCSVToProtos(entity string) ([]*onboarding.Organization, error) {
 				if err == io.EOF {
 					return res, nil
 				}
+			}
+
+			validateUUID := validation.ValidatedOrganizationID{Uuid: row[0]}
+			err = validation.UUIDValidate(validateUUID)
+			if err != nil {
+				continue
 			}
 			md := orgPb.Metadata{
 				OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
@@ -130,25 +156,24 @@ func getCSVToProtos(entity string) ([]*onboarding.Organization, error) {
 			}
 
 			res = append(res, &orgPb.Organization{Payload: &pl, Metadata: &md})
-			fmt.Println(row)
 		}
 
 	}
 	return res, nil
 }
+
 func TestFileProcessingServer(t *testing.T) {
-	flag.Set("test.timeout", "0")
 	// set up env variables
 	closer := envSetter(map[string]string{
-		"BROKERS":                "localhost:9092",
-		"GRPC_SERVER":            "localhost",
-		"GRPC_SERVER_PORT":       "6000",
-		"PROTO_SCHEMA_DIRECTORY": "protos/onboarding",
-		"SCHEMA_CLIENT_ENDPOINT": "http://localhost:8081",
+		"BROKERS":                  "localhost:9092",
+		"GRPC_SERVER":              "localhost",
+		"GRPC_SERVER_PORT":         "6000",
+		"PROTO_SCHEMA_DIRECTORY":   "protos/onboarding",
+		"SCHEMA_CLIENT_ENDPOINT":   "http://localhost:8081",
+		"ORGANIZATION_PROTO_TOPIC": uuid.NewString(),
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+
-
 	l, _ := zap.NewDevelopment()
 
 	logger := log.Wrap(l)
@@ -159,89 +184,144 @@ func TestFileProcessingServer(t *testing.T) {
 		Encoding:          "json",
 		Level:             "info",
 	}
-	ctx := context.Background()
+
 	addr := instrument.GetAddressForGrpc()
 
 	cfg := &config.Config{
 		Server: config.Server{Port: addr, Development: true},
 		Logger: Logger,
 		Kafka: config.Kafka{
-			Brokers: instrument.GetBrokers(),
+			Brokers:                instrument.GetBrokers(),
+			DialTimeout:            int(3 * time.Minute),
+			MaxAttempts:            3,
+			AllowAutoTopicCreation: true,
 		},
 	}
-
+	ctx, _ := context.WithTimeout(context.Background(), time.Minute*5)
 	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
 
 	_, grpcServer, _ := instrument.GetGrpcServer("Mock service", addr, logger)
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
+	conn, err := grpc.DialContext(ctx, "", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
+
 	if err != nil {
-		fmt.Errorf(err.Error())
+		logger.Errorf(ctx, err.Error())
 	}
 
 	client := filepb.NewIngestFileServiceClient(conn)
 	csvFh := test.NewInputFileHandlers(logger)
 
 	schemaType := "PROTO"
-	expectedValues, _ := getCSVToProtos("ORGANIZATION")
+	orgProtoTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
+	// register schema
+	proto.RegisterProtoSchemas(orgProtoTopic)
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers: instrument.GetBrokers(),
+		Topic:   orgProtoTopic,
+	})
+
+	// Testing for kafka messages
+	serde := protobuf.NewProtoSerDe()
+	org := &onboarding.Organization{}
 
 	for _, tc := range testCases {
 		testCase := tc
-		t.Run(testCase.name, func(t *testing.T) {
-			t.Parallel()
+
+		t.Run(tc.name, func(t *testing.T) {
+			//t.Parallel()
 			g := gomega.NewWithT(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			// grpc call
-			res, err := csvFh.ProcessRequests(ctx, client, schemaType, testCase.req)
+			res := csvFh.ProcessRequests(ctx, client, schemaType, testCase.req)
 			switch testCase.name {
 
 			case "one invalid uuid":
 				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
-				g.Expect(err).NotTo(gomega.BeNil(), "Error should not be nil")
 				g.Expect(res.Success).To(gomega.BeFalse())
+				g.Expect(res.Errors).NotTo(gomega.BeNil(), "Error should not be nil")
+				g.Expect(len(res.Errors) == 1).To(gomega.BeTrue())
 
-			case "req ok":
-				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
-				g.Expect(err).To(gomega.BeNil(), "Error should be nil")
-				g.Expect(res.Success).To(gomega.BeTrue())
+				errorMsgs := []string(res.Errors[0].Message)
+				g.Expect(len(errorMsgs) == 2).To(gomega.BeTrue())
+				g.Expect(errorMsgs[0]).To(gomega.ContainSubstring("Failed to process csv file"))
+				g.Expect(errorMsgs[1]).To(gomega.ContainSubstring("Invalid UUID format"))
+				g.Expect(errorMsgs[1]).To(gomega.ContainSubstring("Row number 1 failed to process"))
+				g.Expect(errorMsgs[1]).To(gomega.ContainSubstring("Row number 3 failed to process"))
 
-				// Testing for kafka messages
-				r := kafka.NewReader(kafka.ReaderConfig{
-					Brokers: instrument.GetBrokers(),
-					Topic:   "organization-proto",
-				})
-				ctx := context.Background()
-				serde := protobuf.NewProtoSerDe()
-				org := &onboarding.Organization{}
-
+				expectedValues, _ := getCSVToProtos("ORGANIZATION", "data/bad/invalid_uuid.csv", false)
 				for _, expected := range expectedValues {
 
 					msg, err := r.ReadMessage(ctx)
 
 					if err != nil {
-						fmt.Printf("Error deserializing message: %v\n", err)
+						t.Logf("Error deserializing message: %v\n", err)
+						break
 					}
 
 					_, err = serde.Deserialize(msg.Value, org)
 
 					if err != nil {
-						fmt.Printf("Error deserializing message: %v\n", err)
+						t.Logf("Error deserializing message: %v\n", err)
+						break
 					}
 
 					if err == nil {
-						fmt.Printf("Received message: %v, expected message is %v\n", org, expected)
-
 						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId.Value}
 						err := validation.UUIDValidate(validateTrackingId)
 						if err != nil {
 							t.Fatalf("%s", err)
 						}
-						g.Expect(expected.Metadata.Region.Value == org.Metadata.Region.Value).To(gomega.BeTrue())
-						g.Expect(expected.Metadata.OriginApplication.Value == org.Metadata.OriginApplication.Value).To(gomega.BeTrue())
-						g.Expect(expected.Payload.Uuid.Value == org.Payload.Uuid.Value).To(gomega.BeTrue())
-						g.Expect(expected.Payload.Name.Value == org.Payload.Name.Value).To(gomega.BeTrue())
+
+						g.Expect(expected.Metadata.Region.Value).To(gomega.Equal(org.Metadata.Region.Value))
+						g.Expect(expected.Metadata.OriginApplication.Value).To(gomega.Equal(org.Metadata.OriginApplication.Value))
+						g.Expect(expected.Payload.Uuid.Value).To(gomega.Equal(org.Payload.Uuid.Value))
+						g.Expect(expected.Payload.Name.Value).To(gomega.Equal(org.Payload.Name.Value))
+
+					} else {
+						t.Logf("Error consuming the message: %v (%v)\n", err, msg)
+						break
+					}
+				}
+
+			case "req ok":
+				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
+				g.Expect(res.Success).To(gomega.BeTrue())
+
+				// Testing for kafka messages
+
+				ctx := context.Background()
+				serde := protobuf.NewProtoSerDe()
+				org := &onboarding.Organization{}
+
+				expectedValues, _ := getCSVToProtos("ORGANIZATION", "data/good/organization.csv", true)
+				for _, expected := range expectedValues {
+
+					msg, err := r.ReadMessage(ctx)
+
+					if err != nil {
+						t.Logf("Error deserializing message: %v\n", err)
+						break
+					}
+
+					_, err = serde.Deserialize(msg.Value, org)
+
+					if err != nil {
+						t.Logf("Error deserializing message: %v\n", err)
+						break
+					}
+
+					if err == nil {
+						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId.Value}
+						err := validation.UUIDValidate(validateTrackingId)
+						if err != nil {
+							t.Fatalf("%s", err)
+						}
+						g.Expect(expected.Metadata.Region.Value).To(gomega.Equal(org.Metadata.Region.Value))
+						g.Expect(expected.Metadata.OriginApplication.Value).To(gomega.Equal(org.Metadata.OriginApplication.Value))
+						g.Expect(expected.Payload.Uuid.Value).To(gomega.Equal(org.Payload.Uuid.Value))
+						g.Expect(expected.Payload.Name.Value).To(gomega.Equal(org.Payload.Name.Value))
 
 					} else {
 						t.Logf("Error consuming the message: %v (%v)\n", err, msg)

@@ -11,18 +11,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"file_reader/src/third_party/protobuf"
 
 	csvError "file_reader/src/pkg"
 
-	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/compress"
 )
 
 type Config struct {
+	Topic       string
 	BrokerAddrs []string
 	Reader      io.Reader
 	Context     context.Context
@@ -30,8 +28,6 @@ type Config struct {
 }
 
 type Operation struct {
-	topic            string
-	schema           *srclient.Schema
 	rowToProtoSchema func(row []string, trackingId string) (*orgPb.Organization, error)
 }
 
@@ -42,45 +38,49 @@ func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
 	writerReadTimeout, _ := strconv.Atoi(instrument.MustGetEnv("WRITE_READ_TIMEOUT"))
 
 	writerWriteTimeout, _ := strconv.Atoi(instrument.MustGetEnv("WRITE_WRITE_TIMEOUT"))
+	allowAutoTopicCreation, _ := strconv.ParseBool(instrument.MustGetEnv("ALLOW_AUTO_TOPIC_CREATION"))
 	w := &kafka.Writer{
 		Addr:         kafka.TCP(config.BrokerAddrs...),
-		Topic:        op.topic,
+		Topic:        config.Topic,
 		Balancer:     &kafka.LeastBytes{},
 		RequiredAcks: kafka.RequiredAcks(writerRequiredAcks),
 		MaxAttempts:  writerMaxAttempts,
 		//Logger:       kafka.LoggerFunc(config.Logger.),
-		Compression:  compress.Snappy,
-		ReadTimeout:  time.Duration(writerReadTimeout * int(time.Second)),
-		WriteTimeout: time.Duration(writerWriteTimeout * int(time.Second)),
+		Compression:            compress.Snappy,
+		ReadTimeout:            time.Duration(writerReadTimeout * int(time.Second)),
+		WriteTimeout:           time.Duration(writerWriteTimeout * int(time.Second)),
+		AllowAutoTopicCreation: allowAutoTopicCreation,
 	}
 	return w
 }
 
-func (op Operation) IngestFilePROTO(config Config, fileTypeName string, trackingId string) error {
+func (op Operation) IngestFilePROTO(config Config, fileTypeName string, trackingId string) (errorStr string) {
 
+	var errors []error
 	switch fileTypeName {
 
 	case "CSV":
 		csvReader := csv.NewReader(config.Reader)
 		w := op.GetNewKafkaWriter(config)
-		schemaID, err := schemaRegistryClient.GetProtoSchemaID(organizationSchemaName, organizationProtoTopic)
-		if err != nil {
-			return err
-		}
-		serde := protobuf.NewProtoSerDe()
 
+		schemaID, err := schemaRegistryClient.GetProtoSchemaID(organizationSchemaName, config.Topic)
+		if err != nil {
+			return fmt.Sprintf("%s", err)
+		}
+
+		serde := protobuf.NewProtoSerDe()
 		fails := 0 // Keep track of how many rows failed to process
 		total := 0 // Total of row
 		for {
 			row, err := csvReader.Read()
-			total += 1
 			if err == io.EOF {
 				break
 			}
+			total += 1
 			if err != nil {
 				config.Logger.Errorf(config.Context, err.Error())
 				// If there is an error when reading the current row then skip it
-				err = errors.Wrap(csvError.CSVRowError{RowNum: total, What: "Can't read the data"}, fmt.Sprintf("Error: %w", err))
+				errors = append(errors, csvError.CSVRowError{RowNum: total, Message: "Can't read the data"})
 				fails += 1
 				continue
 			}
@@ -88,7 +88,7 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 			orgSchema, err := op.rowToProtoSchema(row, trackingId)
 			if err != nil {
 				config.Logger.Errorf(config.Context, err.Error())
-				err = errors.Wrap(csvError.CSVRowError{RowNum: total, What: "Fail to process"}, fmt.Sprintf("Error: %w", err))
+				errors = append(errors, csvError.CSVRowError{RowNum: total, Message: "Fail to process the row: Invalid UUID format."})
 				fails += 1
 				continue
 			}
@@ -96,9 +96,9 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 			valueBytes, err := serde.Serialize(schemaID, orgSchema)
 
 			if err != nil {
-				config.Logger.Errorf(config.Context, fmt.Sprintf("error serializing message: %w", err))
-				err = errors.Wrap(err, fmt.Sprintf("error serializing message: %w", err))
-				return err
+				config.Logger.Errorf(config.Context, fmt.Sprintf("error serializing message: %s", err))
+				errors = append(errors, err)
+				return fmt.Sprintf("%s", errors)
 			}
 
 			// Put the row on the topic
@@ -110,17 +110,17 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 				},
 			)
 			if err != nil {
-				config.Logger.Errorf(config.Context, fmt.Sprintf("could not write message: %w", err))
-				err = errors.Wrap(err, fmt.Sprintf("could not write message: %w", err))
-				return err
+				config.Logger.Errorf(config.Context, fmt.Sprintf("could not write message: %s", err))
+				errors = append(errors, err)
+				return fmt.Sprintf("%s", errors)
 			}
 		}
 		// If all the rows are failed to process then
 		if total == fails {
 			config.Logger.Errorf(config.Context, err.Error())
-			err = errors.Wrap(err, "All rows are invalid")
-			return err
+			err = csvError.InvalidRowError{Message: "All rows are invalid"}
+			return fmt.Sprintf("%s", err)
 		}
 	}
-	return nil
+	return fmt.Sprintf("%s", errors)
 }

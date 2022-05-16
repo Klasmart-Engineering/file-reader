@@ -7,13 +7,11 @@ import (
 )
 
 const (
-	organizationProtoTopic = "organization-proto"
 	orgProtoSchemaFileName = "onboarding.proto"
 	organizationSchemaName = "organization"
 )
 
 var OrganizationProto = Operation{
-	topic:            organizationProtoTopic,
 	rowToProtoSchema: rowToOrganizationProto,
 }
 

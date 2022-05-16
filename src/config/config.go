@@ -41,5 +41,6 @@ type Kafka struct {
 
 	DeadLetterQueueTopic string // "dead-letter-queue"
 
-	OrganizationsGroupID string // "organizations_group"
+	OrganizationsGroupID   string // "organizations_group"
+	AllowAutoTopicCreation bool
 }

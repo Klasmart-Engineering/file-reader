@@ -40,6 +40,7 @@ export CREATE_ORGANIZATION_TOPIC="organization"
 export CREATE_ORGANIZATION_WORKDERS="3"
 export DEAD_LETTER_QUEUE_TOPIC="dead-letter-queue"
 export ORGANIZATION_GROUP_ID="organizations_group"
+export ORGANIZATION_PROTO_TOPIC="organization-proto"
 
 # AWS configuration variables
 
