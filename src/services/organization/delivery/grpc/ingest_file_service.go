@@ -48,11 +48,6 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	// Ingest file depending on schema type
 	switch schemaType {
 	case "AVROS":
-		kafkaWriter := kafka.Writer{
-			Addr:  kafka.TCP(c.cfg.Kafka.Brokers...),
-			Topic: src.OrganizationTopic,
-			//Logger: &config.Logger,
-		}
 		schemaRegistryClient := &src.SchemaRegistry{
 			C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 		}
@@ -63,7 +58,16 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			SchemaIDBytes: src.GetOrganizationSchemaIdBytes(schemaRegistryClient),
 			RowToSchema:   src.RowToOrganization,
 		}
-		Organization.IngestFile(context.Background(), csv.NewReader(f), kafkaWriter, trackingid)
+		ingestFileConfig := src.IngestFileConfig{
+			Reader: csv.NewReader(f),
+			KafkaWriter: kafka.Writer{
+				Addr:  kafka.TCP(c.cfg.Kafka.Brokers...),
+				Topic: src.OrganizationTopic,
+			},
+			Tracking_id: trackingid,
+			Logger:      c.logger,
+		}
+		Organization.IngestFile(context.Background(), ingestFileConfig)
 	case "PROTO":
 		config := proto.Config{
 			BrokerAddrs: c.cfg.Kafka.Brokers,

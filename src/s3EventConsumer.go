@@ -102,15 +102,18 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				logger.Error(ctx, "invalid operation_type on file create message ")
 				continue
 			}
-			kafkaWriter := kafka.Writer{
-				Addr:   kafka.TCP(config.OutputBrokerAddrs...),
-				Topic:  operation.Topic,
-				Logger: logger,
+			ingestFileConfig := IngestFileConfig{
+				Reader: reader,
+				KafkaWriter: kafka.Writer{
+					Addr:   kafka.TCP(config.OutputBrokerAddrs...),
+					Topic:  operation.Topic,
+					Logger: logger,
+				},
+				Tracking_id: s3FileCreated.Metadata.Tracking_id,
+				Logger:      logger,
 			}
 
-			trackingId := s3FileCreated.Metadata.Tracking_id
-
-			operation.IngestFile(ctx, reader, kafkaWriter, trackingId)
+			operation.IngestFile(ctx, ingestFileConfig)
 		}
 	}
 }
