@@ -6,8 +6,6 @@ import (
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
 
-	"file_reader/src/protos/onboarding"
-	"file_reader/src/third_party/protobuf"
 	"flag"
 	"fmt"
 	"net"
@@ -26,7 +24,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
-	"github.com/segmentio/kafka-go"
 )
 
 var testCases = []struct {
@@ -145,34 +142,6 @@ func TestFileProcessingServer(t *testing.T) {
 				g.Expect(err).To(gomega.BeNil(), "Error should be nil")
 				g.Expect(res.Success).To(gomega.BeTrue())
 
-			}
-			// Testing for kafka messages
-			r := kafka.NewReader(kafka.ReaderConfig{
-				Brokers: instrument.GetBrokers(),
-				Topic:   "organization-proto",
-			})
-			ctx := context.Background()
-			serde := protobuf.NewProtoSerDe()
-			org := &onboarding.Organization{}
-			for i := 0; i < 5; i++ {
-				msg, err := r.ReadMessage(ctx)
-
-				if err != nil {
-					fmt.Printf("Error deserializing message: %v\n", err)
-				}
-
-				_, err = serde.Deserialize(msg.Value, org)
-
-				if err != nil {
-					fmt.Printf("Error deserializing message: %v\n", err)
-				}
-
-				if err == nil {
-					fmt.Printf("Received message: %v\n", org)
-				} else {
-					t.Logf("Error consuming the message: %v (%v)\n", err, msg)
-					break
-				}
 			}
 
 		})

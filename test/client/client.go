@@ -133,3 +133,26 @@ func (h *inputFileHandlers) process(ctx context.Context, fileClient filepb.Inges
 	return h.ProcessRequests(ctx, fileClient, schemaType, req)
 
 }
+
+/*func main() {
+
+	l, _ := zap.NewDevelopment()
+	logger := log.Wrap(l)
+	opts := grpc.WithInsecure()
+
+	ctx := context.Background()
+	con, err := grpc.Dial("localhost:6000", opts)
+	if err != nil {
+		logger.Errorf(ctx, "Error connecting: %v \n", err)
+	}
+	defer con.Close()
+
+	client := filepb.NewInputFileServiceClient(con)
+	csvFh := NewInputFileHandlers(logger)
+
+	fileNames := []string{"organization.csv"}
+	filePaths := []string{"/Users/annguyen/file-reader/test/data/good/organization.csv"}
+
+	res, err := csvFh.process(ctx, client, fileNames, filePaths, 0, 0)
+	logger.Infof(ctx, "res = %v", res)
+}*/
