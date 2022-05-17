@@ -8,23 +8,19 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
-	"time"
 
-	"file_reader/src/protos/onboarding"
-	orgPb "file_reader/src/protos/onboarding"
-	"file_reader/src/third_party/protobuf"
+	"flag"
 	"fmt"
-	"io"
 	"net"
 
 	"file_reader/src/log"
 	"file_reader/src/pkg/validation"
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
+
 	"os"
 	"testing"
 
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
 	"go.uber.org/zap"
@@ -54,7 +50,11 @@ var testCases = []struct {
 
 			&filepb.InputFileRequest{
 				Type:      filepb.Type_ORGANIZATION,
+<<<<<<< HEAD
 				InputFile: &filepb.InputFile{FileId: "file_id1", Path: "data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
+=======
+				InputFile: &filepb.InputFile{FileId: "file_id1", Path: "/Users/annguyen/file-reader/test/data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
+>>>>>>> main
 			},
 		},
 		expectedRes: filepb.InputFileResponse{Success: true, Errors: nil},
@@ -192,6 +192,9 @@ func TestFileProcessingServer(t *testing.T) {
 
 	conn, err := grpc.DialContext(ctx, "", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
 
+	_, grpcServer, _ := instrument.GetGrpcServer(addr, logger)
+
+	conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
 	if err != nil {
 		logger.Errorf(ctx, err.Error())
 	}
