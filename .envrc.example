@@ -6,13 +6,16 @@ export GRPC_SERVER="localhost"
 export GRPC_HEALTH_PORT="9000"
 export GRPC_SERVER_PORT="6000"
 
+# Mode
+export MODE="debug"
+
 # Schema
 export AVRO_SCHEMA_DIRECTORY="avros"
 export PROTO_SCHEMA_DIRECTORY="protos/onboarding"
 export SCHEMA_CLIENT_ENDPOINT="http://localhost:8081"
 
 # New relic configuration variables
-
+export NEW_RELIC_ENABLED="false"
 export NEW_RELIC_LICENSE_KEY="newrelic_license_key"
 export DISTRIBUTED_TRACER_ENABLED="true"
 export SPAN_EVENT_ENABLED="true"
@@ -37,6 +40,7 @@ export CREATE_ORGANIZATION_TOPIC="organization"
 export CREATE_ORGANIZATION_WORKDERS="3"
 export DEAD_LETTER_QUEUE_TOPIC="dead-letter-queue"
 export ORGANIZATION_GROUP_ID="organizations_group"
+export ORGANIZATION_PROTO_TOPIC="organization-proto"
 
 # AWS configuration variables
 

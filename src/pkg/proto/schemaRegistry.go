@@ -8,10 +8,12 @@ import (
 	"file_reader/src/third_party/protobuf"
 	"file_reader/src/third_party/protobuf/srclient"
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 var cachingEnabled = true
-var fileSchemaCache = registerProtoSchemas(organizationProtoTopic)
+var fileSchemaCache = RegisterProtoSchemas(instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"))
 
 type schemaRegistry struct {
 	c   srclient.Client
@@ -27,7 +29,7 @@ func cacheKey(schemaName string, topic string) string {
 	return fmt.Sprintf("%s-%s", schemaName, topic)
 }
 
-func registerProtoSchemas(topic string) map[string]int {
+func RegisterProtoSchemas(topic string) map[string]int {
 
 	registrator := protobuf.NewSchemaRegistrator(schemaRegistryClient.c)
 
@@ -53,7 +55,7 @@ func GetSchemaIdBytes(schemaID int) []byte {
 	return schemaIDBytes
 
 }
-func (client *schemaRegistry) GetProtoSchemaID(schemaName string, topic string) int {
+func (client *schemaRegistry) GetProtoSchemaID(schemaName string, topic string) (int, error) {
 	// First check if the schema is already cached
 	cacheKey := cacheKey(schemaName,
 		topic)
@@ -61,7 +63,7 @@ func (client *schemaRegistry) GetProtoSchemaID(schemaName string, topic string) 
 
 		// Retrieve the schema from cache
 		if schemaID, ok := fileSchemaCache[cacheKey]; ok {
-			return schemaID
+			return schemaID, nil
 		}
 
 	}
@@ -78,19 +80,20 @@ func (client *schemaRegistry) GetProtoSchemaID(schemaName string, topic string) 
 		schemaID, err := registrator.RegisterValue(schemaRegistryClient.ctx, topic, &onboarding.Organization{})
 
 		if err != nil {
-			panic(fmt.Errorf("error registering schema: %w", err))
+			err = errors.Wrap(err, "error registering schema")
+			return -1, err
 		}
 		// Cache the schema
 		if cachingEnabled {
 			fileSchemaCache[cacheKey] = schemaID
 		}
-		return schemaID
+		return schemaID, nil
 	}
 	// Cache the schema
 	if cachingEnabled {
 		fileSchemaCache[cacheKey] = schema.ID
 	}
 
-	return schema.ID
+	return schema.ID, nil
 
 }

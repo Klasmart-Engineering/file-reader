@@ -24,9 +24,17 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-func grpcServerInstrument(ctx context.Context) {
+var IngestFileService *fileGrpc.IngestFileService
 
-	l, _ := zap.NewDevelopment()
+func grpcServerInstrument(ctx context.Context) {
+	var l *zap.Logger
+	mode := instrument.MustGetEnv("MODE")
+	switch mode {
+	case "debug":
+		l = zap.NewNop()
+	default:
+		l, _ = zap.NewDevelopment()
+	}
 
 	logger := zaplogger.Wrap(l)
 
@@ -40,7 +48,7 @@ func grpcServerInstrument(ctx context.Context) {
 	addr := instrument.GetAddressForHealthCheck()
 
 	// grpc Server instrument
-	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("File service health check", addr, logger)
+	lis, grpcServer, err := instrument.GetGrpcServer("File service health check", addr, logger)
 
 	if err != nil {
 		logger.Fatalf(ctx, "Failed to start server. Error : %v", err)
@@ -50,14 +58,15 @@ func grpcServerInstrument(ctx context.Context) {
 		Server: config.Server{Port: addr, Development: true},
 		Logger: Logger,
 		Kafka: config.Kafka{
-			Brokers: instrument.GetBrokers(),
+			Brokers:                instrument.GetBrokers(),
+			AllowAutoTopicCreation: true,
 		},
 	}
 
-	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
+	IngestFileService = fileGrpc.NewIngestFileService(ctx, logger, cfg)
 	healthServer := health.NewServer()
 
-	filepb.RegisterIngestFileServiceServer(grpcServer, ingestFileService)
+	filepb.RegisterIngestFileServiceServer(grpcServer, IngestFileService)
 
 	//healthService := healthcheck.NewHealthChecker()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)

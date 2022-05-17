@@ -28,7 +28,7 @@ func (s *ingestFileServer) Run(ctx context.Context) error {
 	s.logger.Infof(ctx, "GRPC Server is listening... at port %v\n", s.cfg.Server.Port)
 	addr := instrument.GetAddressForGrpc()
 
-	lis, grpcServer, err := instrument.GetInstrumentGrpcServer("File Processing Server", addr, s.logger)
+	lis, grpcServer, err := instrument.GetGrpcServer("File Processing Server", addr, s.logger)
 
 	if err != nil {
 
