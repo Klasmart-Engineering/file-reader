@@ -19,7 +19,6 @@ import (
 	"net"
 
 	"file_reader/src/log"
-	"file_reader/src/pkg/proto"
 	"file_reader/src/pkg/validation"
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
@@ -184,7 +183,6 @@ func TestFileProcessingServer(t *testing.T) {
 		Encoding:          "json",
 		Level:             "info",
 	}
-
 	addr := instrument.GetAddressForGrpc()
 
 	cfg := &config.Config{
@@ -214,7 +212,7 @@ func TestFileProcessingServer(t *testing.T) {
 	schemaType := "PROTO"
 	orgProtoTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	// register schema
-	proto.RegisterProtoSchemas(orgProtoTopic)
+	//proto.RegisterProtoSchemas(orgProtoTopic)
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: instrument.GetBrokers(),
 		Topic:   orgProtoTopic,
