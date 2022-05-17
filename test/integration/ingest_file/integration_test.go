@@ -52,7 +52,7 @@ var testCases = []struct {
 		name: "req ok",
 		req: []*filepb.InputFileRequest{
 
-			&filepb.InputFileRequest{
+			{
 				Type:      filepb.Type_ORGANIZATION,
 				InputFile: &filepb.InputFile{FileId: "file_id1", Path: "data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
 			},

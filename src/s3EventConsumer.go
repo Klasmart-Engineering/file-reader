@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/csv"
 	avro "file_reader/avro_gencode"
+	"file_reader/src/instrument"
 	"fmt"
 	"log"
 	"os"
@@ -90,9 +91,10 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				panic("invalid operation_type on file create message ")
 			}
 			kafkaWriter := kafka.Writer{
-				Addr:   kafka.TCP(config.BrokerAddrs...),
-				Topic:  operation.Topic,
-				Logger: &config.Logger,
+				Addr:                   kafka.TCP(config.BrokerAddrs...),
+				Topic:                  operation.Topic,
+				Logger:                 &config.Logger,
+				AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 			}
 
 			trackingId := s3FileCreated.Metadata.Tracking_id

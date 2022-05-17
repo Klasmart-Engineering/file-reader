@@ -38,7 +38,6 @@ func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
 	writerReadTimeout, _ := strconv.Atoi(instrument.MustGetEnv("WRITE_READ_TIMEOUT"))
 
 	writerWriteTimeout, _ := strconv.Atoi(instrument.MustGetEnv("WRITE_WRITE_TIMEOUT"))
-	allowAutoTopicCreation, _ := strconv.ParseBool(instrument.MustGetEnv("ALLOW_AUTO_TOPIC_CREATION"))
 	w := &kafka.Writer{
 		Addr:         kafka.TCP(config.BrokerAddrs...),
 		Topic:        config.Topic,
@@ -49,7 +48,7 @@ func (op Operation) GetNewKafkaWriter(config Config) *kafka.Writer {
 		Compression:            compress.Snappy,
 		ReadTimeout:            time.Duration(writerReadTimeout * int(time.Second)),
 		WriteTimeout:           time.Duration(writerWriteTimeout * int(time.Second)),
-		AllowAutoTopicCreation: allowAutoTopicCreation,
+		AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 	}
 	return w
 }

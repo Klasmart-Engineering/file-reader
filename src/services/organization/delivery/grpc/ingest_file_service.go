@@ -50,8 +50,9 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	switch schemaType {
 	case "AVROS":
 		kafkaWriter := kafka.Writer{
-			Addr:  kafka.TCP(c.cfg.Kafka.Brokers...),
-			Topic: src.OrganizationTopic,
+			Addr:                   kafka.TCP(c.cfg.Kafka.Brokers...),
+			Topic:                  src.OrganizationTopic,
+			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 			//Logger: &config.Logger,
 		}
 		schemaRegistryClient := &src.SchemaRegistry{
