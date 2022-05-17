@@ -8,7 +8,6 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
-	"strings"
 	"time"
 
 	"file_reader/src/protos/onboarding"
@@ -23,7 +22,6 @@ import (
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
 	"os"
-	"os/exec"
 	"testing"
 
 	"google.golang.org/grpc/credentials/insecure"
@@ -109,14 +107,6 @@ func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(conte
 	return func(context.Context, string) (net.Conn, error) {
 		return listener.Dial()
 	}
-}
-func deleteTopic(topic string) error {
-	cmd := exec.Command("tr", "a-z", "A-Z")
-	cmd.Stdin = strings.NewReader("some input")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
-	return err
 }
 func getCSVToProtos(entity string, filePath string, isGood bool) ([]*onboarding.Organization, error) {
 	var res []*onboarding.Organization
