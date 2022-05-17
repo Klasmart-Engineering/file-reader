@@ -28,6 +28,8 @@ func GetNewRelic(serviceName string, logger *log.ZapLogger) (*NewRelic, error) {
 	cfg.DistributedTracer.Enabled = isDistributedTracerEnabled
 	cfg.SpanEvents.Enabled = isSpanEventsEnabled
 	cfg.ErrorCollector.Enabled = isErrorCollectorEnabled
+	newRelicEnabled, _ := strconv.ParseBool(MustGetEnv("NEW_RELIC_ENABLED"))
+	cfg.Enabled = newRelicEnabled
 	cfg.Logger = nrzap.Transform(logger.Named("newrelic"))
 
 	app, err := newrelic.NewApplication(cfg)

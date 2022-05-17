@@ -7,7 +7,6 @@ import (
 	"encoding/csv"
 	avro "file_reader/avro_gencode"
 	zaplogger "file_reader/src/log"
-	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -87,7 +86,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				continue
 			}
 
-			fmt.Println("Downloaded", s3FileCreated.Payload.Key, numBytes, "bytes")
+			logger.Info(ctx, "Downloaded", s3FileCreated.Payload.Key, numBytes, "bytes")
 			file.Close()
 			// Reopen the same file for ingest (until thought of alternative)
 			f, _ := os.Open(config.OutputDirectory + s3FileCreated.Payload.Key)

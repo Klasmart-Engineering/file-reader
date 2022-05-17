@@ -50,27 +50,27 @@ func Wrap(l *zap.Logger) *ZapLogger {
 }
 
 func (l *ZapLogger) Error(ctx context.Context, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprint(i...))
+	l.WithCtxValue(ctx).Sugar().Error(fmt.Sprint(i...))
 }
 
 func (l *ZapLogger) Errorf(ctx context.Context, s string, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprintf(s, i...))
+	l.WithCtxValue(ctx).Sugar().Error(fmt.Sprintf(s, i...))
 }
 
 func (l *ZapLogger) Fatal(ctx context.Context, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprint(i...))
+	l.WithCtxValue(ctx).Sugar().Fatal(fmt.Sprint(i...))
 }
 
 func (l *ZapLogger) Fatalf(ctx context.Context, s string, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprintf(s, i...))
+	l.WithCtxValue(ctx).Sugar().Fatal(fmt.Sprintf(s, i...))
 }
 
 func (l *ZapLogger) Info(ctx context.Context, i ...interface{}) {
-	l.WithCtxValue(ctx).Info(fmt.Sprint(i...))
+	l.WithCtxValue(ctx).Sugar().Info(fmt.Sprint(i...))
 }
 
 func (l *ZapLogger) Infof(ctx context.Context, s string, i ...interface{}) {
-	l.WithCtxValue(ctx).Info(fmt.Sprintf(s, i...))
+	l.WithCtxValue(ctx).Sugar().Info(fmt.Sprintf(s, i...))
 }
 
 func (l *ZapLogger) Printf(s string, i ...interface{}) {
@@ -79,9 +79,9 @@ func (l *ZapLogger) Printf(s string, i ...interface{}) {
 }
 
 func (l *ZapLogger) Warn(i ...interface{}) {
-	l.zap.Warn(fmt.Sprint(i...))
+	l.zap.Sugar().Warn(fmt.Sprint(i...))
 }
 
 func (l *ZapLogger) Warnf(s string, i ...interface{}) {
-	l.zap.Warn(fmt.Sprintf(s, i...))
+	l.zap.Sugar().Warn(fmt.Sprintf(s, i...))
 }

@@ -1,41 +1,32 @@
 package proto
 
 import (
+	"file_reader/src/pkg/validation"
 	orgPb "file_reader/src/protos/onboarding"
 	"os"
-
-	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 )
 
 const (
-	organizationProtoTopic = "organization-proto-12"
 	orgProtoSchemaFileName = "onboarding.proto"
 	organizationSchemaName = "organization"
 )
 
-var validate *validator.Validate
-
-type ValidatedOrganization struct {
-	Uuid string `validate:required,uuid4`
-}
-
 var OrganizationProto = Operation{
-	topic:            organizationProtoTopic,
 	rowToProtoSchema: rowToOrganizationProto,
 }
 
-func rowToOrganizationProto(row []string) (*orgPb.Organization, error) {
+func rowToOrganizationProto(row []string, trackingId string) (*orgPb.Organization, error) {
 	md := orgPb.Metadata{
 		OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
 		Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},
-		TrackingId:        &orgPb.StringValue{Value: uuid.NewString()},
+		TrackingId:        &orgPb.StringValue{Value: trackingId},
 	}
 
 	// Validate uuid format
-	validate = validator.New()
-	validatedOrg := ValidatedOrganization{Uuid: row[0]}
-	err := validate.Struct(validatedOrg)
+
+	validatedOrgId := validation.ValidatedOrganizationID{Uuid: row[0]}
+
+	err := validation.UUIDValidate(validatedOrgId)
 	if err != nil {
 		return nil, err
 	}
