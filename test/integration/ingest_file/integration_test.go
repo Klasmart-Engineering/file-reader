@@ -201,8 +201,6 @@ func TestFileProcessingServer(t *testing.T) {
 
 	schemaType := "PROTO"
 	orgProtoTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
-	// register schema
-	//proto.RegisterProtoSchemas(orgProtoTopic)
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: instrument.GetBrokers(),
 		Topic:   orgProtoTopic,
@@ -216,7 +214,6 @@ func TestFileProcessingServer(t *testing.T) {
 		testCase := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			//t.Parallel()
 			g := gomega.NewWithT(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
