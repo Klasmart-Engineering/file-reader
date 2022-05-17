@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/csv"
 	avro "file_reader/avro_gencode"
+	"file_reader/src/instrument"
 	zaplogger "file_reader/src/log"
 	"os"
 
@@ -108,9 +109,10 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			ingestFileConfig := IngestFileConfig{
 				Reader: reader,
 				KafkaWriter: kafka.Writer{
-					Addr:   kafka.TCP(config.OutputBrokerAddrs...),
-					Topic:  operation.Topic,
-					Logger: logger,
+					Addr:                   kafka.TCP(config.OutputBrokerAddrs...),
+					Topic:                  operation.Topic,
+					Logger:                 logger,
+					AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 				},
 				Tracking_id: s3FileCreated.Metadata.Tracking_id,
 				Logger:      logger,

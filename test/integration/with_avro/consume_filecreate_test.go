@@ -103,9 +103,10 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	recordValue = append(recordValue, valueBytes...)
 
 	w := kafka.Writer{
-		Addr:   kafka.TCP(brokerAddrs...),
-		Topic:  s3FileCreationTopic,
-		Logger: log.New(os.Stdout, "kafka writer: ", 0),
+		Addr:                   kafka.TCP(brokerAddrs...),
+		Topic:                  s3FileCreationTopic,
+		AllowAutoTopicCreation: true,
+		Logger:                 log.New(os.Stdout, "kafka writer: ", 0),
 	}
 	err = w.WriteMessages(
 		ctx,

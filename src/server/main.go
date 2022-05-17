@@ -103,8 +103,10 @@ func startFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 			Logger:            logger,
 		}
 		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: brokerAddrs,
-			Topic:   os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
+			Brokers:     brokerAddrs,
+			GroupID:     os.Getenv("ORGANIZATION_GROUP_ID"),
+			StartOffset: kafka.LastOffset,
+			Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 		})
 
 		go src.ConsumeToIngest(ctx, r, consumerConfig)

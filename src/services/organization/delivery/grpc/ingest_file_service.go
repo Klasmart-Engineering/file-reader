@@ -62,8 +62,9 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 		ingestFileConfig := src.IngestFileConfig{
 			Reader: csv.NewReader(f),
 			KafkaWriter: kafka.Writer{
-				Addr:  kafka.TCP(c.cfg.Kafka.Brokers...),
-				Topic: src.OrganizationTopic,
+				Addr:                   kafka.TCP(c.cfg.Kafka.Brokers...),
+				Topic:                  src.OrganizationTopic,
+				AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 			},
 			Tracking_id: trackingId,
 			Logger:      c.logger,

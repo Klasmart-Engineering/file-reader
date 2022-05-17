@@ -19,6 +19,14 @@ func MustGetEnv(key string) string {
 	panic(fmt.Sprintf("environment variable %s unset", key))
 }
 
+func IsEnv(env string) bool {
+	val, exists := os.LookupEnv("ENV")
+	if !exists {
+		return false
+	}
+	return val == env
+}
+
 func GetAddressForHealthCheck() string {
 	host := MustGetEnv("GRPC_SERVER")
 	port := MustGetEnv("GRPC_HEALTH_PORT")
