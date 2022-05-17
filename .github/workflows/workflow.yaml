@@ -1,4 +1,4 @@
-name: csv reader 
+name: csi file reader 
 on:
   push:
     branches:
@@ -18,8 +18,20 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: '1.18.1'
-    - name: Run testing
-      run: cd test && go test -v
+    - name: Setup integration env
+      run: cat .testenv >> $GITHUB_ENV
+    - name: Integration tests
+      run: |
+        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    
+        ids=$(docker ps -a -q)
+        for id in $ids
+        do
+          echo "$id"
+          docker stop $id && docker rm $id
+        done
+
+        make integration-tests
 
   build:
     runs-on: ubuntu-latest

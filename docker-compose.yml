@@ -15,6 +15,8 @@ services:
      - --advertise-pandaproxy-addr redpanda:8082
      - --set redpanda.enable_transactions=true
      - --set redpanda.enable_idempotence=true
+     - --set redpanda.auto_create_topics_enabled=true
+
 
     image: docker.vectorized.io/vectorized/redpanda:v21.11.13
     container_name: redpanda-1
