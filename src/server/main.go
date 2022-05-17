@@ -9,6 +9,7 @@ import (
 	filepb "file_reader/src/protos/inputfile"
 	"fmt"
 	"os"
+	"strings"
 
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 
@@ -72,7 +73,7 @@ func startFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 			C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 			IdSchemaMap: make(map[int]string),
 		}
-		brokerAddrs := []string{os.Getenv("KAFKA_BROKER")}
+		brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
 		sess, err := session.NewSessionWithOptions(session.Options{
 			Profile: os.Getenv("AWS_PROFILE"),
 			Config: aws.Config{

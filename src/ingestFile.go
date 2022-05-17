@@ -31,7 +31,7 @@ type Operation struct {
 	RowToSchema   func(row []string, tracking_id string) avroCodec
 }
 
-func (op Operation) IngestFile(ctx context.Context, config IngestFileConfig) {
+func (op Operation) IngestFile(ctx context.Context, config IngestFileConfig) error {
 	logger := config.Logger
 	for {
 		row, err := config.Reader.Read()
@@ -39,7 +39,7 @@ func (op Operation) IngestFile(ctx context.Context, config IngestFileConfig) {
 			break
 		}
 		if err != nil {
-			logger.Fatal(ctx, err)
+			return err
 		}
 
 		// Serialise row using schema
@@ -67,4 +67,5 @@ func (op Operation) IngestFile(ctx context.Context, config IngestFileConfig) {
 			continue
 		}
 	}
+	return nil
 }

@@ -48,7 +48,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			// Read file-create message off kafka topic
 			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
-				logger.Error(ctx, "could not read message "+err.Error())
+				logger.Error(ctx, "could not read message ", err.Error())
 				continue
 			}
 			logger.Info(ctx, "received message: ", string(msg.Value))
@@ -56,11 +56,15 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			// Deserialize file create message
 			schemaIdBytes := msg.Value[1:5]
 			schemaId := int(binary.BigEndian.Uint32(schemaIdBytes))
-			schema := config.SchemaRegistry.GetSchema(schemaId)
+			schema, err := config.SchemaRegistry.GetSchema(schemaId)
+			if err != nil {
+				logger.Error(ctx, "could not retrieve schema with id ", schemaId, err.Error())
+				continue
+			}
 			r := bytes.NewReader(msg.Value[5:])
 			s3FileCreated, err := avro.DeserializeS3FileCreatedFromSchema(r, schema)
 			if err != nil {
-				logger.Error(ctx, "could not deserialize message "+err.Error())
+				logger.Error(ctx, "could not deserialize message ", err.Error())
 				continue
 			}
 
@@ -113,7 +117,11 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				Logger:      logger,
 			}
 
-			operation.IngestFile(ctx, ingestFileConfig)
+			err = operation.IngestFile(ctx, ingestFileConfig)
+			if err != nil {
+				logger.Error(ctx, err)
+				return
+			}
 		}
 	}
 }
