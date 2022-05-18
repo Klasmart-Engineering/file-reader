@@ -18,6 +18,13 @@ type schemaRegistry struct {
 	IdSchemaMap map[int]string
 }
 
+func GetNewSchemaRegistry(c srclient.Client, ctx context.Context) *schemaRegistry {
+	return &schemaRegistry{
+		c:   c,
+		ctx: ctx,
+	}
+}
+
 var schemaRegistryClient = &schemaRegistry{
 	c:           srclient.NewClient(srclient.WithURL(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT"))),
 	ctx:         context.Background(),

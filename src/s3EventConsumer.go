@@ -7,13 +7,16 @@ import (
 	"encoding/csv"
 	avro "file_reader/avro_gencode"
 	"file_reader/src/instrument"
+	"file_reader/src/log"
 	zaplogger "file_reader/src/log"
+	"file_reader/src/pkg/proto"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -118,10 +121,32 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				Logger:      logger,
 			}
 
-			err = operation.IngestFile(ctx, ingestFileConfig)
-			if err != nil {
-				logger.Error(ctx, err)
-				return
+			schemaType := instrument.MustGetEnv("SCHEMA_TYPE")
+			switch schemaType {
+			case "AVRO":
+
+				err = operation.IngestFile(ctx, ingestFileConfig)
+				if err != nil {
+					logger.Error(ctx, err)
+					return
+				}
+			case "PROTO":
+
+				defer f.Close()
+				config := proto.Config{
+					Topic:       instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"),
+					BrokerAddrs: instrument.GetBrokers(),
+					Reader:      file,
+					Context:     context.Background(),
+					Logger:      &log.ZapLogger{},
+				}
+				trackingId := uuid.NewString()
+				fileTypeName := "CSV"
+				errorStr := proto.OrganizationProto.IngestFilePROTO(config, fileTypeName, trackingId)
+				if errorStr != "[]" {
+					logger.Error(ctx, err)
+					return
+				}
 			}
 		}
 	}

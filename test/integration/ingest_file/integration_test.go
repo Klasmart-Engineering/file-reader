@@ -21,6 +21,7 @@ import (
 	"file_reader/src/pkg/validation"
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 	test "file_reader/test/client"
+	"file_reader/test/env"
 	"os"
 	"testing"
 
@@ -70,27 +71,6 @@ var testCases = []struct {
 		},
 		expectedRes: filepb.InputFileResponse{Success: false, Errors: nil},
 	},
-}
-
-func envSetter(envs map[string]string) (closer func()) {
-	originalEnvs := map[string]string{}
-	for name, value := range envs {
-		if originalValue, ok := os.LookupEnv(name); ok {
-			originalEnvs[name] = originalValue
-		}
-		_ = os.Setenv(name, value)
-	}
-
-	return func() {
-		for name := range envs {
-			origValue, has := originalEnvs[name]
-			if has {
-				_ = os.Setenv(name, origValue)
-			} else {
-				_ = os.Unsetenv(name)
-			}
-		}
-	}
 }
 
 func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(context.Context, string) (net.Conn, error) {
@@ -153,7 +133,7 @@ func getCSVToProtos(entity string, filePath string, isGood bool) ([]*onboarding.
 
 func TestFileProcessingServer(t *testing.T) {
 	// set up env variables
-	closer := envSetter(map[string]string{
+	closer := env.EnvSetter(map[string]string{
 		"BROKERS":                  "localhost:9092",
 		"GRPC_SERVER":              "localhost",
 		"GRPC_SERVER_PORT":         "6000",
