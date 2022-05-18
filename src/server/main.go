@@ -20,7 +20,8 @@ import (
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 
-	"google.golang.org/grpc/health"
+	health "file_reader/src/pkg/healthcheck"
+
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
@@ -64,13 +65,15 @@ func grpcServerInstrument(ctx context.Context) {
 	}
 
 	IngestFileService = fileGrpc.NewIngestFileService(ctx, logger, cfg)
-	healthServer := health.NewServer()
 
 	filepb.RegisterIngestFileServiceServer(grpcServer, IngestFileService)
 
-	//healthService := healthcheck.NewHealthChecker()
+	healthServer := health.NewHealthServer()
+	healthServer.SetServingStatus("File reader service", 1)
+
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
-	healthServer.SetServingStatus(filepb.IngestFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
+
+	//healthService.SetServingStatus(filepb.IngestFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
 
 	logger.Infof(ctx, "Server starting to listen on %s", addr)
 
