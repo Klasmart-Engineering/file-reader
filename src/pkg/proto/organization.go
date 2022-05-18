@@ -8,7 +8,6 @@ import (
 
 const (
 	orgProtoSchemaFileName = "onboarding.proto"
-	organizationSchemaName = "organization"
 )
 
 var OrganizationProto = Operation{

@@ -28,6 +28,7 @@ type Config struct {
 }
 
 type Operation struct {
+	SchemaID         int
 	rowToProtoSchema func(row []string, trackingId string) (*orgPb.Organization, error)
 }
 
@@ -62,11 +63,6 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 		csvReader := csv.NewReader(config.Reader)
 		w := op.GetNewKafkaWriter(config)
 
-		schemaID, err := schemaRegistryClient.GetProtoSchemaID(organizationSchemaName, config.Topic)
-		if err != nil {
-			return fmt.Sprintf("%s", err)
-		}
-
 		serde := protobuf.NewProtoSerDe()
 		fails := 0 // Keep track of how many rows failed to process
 		total := 0 // Total of row
@@ -92,7 +88,7 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 				continue
 			}
 
-			valueBytes, err := serde.Serialize(schemaID, orgSchema)
+			valueBytes, err := serde.Serialize(op.SchemaID, orgSchema)
 
 			if err != nil {
 				config.Logger.Errorf(config.Context, fmt.Sprintf("error serializing message: %s", err))
@@ -116,8 +112,8 @@ func (op Operation) IngestFilePROTO(config Config, fileTypeName string, tracking
 		}
 		// If all the rows are failed to process then
 		if total == fails {
-			config.Logger.Errorf(config.Context, err.Error())
-			err = csvError.InvalidRowError{Message: "All rows are invalid"}
+			config.Logger.Errorf(config.Context, "All rows are invalid")
+			err := csvError.InvalidRowError{Message: "All rows are invalid"}
 			return fmt.Sprintf("%s", err)
 		}
 	}

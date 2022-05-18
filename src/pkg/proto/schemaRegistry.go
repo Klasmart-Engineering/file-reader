@@ -7,66 +7,24 @@ import (
 	"file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
 	"file_reader/src/third_party/protobuf/srclient"
-	"fmt"
-
-	"github.com/pkg/errors"
+	"log"
 )
 
 var cachingEnabled = true
-var fileSchemaCache = RegisterProtoSchemas(instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"))
 
 type schemaRegistry struct {
-	c   srclient.Client
-	ctx context.Context
+	c           srclient.Client
+	ctx         context.Context
+	IdSchemaMap map[int]string
 }
 
 var schemaRegistryClient = &schemaRegistry{
-	c:   srclient.NewClient(srclient.WithURL(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT"))),
-	ctx: context.Background(),
+	c:           srclient.NewClient(srclient.WithURL(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT"))),
+	ctx:         context.Background(),
+	IdSchemaMap: make(map[int]string),
 }
 
-func cacheKey(schemaName string, topic string) string {
-	return fmt.Sprintf("%s-%s", schemaName, topic)
-}
-
-func RegisterProtoSchemas(topic string) map[string]int {
-
-	registrator := protobuf.NewSchemaRegistrator(schemaRegistryClient.c)
-
-	schemaID, err := registrator.RegisterValue(schemaRegistryClient.ctx, topic, &onboarding.Organization{})
-
-	if err != nil {
-		panic(fmt.Errorf("error registering schema: %w", err))
-	}
-
-	var fileSchemaCache = make(map[string]int)
-
-	// Cache the schema
-	if cachingEnabled {
-		cacheKey := cacheKey("organization",
-			topic)
-		fileSchemaCache[cacheKey] = schemaID
-	}
-	return fileSchemaCache
-}
-func GetSchemaIdBytes(schemaID int) []byte {
-	schemaIDBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schemaID))
-	return schemaIDBytes
-
-}
-func (client *schemaRegistry) GetProtoSchemaID(schemaName string, topic string) (int, error) {
-	// First check if the schema is already cached
-	cacheKey := cacheKey(schemaName,
-		topic)
-	if cachingEnabled {
-
-		// Retrieve the schema from cache
-		if schemaID, ok := fileSchemaCache[cacheKey]; ok {
-			return schemaID, nil
-		}
-
-	}
+func (client *schemaRegistry) GetSchemaID(topic string) int {
 
 	// Retrieve the lastest schema
 	schema, err := schemaRegistryClient.c.GetLatestSchema(schemaRegistryClient.ctx, topic)
@@ -77,23 +35,34 @@ func (client *schemaRegistry) GetProtoSchemaID(schemaName string, topic string) 
 
 		registrator := protobuf.NewSchemaRegistrator(schemaRegistryClient.c)
 
-		schemaID, err := registrator.RegisterValue(schemaRegistryClient.ctx, topic, &onboarding.Organization{})
+		schema, err = registrator.RegisterValue(schemaRegistryClient.ctx, topic, &onboarding.Organization{})
 
 		if err != nil {
-			err = errors.Wrap(err, "error registering schema")
-			return -1, err
+			log.Fatal(err)
 		}
-		// Cache the schema
+	}
+	return schema.ID
+
+}
+
+func (client *schemaRegistry) GetSchemaIdBytes(schemaID int) []byte {
+
+	schemaIDBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schemaID))
+	return schemaIDBytes
+}
+
+func (client *schemaRegistry) GetSchema(schemaId int) string {
+	// Gets schema from local cache if exists, otherwise from schema registry
+	if _, ok := client.IdSchemaMap[schemaId]; !ok {
+		schema, err := client.c.GetSchemaByID(schemaRegistryClient.ctx, schemaId)
+		if err != nil {
+			panic("could not get consumer schema " + err.Error())
+		}
 		if cachingEnabled {
-			fileSchemaCache[cacheKey] = schemaID
+
+			client.IdSchemaMap[schemaId] = schema.Schema
 		}
-		return schemaID, nil
 	}
-	// Cache the schema
-	if cachingEnabled {
-		fileSchemaCache[cacheKey] = schema.ID
-	}
-
-	return schema.ID, nil
-
+	return client.IdSchemaMap[schemaId]
 }
