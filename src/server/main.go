@@ -73,8 +73,6 @@ func grpcServerInstrument(ctx context.Context) {
 
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
 
-	//healthService.SetServingStatus(filepb.IngestFileService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
-
 	logger.Infof(ctx, "Server starting to listen on %s", addr)
 
 	if err = grpcServer.Serve(lis); err != nil {
