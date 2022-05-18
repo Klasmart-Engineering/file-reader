@@ -9,8 +9,7 @@ import (
 )
 
 type HealthServer struct {
-	mu sync.Mutex
-	// statusMap stores the serving status of the services this HealthServer monitors.
+	mu     sync.Mutex
 	status healthpb.HealthCheckResponse_ServingStatus
 }
 
