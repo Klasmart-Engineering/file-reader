@@ -49,12 +49,6 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	// Ingest file depending on schema type
 	switch schemaType {
 	case "AVROS":
-		kafkaWriter := kafka.Writer{
-			Addr:                   kafka.TCP(c.cfg.Kafka.Brokers...),
-			Topic:                  src.OrganizationTopic,
-			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
-			//Logger: &config.Logger,
-		}
 		schemaRegistryClient := &src.SchemaRegistry{
 			C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 		}
@@ -65,7 +59,17 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			SchemaIDBytes: src.GetOrganizationSchemaIdBytes(schemaRegistryClient),
 			RowToSchema:   src.RowToOrganization,
 		}
-		Organization.IngestFile(c.ctx, csv.NewReader(f), kafkaWriter, trackingId)
+		ingestFileConfig := src.IngestFileConfig{
+			Reader: csv.NewReader(f),
+			KafkaWriter: kafka.Writer{
+				Addr:                   kafka.TCP(c.cfg.Kafka.Brokers...),
+				Topic:                  src.OrganizationTopic,
+				AllowAutoTopicCreation: instrument.IsEnv("TEST"),
+			},
+			Tracking_id: trackingId,
+			Logger:      c.logger,
+		}
+		Organization.IngestFile(c.ctx, ingestFileConfig)
 	case "PROTO":
 		config := proto.Config{
 			Topic:       instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"),
