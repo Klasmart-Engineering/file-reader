@@ -23,4 +23,6 @@ newrelic_agent.log
 
 .envrc
 
+.idea/*
+
 downloaded/*

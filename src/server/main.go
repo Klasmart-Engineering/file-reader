@@ -8,8 +8,8 @@ import (
 	zaplogger "file_reader/src/log"
 	filepb "file_reader/src/protos/inputfile"
 	"fmt"
-	"log"
 	"os"
+	"strings"
 
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 
@@ -26,18 +26,7 @@ import (
 
 var IngestFileService *fileGrpc.IngestFileService
 
-func grpcServerInstrument(ctx context.Context) {
-	var l *zap.Logger
-	mode := instrument.MustGetEnv("MODE")
-	switch mode {
-	case "debug":
-		l = zap.NewNop()
-	default:
-		l, _ = zap.NewDevelopment()
-	}
-
-	logger := zaplogger.Wrap(l)
-
+func grpcServerInstrument(ctx context.Context, logger *zaplogger.ZapLogger) {
 	Logger := config.Logger{
 		DisableCaller:     false,
 		DisableStacktrace: false,
@@ -80,13 +69,14 @@ func grpcServerInstrument(ctx context.Context) {
 
 }
 
-func startFileCreateConsumer(ctx context.Context) {
+func startFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	schemaType := os.Getenv("SCHEMA_TYPE") // AVRO or PROTO.
 	if schemaType == "AVRO" {
 		schemaRegistryClient := &src.SchemaRegistry{
-			C: srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
+			C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
+			IdSchemaMap: make(map[int]string),
 		}
-		brokerAddrs := []string{os.Getenv("KAFKA_BROKER")}
+		brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
 		sess, err := session.NewSessionWithOptions(session.Options{
 			Profile: os.Getenv("AWS_PROFILE"),
 			Config: aws.Config{
@@ -105,26 +95,42 @@ func startFileCreateConsumer(ctx context.Context) {
 		}
 		operationMap := src.CreateOperationMap(schemaRegistryClient)
 		var consumerConfig = src.ConsumeToIngestConfig{
-			BrokerAddrs:     brokerAddrs,
-			AwsSession:      sess,
-			OutputDirectory: os.Getenv("DOWNLOAD_DIRECTORY"),
-			Logger:          *log.New(os.Stdout, "kafka writer: ", 0),
+			OutputBrokerAddrs: brokerAddrs,
+			AwsSession:        sess,
+			OperationMap:      operationMap,
+			SchemaRegistry:    schemaRegistryClient,
+			OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
+			Logger:            logger,
 		}
 		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: brokerAddrs,
-			Topic:   os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
+			Brokers:     brokerAddrs,
+			GroupID:     os.Getenv("ORGANIZATION_GROUP_ID"),
+			StartOffset: kafka.LastOffset,
+			Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 		})
 
-		go src.ConsumeToIngest(ctx, r, consumerConfig, operationMap)
+		go src.ConsumeToIngest(ctx, r, consumerConfig)
 	}
 }
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	var l *zap.Logger
+	mode := instrument.MustGetEnv("MODE")
+	switch mode {
+	case "debug":
+		l = zap.NewNop()
+	default:
+		l, _ = zap.NewDevelopment()
+	}
+
+	logger := zaplogger.Wrap(l)
+
 	// Initialise Consumer for file create event
-	startFileCreateConsumer(ctx)
+	startFileCreateConsumer(ctx, logger)
 
 	// grpc Server instrument
-	grpcServerInstrument(ctx)
+	grpcServerInstrument(ctx, logger)
 }

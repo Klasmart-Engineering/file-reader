@@ -10,7 +10,7 @@ services:
      - --node-id 0
      - --check=false
      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
-     - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+     - --advertise-kafka-addr PLAINTEXT://localhost:29092,OUTSIDE://localhost:9092
      - --pandaproxy-addr 0.0.0.0:8082
      - --advertise-pandaproxy-addr redpanda:8082
      - --set redpanda.enable_transactions=true
@@ -25,7 +25,6 @@ services:
      - 29092:29092 
      - 8081:8081
      - 8082:8082
-
   localstack:
     image: localstack/localstack:0.14.2
     container_name: localstack
@@ -36,3 +35,4 @@ services:
         - 4566:4566
     volumes:
         - ./scripts:/docker-entrypoint-initaws.d
+    
