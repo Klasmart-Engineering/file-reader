@@ -15,9 +15,6 @@ RUN go build -ldflags "-s -w" -o main src/server/main.go
 
 EXPOSE 6000
 EXPOSE 9000
-EXPOSE 4566
-EXPOSE 9092
-EXPOSE 8081
 
 # Run the executable
 CMD ["./main"]
