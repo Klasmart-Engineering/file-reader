@@ -6,11 +6,16 @@ import (
 	"encoding/binary"
 	avro "file_reader/avro_gencode"
 	"file_reader/src"
+	"file_reader/src/config"
 	"file_reader/src/instrument"
+	"file_reader/src/log"
 	"file_reader/src/pkg/proto"
 	protoSrc "file_reader/src/third_party/protobuf/srclient"
+	clientPb "file_reader/test/client"
 	"file_reader/test/env"
-	"log"
+	util "file_reader/test/integration"
+	"time"
+
 	"os"
 	"strconv"
 	"strings"
@@ -24,6 +29,7 @@ import (
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
@@ -53,6 +59,35 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 	defer t.Cleanup(closer) // In Go 1.14+
 
+	// get grpc service ready
+	l, _ := zap.NewDevelopment()
+
+	logger := log.Wrap(l)
+
+	Logger := config.Logger{
+		DisableCaller:     false,
+		DisableStacktrace: false,
+		Encoding:          "json",
+		Level:             "info",
+	}
+	addr := instrument.GetAddressForGrpc()
+
+	cfg := &config.Config{
+		Server: config.Server{Port: addr, Development: true},
+		Logger: Logger,
+		Kafka: config.Kafka{
+			Brokers:                instrument.GetBrokers(),
+			DialTimeout:            int(3 * time.Minute),
+			MaxAttempts:            3,
+			AllowAutoTopicCreation: true,
+		},
+	}
+
+	// start grpc service
+	ctx, client := util.StartGrpc(logger, cfg, addr)
+
+	csvFh := clientPb.NewInputFileHandlers(logger)
+
 	// proto schema registry
 	protoSRC := proto.GetNewSchemaRegistry(
 		protoSrc.NewClient(protoSrc.WithURL(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT"))),
@@ -74,10 +109,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	awsRegion := "eu-west-1"
 
 	bucket := "organization"
+
 	s3key := "organization.csv"
-
-	ctx := context.Background()
-
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Profile: "localstack",
 		Config: aws.Config{
@@ -170,7 +203,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	}
 
 	// For now have the s3 downloader write to disk
-	file, err := os.Create(config.OutputDirectory + s3FileCreated.Payload.Key)
+	outputDir := instrument.MustGetEnv("DOWNLOAD_DIRECTORY")
+	file, err := os.Create(outputDir + s3FileCreated.Payload.Key)
 	if err != nil {
 		logger.Error(ctx, err)
 		continue

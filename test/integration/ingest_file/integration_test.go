@@ -8,28 +8,23 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
+	clientPb "file_reader/test/client"
+	util "file_reader/test/integration"
 	"time"
 
 	"file_reader/src/protos/onboarding"
 	orgPb "file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
-	"fmt"
+
 	"io"
-	"net"
 
 	"file_reader/src/log"
 	"file_reader/src/pkg/validation"
-	fileGrpc "file_reader/src/services/organization/delivery/grpc"
-	test "file_reader/test/client"
 	"file_reader/test/env"
 	"os"
 	"testing"
 
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/test/bufconn"
-
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 
 	"github.com/google/uuid"
 
@@ -73,21 +68,6 @@ var testCases = []struct {
 	},
 }
 
-func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(context.Context, string) (net.Conn, error) {
-	listener := bufconn.Listen(1024 * 1024)
-
-	filepb.RegisterIngestFileServiceServer(server, service)
-
-	go func() {
-		if err := server.Serve(listener); err != nil {
-			fmt.Printf("Error: %v", err)
-		}
-	}()
-
-	return func(context.Context, string) (net.Conn, error) {
-		return listener.Dial()
-	}
-}
 func getCSVToProtos(entity string, filePath string, isGood bool) ([]*onboarding.Organization, error) {
 	var res []*onboarding.Organization
 	var content []byte
@@ -165,20 +145,9 @@ func TestFileProcessingServer(t *testing.T) {
 			AllowAutoTopicCreation: true,
 		},
 	}
-	ctx, _ := context.WithTimeout(context.Background(), time.Minute*5)
-	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
+	ctx, client := util.StartGrpc(logger, cfg, addr)
 
-	_, grpcServer, _ := instrument.GetGrpcServer("Mock service", addr, logger)
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
-
-	if err != nil {
-		logger.Errorf(ctx, err.Error())
-	}
-
-	client := filepb.NewIngestFileServiceClient(conn)
-	csvFh := test.NewInputFileHandlers(logger)
-
+	csvFh := clientPb.NewInputFileHandlers(logger)
 	schemaType := "PROTO"
 	orgProtoTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	r := kafka.NewReader(kafka.ReaderConfig{
