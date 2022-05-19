@@ -3,19 +3,18 @@ package integration_test
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	avro "file_reader/avro_gencode"
 	"file_reader/src"
-	"file_reader/src/config"
 	"file_reader/src/instrument"
-	"file_reader/src/log"
-	"file_reader/src/pkg/proto"
-	protoSrc "file_reader/src/third_party/protobuf/srclient"
-	clientPb "file_reader/test/client"
+	zaplogger "file_reader/src/log"
+	"file_reader/src/pkg/validation"
+	"file_reader/src/protos/onboarding"
+	"file_reader/src/third_party/protobuf"
+
 	"file_reader/test/env"
 	util "file_reader/test/integration"
-	"time"
 
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -50,56 +49,29 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 func TestConsumeS3CsvOrganization(t *testing.T) {
 	// set env
 	closer := env.EnvSetter(map[string]string{
-		"BROKERS":                  "localhost:9092",
-		"PROTO_SCHEMA_DIRECTORY":   "protos/onboarding",
-		"SCHEMA_CLIENT_ENDPOINT":   "http://localhost:8081",
-		"ORGANIZATION_PROTO_TOPIC": uuid.NewString(),
-		"DOWNLOAD_DIRECTORY":       "./" + uuid.NewString(),
+		"BROKERS":                       "localhost:9092",
+		"PROTO_SCHEMA_DIRECTORY":        "protos/onboarding",
+		"SCHEMA_CLIENT_ENDPOINT":        "http://localhost:8081",
+		"ORGANIZATION_PROTO_TOPIC":      uuid.NewString(),
+		"DOWNLOAD_DIRECTORY":            "./" + uuid.NewString(),
+		"ORGANIZATION_GROUP_ID":         uuid.NewString(),
+		"S3_FILE_CREATED_UPDATED_TOPIC": uuid.NewString(),
+		"AWS_DEFAULT_REGION":            "eu-west-1",
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+
 
-	// get grpc service ready
-	l, _ := zap.NewDevelopment()
+	l := zap.NewNop()
 
-	logger := log.Wrap(l)
+	logger := zaplogger.Wrap(l)
 
-	Logger := config.Logger{
-		DisableCaller:     false,
-		DisableStacktrace: false,
-		Encoding:          "json",
-		Level:             "info",
-	}
-	addr := instrument.GetAddressForGrpc()
-
-	cfg := &config.Config{
-		Server: config.Server{Port: addr, Development: true},
-		Logger: Logger,
-		Kafka: config.Kafka{
-			Brokers:                instrument.GetBrokers(),
-			DialTimeout:            int(3 * time.Minute),
-			MaxAttempts:            3,
-			AllowAutoTopicCreation: true,
-		},
-	}
-
-	// start grpc service
-	ctx, client := util.StartGrpc(logger, cfg, addr)
-
-	csvFh := clientPb.NewInputFileHandlers(logger)
-
-	// proto schema registry
-	protoSRC := proto.GetNewSchemaRegistry(
-		protoSrc.NewClient(protoSrc.WithURL(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT"))),
-		context.Background(),
-	)
-
+	ctx := context.Background()
 	// avros schema registry
 	schemaRegistryClient := &src.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT")),
 	}
 
-	s3FileCreationTopic := "S3FileCreatedUpdated"
+	s3FileCreationTopic := instrument.MustGetEnv("S3_FILE_CREATED_UPDATED_TOPIC")
 	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
 	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaIdBytes(schemaBody, s3FileCreationTopic)
 
@@ -175,53 +147,37 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	)
 	assert.Nil(t, err, "error writing message to topic")
 
-	// Read file-create message off kafka topic
-	kafkaReader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     brokerAddrs,
-		GroupID:     os.Getenv("ORGANIZATION_GROUP_ID"),
+	// start consumer
+	go util.StartFileCreateConsumer(ctx, logger)
+
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:     []string{"localhost:9092"},
+		GroupID:     "consumer-group-" + uuid.NewString(),
+		Topic:       instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"),
 		StartOffset: kafka.LastOffset,
-		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 	})
 
-	msg, err := kafkaReader.ReadMessage(ctx)
-	if err != nil {
-		t.Errorf("could not read message ", err.Error())
-	}
-	t.Log("received message: ", string(msg.Value))
-
-	// Deserialize file create message
-	schemaIdBytes := msg.Value[1:5]
-	schemaId := int(binary.BigEndian.Uint32(schemaIdBytes))
-	schema, err := schemaRegistryClient.GetSchema(schemaId)
-	if err != nil {
-		t.Errorf("could not retrieve schema with id ", schemaId, err.Error())
-	}
-	r := bytes.NewReader(msg.Value[5:])
-	s3FileCreated, err := avro.DeserializeS3FileCreatedFromSchema(r, schema)
-	if err != nil {
-		t.Errorf("could not deserialize message ", err.Error())
-	}
-
-	// For now have the s3 downloader write to disk
-	outputDir := instrument.MustGetEnv("DOWNLOAD_DIRECTORY")
-	file, err := os.Create(outputDir + s3FileCreated.Payload.Key)
-	if err != nil {
-		logger.Error(ctx, err)
-		continue
-	}
-	defer file.Close()
+	serde := protobuf.NewProtoSerDe()
+	orgOutput := &onboarding.Organization{}
 
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
-		orgOutput, err := avro.DeserializeOrganization(bytes.NewReader(msg.Value[5:]))
-		assert.Nil(t, err, "error deserialising message to org")
+
+		_, err = serde.Deserialize(msg.Value, orgOutput)
+
+		assert.Nil(t, err, "error deserializing message from topic")
+
 		t.Log(orgOutput)
 
-		assert.Equal(t, trackingId, orgOutput.Metadata.Tracking_id)
+		validateTrackingId := validation.ValidateTrackingId{Uuid: orgOutput.Metadata.TrackingId.Value}
+
+		err = validation.UUIDValidate(validateTrackingId)
+
+		assert.Nil(t, err, "UUID is invalid")
 
 		orgInput := orgs[i]
-		assert.Equal(t, orgInput[0], orgOutput.Payload.Guid)
-		assert.Equal(t, orgInput[1], orgOutput.Payload.Organization_name)
+		assert.Equal(t, orgInput[0], orgOutput.Payload.Uuid.Value)
+		assert.Equal(t, orgInput[1], orgOutput.Payload.Name.Value)
 	}
 }
