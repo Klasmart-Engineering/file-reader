@@ -40,7 +40,6 @@ func (s *HealthServer) Watch(in *healthpb.HealthCheckRequest, stream healthgrpc.
 }
 
 // SetServingStatus is called when need to reset the serving status of a service
-// or insert a new service entry into the statusMap.
 func (s *HealthServer) SetServingStatus(service string, status healthpb.HealthCheckResponse_ServingStatus) {
 	atomic.AddInt64(&s.ops, 1)
 	s.status = status
