@@ -2,14 +2,14 @@ package healthcheck
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 
 	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 type HealthServer struct {
-	mu     sync.Mutex
+	ops    int64
 	status healthpb.HealthCheckResponse_ServingStatus
 }
 
@@ -20,8 +20,7 @@ func NewHealthServer() *HealthServer {
 }
 
 func (s *HealthServer) Check(ctx context.Context, in *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	atomic.AddInt64(&s.ops, 1)
 	if in.Service == "" {
 		// check the server overall health status.
 		return &healthpb.HealthCheckResponse{
@@ -34,6 +33,7 @@ func (s *HealthServer) Check(ctx context.Context, in *healthpb.HealthCheckReques
 }
 
 func (s *HealthServer) Watch(in *healthpb.HealthCheckRequest, stream healthgrpc.Health_WatchServer) error {
+	atomic.AddInt64(&s.ops, 1)
 	return stream.Send(&healthgrpc.HealthCheckResponse{
 		Status: healthgrpc.HealthCheckResponse_SERVING,
 	})
@@ -42,7 +42,7 @@ func (s *HealthServer) Watch(in *healthpb.HealthCheckRequest, stream healthgrpc.
 // SetServingStatus is called when need to reset the serving status of a service
 // or insert a new service entry into the statusMap.
 func (s *HealthServer) SetServingStatus(service string, status healthpb.HealthCheckResponse_ServingStatus) {
-	s.mu.Lock()
+	atomic.AddInt64(&s.ops, 1)
 	s.status = status
-	s.mu.Unlock()
+
 }
