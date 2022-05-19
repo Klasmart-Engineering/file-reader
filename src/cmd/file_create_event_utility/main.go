@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
@@ -33,7 +34,7 @@ func main() {
 		C: srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 	}
 	s3FileCreationTopic := "S3FileCreatedUpdated"
-	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
+	schemaBody := avro.NewS3FileCreated().Schema()
 	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaIdBytes(schemaBody, s3FileCreationTopic)
 
 	// Encode file_created message using schema
@@ -59,7 +60,7 @@ func main() {
 	recordValue = append(recordValue, valueBytes...)
 
 	// Put the message on the file_created topic
-	brokerAddrs := []string{os.Getenv("BROKERS")}
+	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
 	w := kafka.Writer{
 		Addr:                   kafka.TCP(brokerAddrs...),
 		Topic:                  s3FileCreationTopic,
