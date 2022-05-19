@@ -15,10 +15,13 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-var s3key = ""              // This should match to the file uploaded to S3
-var trackingId = ""         // This will appear in the organization messages produced by the code, it should be the same coming out as going in
-var bucket = "organization" // This can be anything as long as it is created beforehand
+var trackingId = "testtrackingid" // This can be changed to whatever you want. It will appear in the organization messages and should still be the same as what you put here
 
+// These two should correspond to the Key and Bucket on localstack for the csv you are testing
+var s3key = "organization.csv"
+var bucket = "organization"
+
+// No need to change these two
 var awsRegion = os.Getenv("AWS_DEFAULT_REGION")
 var content_type = "text/csv" // Current implementation attempts to ingest csv as a default case, and there are not other file types implemented, so this won't change behavior
 
