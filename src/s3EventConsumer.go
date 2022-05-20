@@ -7,20 +7,13 @@ import (
 	"encoding/csv"
 	avro "file_reader/avro_gencode"
 	"file_reader/src/instrument"
-<<<<<<< HEAD
-	"file_reader/src/log"
 	zaplogger "file_reader/src/log"
-	"file_reader/src/pkg/proto"
-=======
-	zaplogger "file_reader/src/log"
->>>>>>> 68f8cec (Feat/csi 340 consume csv creation event avro (#27))
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 )
 
