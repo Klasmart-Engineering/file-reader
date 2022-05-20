@@ -70,7 +70,6 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 		default:
 			reader = csv.NewReader(f)
 		}
-
 		config := proto.Config{
 			BrokerAddrs: c.cfg.Kafka.Brokers,
 			Reader:      reader,
