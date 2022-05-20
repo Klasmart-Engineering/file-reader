@@ -7,9 +7,13 @@ import (
 	"encoding/csv"
 	avro "file_reader/avro_gencode"
 	"file_reader/src/instrument"
+<<<<<<< HEAD
 	"file_reader/src/log"
 	zaplogger "file_reader/src/log"
 	"file_reader/src/pkg/proto"
+=======
+	zaplogger "file_reader/src/log"
+>>>>>>> 68f8cec (Feat/csi 340 consume csv creation event avro (#27))
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -121,32 +125,10 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				Logger:      logger,
 			}
 
-			schemaType := instrument.MustGetEnv("SCHEMA_TYPE")
-			switch schemaType {
-			case "AVRO":
-
-				err = operation.IngestFile(ctx, ingestFileConfig)
-				if err != nil {
-					logger.Error(ctx, err)
-					return
-				}
-			case "PROTO":
-
-				defer f.Close()
-				config := proto.Config{
-					Topic:       instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"),
-					BrokerAddrs: instrument.GetBrokers(),
-					Reader:      file,
-					Context:     context.Background(),
-					Logger:      &log.ZapLogger{},
-				}
-				trackingId := uuid.NewString()
-				fileTypeName := "CSV"
-				errorStr := proto.OrganizationProto.IngestFilePROTO(config, fileTypeName, trackingId)
-				if errorStr != "[]" {
-					logger.Error(ctx, err)
-					return
-				}
+			err = operation.IngestFile(ctx, ingestFileConfig)
+			if err != nil {
+				logger.Error(ctx, err)
+				return
 			}
 		}
 	}
