@@ -3,19 +3,16 @@ package grpc
 import (
 	"context"
 	"encoding/csv"
-	"file_reader/src"
 	"file_reader/src/config"
-	"file_reader/src/instrument"
 	"file_reader/src/log"
 	proto "file_reader/src/pkg/proto"
+	"file_reader/src/pkg/reader"
 	"file_reader/src/protos/inputfile"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/google/uuid"
-	"github.com/riferrei/srclient"
-	"github.com/segmentio/kafka-go"
 )
 
 // ingestFileService grpc service
@@ -31,8 +28,7 @@ func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *confi
 	return &IngestFileService{ctx: ctx, logger: logger, cfg: cfg}
 }
 
-func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, schemaType string) (erroStr string) {
-	// ToDo: include tracking id in proto file?
+func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, schemaType string, entity string) (erroStr string) {
 	trackingId := uuid.NewString()
 	//Setup
 	c.logger.Infof(c.ctx, "Processing input file in ", filePath)
@@ -49,15 +45,10 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	// Ingest file depending on schema type
 	switch schemaType {
 	case "AVROS":
-		schemaRegistryClient := &src.SchemaRegistry{
-			C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
-		}
-		// Compose File reader for organization
-		var Organization = src.Operation{
-			Topic:         src.OrganizationTopic,
-			Key:           "",
-			SchemaIDBytes: src.GetOrganizationSchemaIdBytes(schemaRegistryClient),
-			RowToSchema:   src.RowToOrganization,
+
+		/*schemaRegistryClient := &src.SchemaRegistry{
+			C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
+			IdSchemaMap: make(map[int]string),
 		}
 		ingestFileConfig := src.IngestFileConfig{
 			Reader: csv.NewReader(f),
@@ -69,20 +60,29 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			Tracking_id: trackingId,
 			Logger:      c.logger,
 		}
-		Organization.IngestFile(c.ctx, ingestFileConfig)
-	case "PROTO":
+		operationMap := Create
+		src.AvrosOperationMap[entity].IngestFile(c.ctx, ingestFileConfig)
+		*/
+
+	default:
+		var reader reader.Reader
+		switch fileTypeName {
+		default:
+			reader = csv.NewReader(f)
+		}
+
 		config := proto.Config{
-			Topic:       instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"),
 			BrokerAddrs: c.cfg.Kafka.Brokers,
-			Reader:      f,
+			Reader:      reader,
 			Context:     context.Background(),
 			Logger:      c.logger,
 		}
-		errorStr := proto.OrganizationProto.IngestFilePROTO(config, fileTypeName, trackingId)
+		operationMap := proto.CreateOperationMapProto()
+		errorStr := operationMap[entity].IngestFilePROTO(config, trackingId)
 		return errorStr
 	}
 
-	return ""
+	return "[]"
 }
 
 // Ingest a new input file
@@ -113,27 +113,22 @@ func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_I
 
 		t := req.GetType().String()
 
-		switch t {
+		// process organization
+		if errStr := c.processInputFile(filePath, fileTypeName, "PROTO", t); errStr != "" {
+			if errStr != "[]" {
+				c.logger.Errorf(c.ctx, "Failed to process csv file: %s, %s", filePath, errStr)
 
-		case "ORGANIZATION":
-
-			// process organization
-			if errStr := c.processInputFile(filePath, fileTypeName, "PROTO"); errStr != "" {
-				if errStr != "[]" {
-					c.logger.Errorf(c.ctx, "Failed to process csv file: %s, %s", filePath, errStr)
-
-					e := &inputfile.InputFileError{
-						FileId:  fileId,
-						Message: []string{"Failed to process csv file", fmt.Sprint("Error: %s", errStr)},
-					}
-
-					// Append new error message
-					errors = append(errors, e)
+				e := &inputfile.InputFileError{
+					FileId:  fileId,
+					Message: []string{"Failed to process csv file", fmt.Sprint("Error: %s", errStr)},
 				}
 
+				// Append new error message
+				errors = append(errors, e)
 			}
 
 		}
+
 	}
 }
 
@@ -165,23 +160,17 @@ func (c *IngestFileService) IngestFileAVROS(stream inputfile.IngestFileService_I
 
 		t := req.GetType().String()
 
-		switch t {
+		// process organization
+		if errStr := c.processInputFile(filePath, fileTypeName, "AVROS", t); errStr != "" {
+			c.logger.Errorf(c.ctx, "Failed to process input file: %s, %s", filePath, errStr)
 
-		case "ORGANIZATION":
-
-			// process organization
-			if errStr := c.processInputFile(filePath, fileTypeName, "AVROS"); errStr != "" {
-				c.logger.Errorf(c.ctx, "Failed to process input file: %s, %s", filePath, errStr)
-
-				e := &inputfile.InputFileError{
-					FileId:  fileId,
-					Message: []string{"Failed to process input file", fmt.Sprint("Error: %s", errStr)},
-				}
-
-				// Append new error message
-				errors = append(errors, e)
-
+			e := &inputfile.InputFileError{
+				FileId:  fileId,
+				Message: []string{"Failed to process input file", fmt.Sprintf("Error: %s", errStr)},
 			}
+
+			// Append new error message
+			errors = append(errors, e)
 
 		}
 	}

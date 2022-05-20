@@ -6,15 +6,7 @@ import (
 	"os"
 )
 
-const (
-	orgProtoSchemaFileName = "onboarding.proto"
-)
-
-var OrganizationProto = Operation{
-	rowToProtoSchema: rowToOrganizationProto,
-}
-
-func rowToOrganizationProto(row []string, trackingId string) (*orgPb.Organization, error) {
+func RowToOrganization(row []string, trackingId string) (interface{}, error) {
 	md := orgPb.Metadata{
 		OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
 		Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},

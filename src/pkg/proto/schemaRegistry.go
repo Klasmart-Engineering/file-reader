@@ -12,26 +12,22 @@ import (
 
 var cachingEnabled = true
 
-type schemaRegistry struct {
+type SchemaRegistry struct {
 	c           srclient.Client
 	ctx         context.Context
 	IdSchemaMap map[int]string
 }
 
-func GetNewSchemaRegistry(c srclient.Client, ctx context.Context) *schemaRegistry {
-	return &schemaRegistry{
-		c:   c,
-		ctx: ctx,
-	}
-}
-
-var schemaRegistryClient = &schemaRegistry{
+var schemaRegistryClient = &SchemaRegistry{
 	c:           srclient.NewClient(srclient.WithURL(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT"))),
 	ctx:         context.Background(),
 	IdSchemaMap: make(map[int]string),
 }
 
-func (client *schemaRegistry) GetSchemaID(topic string) int {
+func GetSchemaRegistryClient() *SchemaRegistry {
+	return schemaRegistryClient
+}
+func (client *SchemaRegistry) GetSchemaID(topic string) int {
 
 	// Retrieve the lastest schema
 	schema, err := schemaRegistryClient.c.GetLatestSchema(schemaRegistryClient.ctx, topic)
@@ -52,14 +48,14 @@ func (client *schemaRegistry) GetSchemaID(topic string) int {
 
 }
 
-func (client *schemaRegistry) GetSchemaIdBytes(schemaID int) []byte {
+func (client *SchemaRegistry) GetSchemaIdBytes(schemaID int) []byte {
 
 	schemaIDBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schemaID))
 	return schemaIDBytes
 }
 
-func (client *schemaRegistry) GetSchema(schemaId int) string {
+func (client *SchemaRegistry) GetSchema(schemaId int) string {
 	// Gets schema from local cache if exists, otherwise from schema registry
 	if _, ok := client.IdSchemaMap[schemaId]; !ok {
 		schema, err := client.c.GetSchemaByID(schemaRegistryClient.ctx, schemaId)

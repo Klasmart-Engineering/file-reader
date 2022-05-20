@@ -6,14 +6,11 @@ import (
 	avro "file_reader/avro_gencode"
 	"file_reader/src"
 	"file_reader/src/instrument"
-	zaplogger "file_reader/src/log"
+	zapLogger "file_reader/src/log"
 	"file_reader/src/pkg/validation"
 	"file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
-
-	"file_reader/test/env"
 	util "file_reader/test/integration"
-
 	"log"
 	"os"
 	"strconv"
@@ -47,42 +44,23 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 }
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
-	// set env
-	closer := env.EnvSetter(map[string]string{
-		"BROKERS":                       "localhost:9092",
-		"PROTO_SCHEMA_DIRECTORY":        "protos/onboarding",
-		"SCHEMA_CLIENT_ENDPOINT":        "http://localhost:8081",
-		"ORGANIZATION_PROTO_TOPIC":      uuid.NewString(),
-		"DOWNLOAD_DIRECTORY":            "./" + uuid.NewString(),
-		"ORGANIZATION_GROUP_ID":         uuid.NewString(),
-		"S3_FILE_CREATED_UPDATED_TOPIC": uuid.NewString(),
-		"AWS_DEFAULT_REGION":            "eu-west-1",
-	})
 
-	defer t.Cleanup(closer) // In Go 1.14+
-
-	l := zap.NewNop()
-
-	logger := zaplogger.Wrap(l)
-
-	ctx := context.Background()
-	// avros schema registry
 	schemaRegistryClient := &src.SchemaRegistry{
-		C: srclient.CreateSchemaRegistryClient(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT")),
+		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 	}
-
-	s3FileCreationTopic := instrument.MustGetEnv("S3_FILE_CREATED_UPDATED_TOPIC")
+	s3FileCreationTopic := "S3FileCreatedUpdated"
 	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
 	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaIdBytes(schemaBody, s3FileCreationTopic)
-
 	kafkakey := ""
 	brokerAddrs := []string{"localhost:9092"}
 
 	awsRegion := "eu-west-1"
 
 	bucket := "organization"
-
 	s3key := "organization.csv"
+
+	ctx := context.Background()
+
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Profile: "localstack",
 		Config: aws.Config{
@@ -146,6 +124,9 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		},
 	)
 	assert.Nil(t, err, "error writing message to topic")
+
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
 
 	// start consumer
 	go util.StartFileCreateConsumer(ctx, logger)

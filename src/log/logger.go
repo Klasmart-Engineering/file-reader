@@ -54,7 +54,7 @@ func (l *ZapLogger) Error(ctx context.Context, i ...interface{}) {
 }
 
 func (l *ZapLogger) Errorf(ctx context.Context, s string, i ...interface{}) {
-	l.WithCtxValue(ctx).Sugar().Error(fmt.Sprintf(s, i...))
+	l.WithCtxValue(ctx).Sugar().Errorf(fmt.Sprintf(s, i...))
 }
 
 func (l *ZapLogger) Fatal(ctx context.Context, i ...interface{}) {

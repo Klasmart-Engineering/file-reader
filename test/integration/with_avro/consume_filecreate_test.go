@@ -5,6 +5,8 @@ import (
 	"context"
 	avro "file_reader/avro_gencode"
 	"file_reader/src"
+	zapLogger "file_reader/src/log"
+	util "file_reader/test/integration"
 	"log"
 	"os"
 	"strconv"
@@ -19,6 +21,7 @@ import (
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
@@ -116,6 +119,12 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		},
 	)
 	assert.Nil(t, err, "error writing message to topic")
+
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
+
+	// start consumer
+	go util.StartFileCreateConsumer(ctx, logger)
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},

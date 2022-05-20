@@ -8,12 +8,15 @@ import (
 	avro "file_reader/avro_gencode"
 	"file_reader/src/instrument"
 	zaplogger "file_reader/src/log"
+	"file_reader/src/pkg/proto"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -48,7 +51,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			// Read file-create message off kafka topic
 			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
-				logger.Error(ctx, "could not read message ", err.Error())
+				logger.Info(ctx, "could not read message ", err.Error())
 				continue
 			}
 			logger.Info(ctx, "received message: ", string(msg.Value))
@@ -100,28 +103,53 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				reader = csv.NewReader(f)
 			}
 
-			// Map to operation based on operation type
-			operation, exists := config.OperationMap[s3FileCreated.Payload.Operation_type]
-			if !exists {
-				logger.Error(ctx, "invalid operation_type on file create message ")
-				continue
-			}
-			ingestFileConfig := IngestFileConfig{
-				Reader: reader,
-				KafkaWriter: kafka.Writer{
-					Addr:                   kafka.TCP(config.OutputBrokerAddrs...),
-					Topic:                  operation.Topic,
-					Logger:                 logger,
-					AllowAutoTopicCreation: instrument.IsEnv("TEST"),
-				},
-				Tracking_id: s3FileCreated.Metadata.Tracking_id,
-				Logger:      logger,
-			}
+			schemaType := instrument.MustGetEnv("SCHEMA_TYPE")
 
-			err = operation.IngestFile(ctx, ingestFileConfig)
-			if err != nil {
-				logger.Error(ctx, err)
-				return
+			switch schemaType {
+			case "PROTO":
+				operationMap := proto.CreateOperationMapProto()
+				operation, exists := operationMap[strings.ToUpper(s3FileCreated.Payload.Operation_type)]
+				if !exists {
+					logger.Info(ctx, "invalid operation_type on file create message ")
+					continue
+				}
+
+				protoCfg := proto.Config{
+					BrokerAddrs: instrument.GetBrokers(),
+					Reader:      reader,
+					Context:     context.Background(),
+					Logger:      config.Logger,
+				}
+				trackingId := uuid.NewString()
+				errStr := operation.IngestFilePROTO(protoCfg, trackingId)
+				if errStr != "[]" {
+					logger.Info(ctx, err)
+					return
+				}
+
+			default:
+				// Map to operation based on operation type
+				operation, exists := config.OperationMap[s3FileCreated.Payload.Operation_type]
+				if !exists {
+					logger.Info(ctx, "invalid operation_type on file create message ")
+					continue
+				}
+				ingestFileConfig := IngestFileConfig{
+					Reader: reader,
+					KafkaWriter: kafka.Writer{
+						Addr:                   kafka.TCP(config.OutputBrokerAddrs...),
+						Topic:                  operation.Topic,
+						Logger:                 logger,
+						AllowAutoTopicCreation: instrument.IsEnv("TEST"),
+					},
+					Tracking_id: s3FileCreated.Metadata.Tracking_id,
+					Logger:      logger,
+				}
+				err = operation.IngestFile(ctx, ingestFileConfig)
+				if err != nil {
+					logger.Info(ctx, err)
+					return
+				}
 			}
 		}
 	}
