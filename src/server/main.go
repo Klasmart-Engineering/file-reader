@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"file_reader/internal/filereader"
 	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/instrument"
@@ -70,47 +71,55 @@ func grpcServerInstrument(ctx context.Context, logger *zaplogger.ZapLogger) {
 }
 
 func startFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
-	schemaType := os.Getenv("SCHEMA_TYPE") // AVRO or PROTO.
-	if schemaType == "AVRO" {
-		schemaRegistryClient := &src.SchemaRegistry{
-			C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
-			IdSchemaMap: make(map[int]string),
-		}
-		brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
-		sess, err := session.NewSessionWithOptions(session.Options{
-			Profile: os.Getenv("AWS_PROFILE"),
-			Config: aws.Config{
-				Credentials: credentials.NewStaticCredentials(
-					os.Getenv("AWS_ACCESS_KEY_ID"),
-					os.Getenv("AWS_SECRET_ACCESS_KEY"),
-					"",
-				),
-				Region:           aws.String(os.Getenv("AWS_DEFAULT_REGION")),
-				Endpoint:         aws.String(os.Getenv("AWS_ENDPOINT")),
-				S3ForcePathStyle: aws.Bool(true),
-			},
-		})
-		if err != nil {
-			fmt.Printf("Failed to initialize new aws session: %v", err)
-		}
-		operationMap := src.CreateOperationMap(schemaRegistryClient)
-		var consumerConfig = src.ConsumeToIngestConfig{
-			OutputBrokerAddrs: brokerAddrs,
-			AwsSession:        sess,
-			OperationMap:      operationMap,
-			SchemaRegistry:    schemaRegistryClient,
-			OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
-			Logger:            logger,
-		}
-		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers:     brokerAddrs,
-			GroupID:     os.Getenv("ORGANIZATION_GROUP_ID"),
-			StartOffset: kafka.LastOffset,
-			Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
-		})
-
-		go src.ConsumeToIngest(ctx, r, consumerConfig)
+	schemaRegistryClient := &src.SchemaRegistry{
+		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
+		IdSchemaMap: make(map[int]string),
 	}
+
+	schemaType := os.Getenv("SCHEMA_TYPE") // AVRO or PROTO.
+	var operationMap map[string]filereader.Operation
+	switch schemaType {
+	case "AVRO":
+		operationMap = filereader.CreateOperationMapAvro(schemaRegistryClient)
+	case "PROTO":
+		operationMap = filereader.CreateOperationMapProto()
+	}
+
+	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: os.Getenv("AWS_PROFILE"),
+		Config: aws.Config{
+			Credentials: credentials.NewStaticCredentials(
+				os.Getenv("AWS_ACCESS_KEY_ID"),
+				os.Getenv("AWS_SECRET_ACCESS_KEY"),
+				"",
+			),
+			Region:           aws.String(os.Getenv("AWS_DEFAULT_REGION")),
+			Endpoint:         aws.String(os.Getenv("AWS_ENDPOINT")),
+			S3ForcePathStyle: aws.Bool(true),
+		},
+	})
+	if err != nil {
+		fmt.Printf("Failed to initialize new aws session: %v", err)
+	}
+
+	var consumerConfig = filereader.ConsumeToIngestConfig{
+		OutputBrokerAddrs: brokerAddrs,
+		AwsSession:        sess,
+		OperationMap:      operationMap,
+		SchemaRegistry:    schemaRegistryClient,
+		OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
+		Logger:            logger,
+	}
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:     brokerAddrs,
+		GroupID:     os.Getenv("ORGANIZATION_GROUP_ID"),
+		StartOffset: kafka.LastOffset,
+		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
+	})
+
+	go filereader.ConsumeToIngest(ctx, r, consumerConfig)
+
 }
 
 func main() {

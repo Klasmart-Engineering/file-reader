@@ -3,6 +3,7 @@ package integration_test
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	avro "file_reader/avro_gencode"
 	"file_reader/src"
 	"log"
@@ -42,14 +43,16 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	}
 	s3FileCreationTopic := "S3FileCreatedUpdated"
 	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
-	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaIdBytes(schemaBody, s3FileCreationTopic)
+	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaId(schemaBody, s3FileCreationTopic)
+	schemaIDBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(schemaIDBytes, uint32(s3FileCreationSchemaId))
 	kafkakey := ""
 	brokerAddrs := []string{"localhost:9092"}
 
 	awsRegion := "eu-west-1"
 
 	bucket := "organization"
-	s3key := "organization.csv"
+	s3key := "organization1.csv"
 
 	ctx := context.Background()
 
@@ -99,7 +102,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	// Combine row bytes with schema id to make a record
 	var recordValue []byte
 	recordValue = append(recordValue, byte(0))
-	recordValue = append(recordValue, s3FileCreationSchemaId...)
+	recordValue = append(recordValue, schemaIDBytes...)
 	recordValue = append(recordValue, valueBytes...)
 
 	w := kafka.Writer{

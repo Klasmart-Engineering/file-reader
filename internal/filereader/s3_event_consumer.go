@@ -1,4 +1,4 @@
-package src
+package filereader
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/csv"
 	avro "file_reader/avro_gencode"
+	"file_reader/src"
 	"file_reader/src/instrument"
 	zaplogger "file_reader/src/log"
 	"os"
@@ -20,22 +21,10 @@ import (
 type ConsumeToIngestConfig struct {
 	OutputBrokerAddrs []string
 	AwsSession        *session.Session
-	SchemaRegistry    *SchemaRegistry
+	SchemaRegistry    *src.SchemaRegistry
 	OperationMap      map[string]Operation
 	OutputDirectory   string
 	Logger            *zaplogger.ZapLogger
-}
-
-func CreateOperationMap(schemaRegistryClient *SchemaRegistry) map[string]Operation {
-	// creates a map of key to Operation struct
-	return map[string]Operation{
-		"organization": {
-			Topic:         OrganizationTopic,
-			Key:           "",
-			SchemaIDBytes: GetOrganizationSchemaIdBytes(schemaRegistryClient),
-			RowToSchema:   RowToOrganization,
-		},
-	}
 }
 
 func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config ConsumeToIngestConfig) {
@@ -114,15 +103,11 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 					Logger:                 logger,
 					AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 				},
-				Tracking_id: s3FileCreated.Metadata.Tracking_id,
-				Logger:      logger,
+				TrackingId: s3FileCreated.Metadata.Tracking_id,
+				Logger:     logger,
 			}
 
-			err = operation.IngestFile(ctx, ingestFileConfig)
-			if err != nil {
-				logger.Error(ctx, err)
-				return
-			}
+			operation.IngestFile(ctx, ingestFileConfig)
 		}
 	}
 }

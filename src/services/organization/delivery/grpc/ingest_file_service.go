@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"encoding/csv"
+	"file_reader/internal/filereader"
 	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/instrument"
@@ -53,21 +54,21 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 		}
 		// Compose File reader for organization
-		var Organization = src.Operation{
-			Topic:         src.OrganizationTopic,
-			Key:           "",
-			SchemaIDBytes: src.GetOrganizationSchemaIdBytes(schemaRegistryClient),
-			RowToSchema:   src.RowToOrganization,
+		var Organization = filereader.Operation{
+			Topic:        filereader.OrganizationTopicAvro,
+			Key:          "",
+			SchemaID:     filereader.GetOrganizationSchemaId(schemaRegistryClient),
+			SerializeRow: filereader.RowToOrganizationAvro,
 		}
-		ingestFileConfig := src.IngestFileConfig{
+		ingestFileConfig := filereader.IngestFileConfig{
 			Reader: csv.NewReader(f),
 			KafkaWriter: kafka.Writer{
 				Addr:                   kafka.TCP(c.cfg.Kafka.Brokers...),
-				Topic:                  src.OrganizationTopic,
+				Topic:                  filereader.OrganizationTopicAvro,
 				AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 			},
-			Tracking_id: trackingId,
-			Logger:      c.logger,
+			TrackingId: trackingId,
+			Logger:     c.logger,
 		}
 		Organization.IngestFile(c.ctx, ingestFileConfig)
 	case "PROTO":

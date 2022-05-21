@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"file_reader/internal/filereader"
 	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/instrument"
@@ -68,8 +69,8 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	if err != nil {
 		fmt.Printf("Failed to initialize new aws session: %v", err)
 	}
-	operationMap := src.CreateOperationMap(schemaRegistryClient)
-	var consumerConfig = src.ConsumeToIngestConfig{
+	operationMap := filereader.CreateOperationMapAvro(schemaRegistryClient)
+	var consumerConfig = filereader.ConsumeToIngestConfig{
 		OutputBrokerAddrs: brokerAddrs,
 		AwsSession:        sess,
 		OperationMap:      operationMap,
@@ -84,7 +85,7 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 	})
 
-	go src.ConsumeToIngest(ctx, r, consumerConfig)
+	go filereader.ConsumeToIngest(ctx, r, consumerConfig)
 }
 
 func StartGrpc(logger *log.ZapLogger, cfg *config.Config, addr string) (context.Context, filepb.IngestFileServiceClient) {

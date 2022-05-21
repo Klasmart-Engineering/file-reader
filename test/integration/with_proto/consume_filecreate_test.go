@@ -3,16 +3,11 @@ package integration_test
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	avro "file_reader/avro_gencode"
 	"file_reader/src"
-	"file_reader/src/instrument"
-	zaplogger "file_reader/src/log"
-	"file_reader/src/pkg/validation"
 	"file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
-
-	"file_reader/test/env"
-	util "file_reader/test/integration"
 
 	"log"
 	"os"
@@ -28,7 +23,6 @@ import (
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
@@ -47,42 +41,24 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 }
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
-	// set env
-	closer := env.EnvSetter(map[string]string{
-		"BROKERS":                       "localhost:9092",
-		"PROTO_SCHEMA_DIRECTORY":        "protos/onboarding",
-		"SCHEMA_CLIENT_ENDPOINT":        "http://localhost:8081",
-		"ORGANIZATION_PROTO_TOPIC":      uuid.NewString(),
-		"DOWNLOAD_DIRECTORY":            "./" + uuid.NewString(),
-		"ORGANIZATION_GROUP_ID":         uuid.NewString(),
-		"S3_FILE_CREATED_UPDATED_TOPIC": uuid.NewString(),
-		"AWS_DEFAULT_REGION":            "eu-west-1",
-	})
-
-	defer t.Cleanup(closer) // In Go 1.14+
-
-	l := zap.NewNop()
-
-	logger := zaplogger.Wrap(l)
-
-	ctx := context.Background()
-	// avros schema registry
 	schemaRegistryClient := &src.SchemaRegistry{
-		C: srclient.CreateSchemaRegistryClient(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT")),
+		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 	}
-
-	s3FileCreationTopic := instrument.MustGetEnv("S3_FILE_CREATED_UPDATED_TOPIC")
+	s3FileCreationTopic := "S3FileCreatedUpdated"
 	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
-	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaIdBytes(schemaBody, s3FileCreationTopic)
-
+	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaId(schemaBody, s3FileCreationTopic)
+	schemaIDBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(schemaIDBytes, uint32(s3FileCreationSchemaId))
 	kafkakey := ""
 	brokerAddrs := []string{"localhost:9092"}
 
 	awsRegion := "eu-west-1"
 
 	bucket := "organization"
+	s3key := "organization1.csv"
 
-	s3key := "organization.csv"
+	ctx := context.Background()
+
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Profile: "localstack",
 		Config: aws.Config{
@@ -129,7 +105,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	// Combine row bytes with schema id to make a record
 	var recordValue []byte
 	recordValue = append(recordValue, byte(0))
-	recordValue = append(recordValue, s3FileCreationSchemaId...)
+	recordValue = append(recordValue, schemaIDBytes...)
 	recordValue = append(recordValue, valueBytes...)
 
 	w := kafka.Writer{
@@ -147,13 +123,10 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	)
 	assert.Nil(t, err, "error writing message to topic")
 
-	// start consumer
-	go util.StartFileCreateConsumer(ctx, logger)
-
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC"),
+		Topic:       "organization",
 		StartOffset: kafka.LastOffset,
 	})
 
@@ -168,13 +141,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		t.Log(orgOutput)
-
-		validateTrackingId := validation.ValidateTrackingId{Uuid: orgOutput.Metadata.TrackingId.Value}
-
-		err = validation.UUIDValidate(validateTrackingId)
-
-		assert.Nil(t, err, "UUID is invalid")
+		assert.Equal(t, trackingId, orgOutput.Metadata.TrackingId.Value)
 
 		orgInput := orgs[i]
 		assert.Equal(t, orgInput[0], orgOutput.Payload.Uuid.Value)

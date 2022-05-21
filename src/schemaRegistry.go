@@ -1,7 +1,6 @@
 package src
 
 import (
-	"encoding/binary"
 	"log"
 
 	"github.com/riferrei/srclient"
@@ -12,16 +11,13 @@ type SchemaRegistry struct {
 	IdSchemaMap map[int]string
 }
 
-func (SchemaRegistryClient *SchemaRegistry) GetSchemaIdBytes(schemaBody string, topic string) []byte {
-	// Gets byte representation of id for the schema provided
+func (SchemaRegistryClient *SchemaRegistry) GetSchemaId(schemaBody string, topic string) int {
 	schema, err := SchemaRegistryClient.C.CreateSchema(topic, schemaBody, "AVRO")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	schemaIDBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schema.ID()))
-	return schemaIDBytes
+	return schema.ID()
 }
 
 func (SchemaRegistryClient *SchemaRegistry) GetSchema(schemaId int) (string, error) {

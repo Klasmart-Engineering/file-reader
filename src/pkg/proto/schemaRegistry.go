@@ -12,37 +12,33 @@ import (
 
 var cachingEnabled = true
 
-type schemaRegistry struct {
+type SchemaRegistry struct {
 	c           srclient.Client
 	ctx         context.Context
 	IdSchemaMap map[int]string
 }
 
-func GetNewSchemaRegistry(c srclient.Client, ctx context.Context) *schemaRegistry {
-	return &schemaRegistry{
-		c:   c,
-		ctx: ctx,
-	}
-}
-
-var schemaRegistryClient = &schemaRegistry{
+var SchemaRegistryClient = &SchemaRegistry{
 	c:           srclient.NewClient(srclient.WithURL(instrument.MustGetEnv("SCHEMA_CLIENT_ENDPOINT"))),
 	ctx:         context.Background(),
 	IdSchemaMap: make(map[int]string),
 }
 
-func (client *schemaRegistry) GetSchemaID(topic string) int {
+func GetSchemaRegistryClient() *SchemaRegistry {
+	return SchemaRegistryClient
+}
+func (client *SchemaRegistry) GetSchemaID(topic string) int {
 
 	// Retrieve the lastest schema
-	schema, err := schemaRegistryClient.c.GetLatestSchema(schemaRegistryClient.ctx, topic)
+	schema, err := SchemaRegistryClient.c.GetLatestSchema(SchemaRegistryClient.ctx, topic)
 
 	// If it does not exist then register a new one and cache it
 
 	if schema == nil || err != nil {
 
-		registrator := protobuf.NewSchemaRegistrator(schemaRegistryClient.c)
+		registrator := protobuf.NewSchemaRegistrator(SchemaRegistryClient.c)
 
-		schema, err = registrator.RegisterValue(schemaRegistryClient.ctx, topic, &onboarding.Organization{})
+		schema, err = registrator.RegisterValue(SchemaRegistryClient.ctx, topic, &onboarding.Organization{})
 
 		if err != nil {
 			log.Fatal(err)
@@ -52,17 +48,17 @@ func (client *schemaRegistry) GetSchemaID(topic string) int {
 
 }
 
-func (client *schemaRegistry) GetSchemaIdBytes(schemaID int) []byte {
+func (client *SchemaRegistry) GetSchemaIdBytes(schemaID int) []byte {
 
 	schemaIDBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schemaID))
 	return schemaIDBytes
 }
 
-func (client *schemaRegistry) GetSchema(schemaId int) string {
+func (client *SchemaRegistry) GetSchema(schemaId int) string {
 	// Gets schema from local cache if exists, otherwise from schema registry
 	if _, ok := client.IdSchemaMap[schemaId]; !ok {
-		schema, err := client.c.GetSchemaByID(schemaRegistryClient.ctx, schemaId)
+		schema, err := client.c.GetSchemaByID(SchemaRegistryClient.ctx, schemaId)
 		if err != nil {
 			panic("could not get consumer schema " + err.Error())
 		}
