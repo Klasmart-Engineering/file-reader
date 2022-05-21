@@ -3,7 +3,9 @@ package grpc
 import (
 	"context"
 	"encoding/csv"
+	"file_reader/src"
 	"file_reader/src/config"
+	"file_reader/src/instrument"
 	"file_reader/src/log"
 	proto "file_reader/src/pkg/proto"
 	"file_reader/src/pkg/reader"
@@ -13,6 +15,8 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"github.com/riferrei/srclient"
+	"github.com/segmentio/kafka-go"
 )
 
 // ingestFileService grpc service
@@ -46,7 +50,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	switch schemaType {
 	case "AVROS":
 
-		/*schemaRegistryClient := &src.SchemaRegistry{
+		schemaRegistryClient := &src.SchemaRegistry{
 			C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 			IdSchemaMap: make(map[int]string),
 		}
@@ -60,9 +64,9 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			Tracking_id: trackingId,
 			Logger:      c.logger,
 		}
-		operationMap := Create
-		src.AvrosOperationMap[entity].IngestFile(c.ctx, ingestFileConfig)
-		*/
+		operationMap := src.CreateOperationMap(schemaRegistryClient)
+
+		operationMap[entity].IngestFile(c.ctx, ingestFileConfig)
 
 	default:
 		var reader reader.Reader
