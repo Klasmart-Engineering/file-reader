@@ -51,7 +51,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	switch schemaType {
 	case "AVROS":
 		schemaRegistryClient := &src.SchemaRegistry{
-			C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
+			C: srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 		}
 		// Compose File reader for organization
 		var Organization = filereader.Operation{
