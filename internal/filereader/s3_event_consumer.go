@@ -9,13 +9,16 @@ import (
 	"file_reader/src"
 	"file_reader/src/instrument"
 	zaplogger "file_reader/src/log"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -45,12 +48,13 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			return
 		default:
 			// Read file-create message off kafka topic
+			fmt.Println("about to read")
 			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
 				logger.Error(ctx, "could not read message ", err.Error())
 				continue
 			}
-			logger.Debug(ctx, "received message: ", string(msg.Value))
+			logger.Debug(ctx, " received message: ", string(msg.Value))
 
 			// Deserialize file create message
 			schemaIdBytes := msg.Value[1:5]
@@ -86,7 +90,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				continue
 			}
 
-			logger.Info(ctx, "Downloaded", s3FileCreated.Payload.Key, numBytes, "bytes")
+			logger.Infof(ctx, "Downloaded %s %d bytes", s3FileCreated.Payload.Key, numBytes)
 			file.Close()
 			// Reopen the same file for ingest (until thought of alternative)
 			f, _ := os.Open(config.OutputDirectory + s3FileCreated.Payload.Key)
@@ -118,6 +122,58 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			}
 
 			operation.IngestFile(ctx, ingestFileConfig)
+			f.Close()
 		}
 	}
+}
+
+func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
+	schemaRegistryClient := &src.SchemaRegistry{
+		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
+		IdSchemaMap: make(map[int]string),
+	}
+
+	schemaType := os.Getenv("SCHEMA_TYPE") // AVRO or PROTO.
+	var operations Operations
+	switch schemaType {
+	case "AVRO":
+		operations = InitAvroOperations(schemaRegistryClient)
+	case "PROTO":
+		operations = InitProtoOperations()
+	}
+
+	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: os.Getenv("AWS_PROFILE"),
+		Config: aws.Config{
+			Credentials: credentials.NewStaticCredentials(
+				os.Getenv("AWS_ACCESS_KEY_ID"),
+				os.Getenv("AWS_SECRET_ACCESS_KEY"),
+				"",
+			),
+			Region:           aws.String(os.Getenv("AWS_DEFAULT_REGION")),
+			Endpoint:         aws.String(os.Getenv("AWS_ENDPOINT")),
+			S3ForcePathStyle: aws.Bool(true),
+		},
+	})
+	if err != nil {
+		fmt.Printf("Failed to initialize new aws session: %v", err)
+	}
+
+	var consumerConfig = ConsumeToIngestConfig{
+		OutputBrokerAddrs: brokerAddrs,
+		AwsSession:        sess,
+		Operations:        operations,
+		SchemaRegistry:    schemaRegistryClient,
+		OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
+		Logger:            logger,
+	}
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:     brokerAddrs,
+		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID"),
+		StartOffset: kafka.LastOffset,
+		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
+	})
+
+	go ConsumeToIngest(ctx, r, consumerConfig)
 }

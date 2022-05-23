@@ -1,23 +1,21 @@
 package filereader
 
 import (
+	"file_reader/src/instrument"
 	"file_reader/src/pkg/proto"
 	orgPb "file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
 	"os"
 )
 
-const (
-	OrganizationTopicProto = "organization-proto"
-)
-
 func InitProtoOperations() Operations {
+	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
-				Topic:        OrganizationTopicProto,
+				Topic:        orgTopic,
 				Key:          "",
-				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(OrganizationTopicProto),
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgTopic),
 				SerializeRow: RowToOrganizationProto,
 			},
 		},

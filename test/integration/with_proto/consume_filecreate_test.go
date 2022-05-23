@@ -5,9 +5,12 @@ import (
 	"context"
 	"encoding/binary"
 	avro "file_reader/avro_gencode"
+	"file_reader/internal/filereader"
 	"file_reader/src"
+	zapLogger "file_reader/src/log"
 	"file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
+	"file_reader/test/env"
 
 	"log"
 	"os"
@@ -23,6 +26,7 @@ import (
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
@@ -41,6 +45,19 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 }
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
+	// set up env variables
+	organizationProtoTopic := uuid.NewString()
+	closer := env.EnvSetter(map[string]string{
+		"ORGANIZATION_PROTO_TOPIC": organizationProtoTopic,
+	})
+
+	defer t.Cleanup(closer)
+
+	// Start consumer
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
+	filereader.StartFileCreateConsumer(context.Background(), logger)
+
 	schemaRegistryClient := &src.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 	}
@@ -74,7 +91,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	})
 	assert.Nil(t, err, "error creating aws session")
 
-	// Upload file to s3
+	// Upload file togo  s3
 	numOrgs := 5
 	file, orgs := MakeOrgsCsv(numOrgs)
 	uploader := s3manager.NewUploader(sess)
@@ -126,7 +143,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       "organization",
+		Topic:       organizationProtoTopic,
 		StartOffset: kafka.LastOffset,
 	})
 

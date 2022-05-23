@@ -5,12 +5,9 @@ import (
 	"encoding/binary"
 	avro "file_reader/avro_gencode"
 	"file_reader/src"
+	"file_reader/src/instrument"
 	"io"
 	"os"
-)
-
-const (
-	OrganizationTopicAvro = "organization"
 )
 
 type avroCodec interface {
@@ -36,18 +33,19 @@ func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
 	return recordValue
 }
 
-func GetOrganizationSchemaId(schemaRegistryClient *src.SchemaRegistry) int {
+func GetOrganizationSchemaId(schemaRegistryClient *src.SchemaRegistry, organizationTopic string) int {
 	schemaBody := avro.Organization.Schema(avro.NewOrganization())
-	return schemaRegistryClient.GetSchemaId(schemaBody, OrganizationTopicAvro)
+	return schemaRegistryClient.GetSchemaId(schemaBody, organizationTopic)
 }
 
 func InitAvroOperations(schemaRegistryClient *src.SchemaRegistry) Operations {
+	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
-				Topic:        OrganizationTopicAvro,
+				Topic:        organizationTopic,
 				Key:          "",
-				SchemaID:     GetOrganizationSchemaId(schemaRegistryClient),
+				SchemaID:     GetOrganizationSchemaId(schemaRegistryClient, organizationTopic),
 				SerializeRow: RowToOrganizationAvro,
 			},
 		},

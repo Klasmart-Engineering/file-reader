@@ -55,29 +55,14 @@ var testCases = []struct {
 		},
 		expectedRes: filepb.InputFileResponse{Success: true, Errors: nil},
 	},
-	{
-		name: "one invalid uuid",
-		req: []*filepb.InputFileRequest{
-
-			&filepb.InputFileRequest{
-				Type:      filepb.Type_ORGANIZATION,
-				InputFile: &filepb.InputFile{FileId: "file_id2", Path: "data/bad/invalid_uuid.csv", InputFileType: filepb.InputFileType_CSV},
-			},
-		},
-		expectedRes: filepb.InputFileResponse{Success: false, Errors: nil},
-	},
 }
 
-func getCSVToProtos(entity string, filePath string, isGood bool) ([]*onboarding.Organization, error) {
+func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization, error) {
 	var res []*onboarding.Organization
 	var content []byte
 	switch entity {
 	case "ORGANIZATION":
-		if isGood {
-			content, _ = testGoodDataDir.ReadFile(filePath)
-		} else {
-			content, _ = testBadDataDir.ReadFile(filePath)
-		}
+		content, _ = testGoodDataDir.ReadFile(filePath)
 
 		reader := csv.NewReader(bytes.NewBuffer(content))
 		for {
@@ -88,11 +73,6 @@ func getCSVToProtos(entity string, filePath string, isGood bool) ([]*onboarding.
 				}
 			}
 
-			validateUUID := validation.ValidatedOrganizationID{Uuid: row[0]}
-			err = validation.UUIDValidate(validateUUID)
-			if err != nil {
-				continue
-			}
 			md := orgPb.Metadata{
 				OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
 				Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},
@@ -119,7 +99,7 @@ func TestFileProcessingServer(t *testing.T) {
 		"GRPC_SERVER_PORT":         "6000",
 		"PROTO_SCHEMA_DIRECTORY":   "protos/onboarding",
 		"SCHEMA_CLIENT_ENDPOINT":   "http://localhost:8081",
-		"ORGANIZATION_PROTO_TOPIC": "orgprototest", //uuid.NewString(),
+		"ORGANIZATION_PROTO_TOPIC": uuid.NewString(),
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+
@@ -171,54 +151,6 @@ func TestFileProcessingServer(t *testing.T) {
 			res := csvFh.ProcessRequests(ctx, client, schemaType, testCase.req)
 			switch testCase.name {
 
-			case "one invalid uuid":
-				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
-				g.Expect(res.Success).To(gomega.BeFalse())
-				g.Expect(res.Errors).NotTo(gomega.BeNil(), "Error should not be nil")
-				g.Expect(len(res.Errors) == 1).To(gomega.BeTrue())
-
-				errorMsgs := []string(res.Errors[0].Message)
-				g.Expect(len(errorMsgs) == 2).To(gomega.BeTrue())
-				g.Expect(errorMsgs[0]).To(gomega.ContainSubstring("Failed to process csv file"))
-				g.Expect(errorMsgs[1]).To(gomega.ContainSubstring("Invalid UUID format"))
-				g.Expect(errorMsgs[1]).To(gomega.ContainSubstring("Row number 1 failed to process"))
-				g.Expect(errorMsgs[1]).To(gomega.ContainSubstring("Row number 3 failed to process"))
-
-				expectedValues, _ := getCSVToProtos("ORGANIZATION", "data/bad/invalid_uuid.csv", false)
-				for _, expected := range expectedValues {
-
-					msg, err := r.ReadMessage(ctx)
-
-					if err != nil {
-						t.Logf("Error deserializing message: %v\n", err)
-						break
-					}
-
-					_, err = serde.Deserialize(msg.Value, org)
-
-					if err != nil {
-						t.Logf("Error deserializing message: %v\n", err)
-						break
-					}
-
-					if err == nil {
-						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId.Value}
-						err := validation.UUIDValidate(validateTrackingId)
-						if err != nil {
-							t.Fatalf("%s", err)
-						}
-
-						g.Expect(expected.Metadata.Region.Value).To(gomega.Equal(org.Metadata.Region.Value))
-						g.Expect(expected.Metadata.OriginApplication.Value).To(gomega.Equal(org.Metadata.OriginApplication.Value))
-						g.Expect(expected.Payload.Uuid.Value).To(gomega.Equal(org.Payload.Uuid.Value))
-						g.Expect(expected.Payload.Name.Value).To(gomega.Equal(org.Payload.Name.Value))
-
-					} else {
-						t.Logf("Error consuming the message: %v (%v)\n", err, msg)
-						break
-					}
-				}
-
 			case "req ok":
 				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
 				g.Expect(res.Success).To(gomega.BeTrue())
@@ -226,14 +158,12 @@ func TestFileProcessingServer(t *testing.T) {
 				// Testing for kafka messages
 
 				ctx := context.Background()
-				serde := protobuf.NewProtoSerDe()
-				org := &onboarding.Organization{}
 
-				expectedValues, _ := getCSVToProtos("ORGANIZATION", "data/good/organization.csv", true)
+				expectedValues, _ := getCSVToProtos("ORGANIZATION", "data/good/organization.csv")
 				for _, expected := range expectedValues {
-
+					t.Log("expecting to read ", expected, " on topic ", orgProtoTopic)
 					msg, err := r.ReadMessage(ctx)
-
+					t.Log("read message", msg, err)
 					if err != nil {
 						t.Logf("Error deserializing message: %v\n", err)
 						break

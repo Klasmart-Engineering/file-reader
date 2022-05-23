@@ -3,22 +3,13 @@ package main
 import (
 	"context"
 	"file_reader/internal/filereader"
-	"file_reader/src"
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	zaplogger "file_reader/src/log"
 	filepb "file_reader/src/protos/inputfile"
-	"fmt"
-	"os"
-	"strings"
 
 	fileGrpc "file_reader/src/services/organization/delivery/grpc"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/riferrei/srclient"
-	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 
 	"google.golang.org/grpc/health"
@@ -70,58 +61,6 @@ func grpcServerInstrument(ctx context.Context, logger *zaplogger.ZapLogger) {
 
 }
 
-func startFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
-	schemaRegistryClient := &src.SchemaRegistry{
-		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
-		IdSchemaMap: make(map[int]string),
-	}
-
-	schemaType := os.Getenv("SCHEMA_TYPE") // AVRO or PROTO.
-	var operations filereader.Operations
-	switch schemaType {
-	case "AVRO":
-		operations = filereader.InitAvroOperations(schemaRegistryClient)
-	case "PROTO":
-		operations = filereader.InitProtoOperations()
-	}
-
-	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: os.Getenv("AWS_PROFILE"),
-		Config: aws.Config{
-			Credentials: credentials.NewStaticCredentials(
-				os.Getenv("AWS_ACCESS_KEY_ID"),
-				os.Getenv("AWS_SECRET_ACCESS_KEY"),
-				"",
-			),
-			Region:           aws.String(os.Getenv("AWS_DEFAULT_REGION")),
-			Endpoint:         aws.String(os.Getenv("AWS_ENDPOINT")),
-			S3ForcePathStyle: aws.Bool(true),
-		},
-	})
-	if err != nil {
-		fmt.Printf("Failed to initialize new aws session: %v", err)
-	}
-
-	var consumerConfig = filereader.ConsumeToIngestConfig{
-		OutputBrokerAddrs: brokerAddrs,
-		AwsSession:        sess,
-		Operations:        operations,
-		SchemaRegistry:    schemaRegistryClient,
-		OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
-		Logger:            logger,
-	}
-	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     brokerAddrs,
-		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID"),
-		StartOffset: kafka.LastOffset,
-		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
-	})
-
-	go filereader.ConsumeToIngest(ctx, r, consumerConfig)
-
-}
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -138,7 +77,7 @@ func main() {
 	logger := zaplogger.Wrap(l)
 
 	// Initialise Consumer for file create event
-	startFileCreateConsumer(ctx, logger)
+	filereader.StartFileCreateConsumer(ctx, logger)
 
 	// grpc Server instrument
 	grpcServerInstrument(ctx, logger)

@@ -5,7 +5,10 @@ import (
 	"context"
 	"encoding/binary"
 	avro "file_reader/avro_gencode"
+	"file_reader/internal/filereader"
 	"file_reader/src"
+	zapLogger "file_reader/src/log"
+	"file_reader/test/env"
 	"log"
 	"os"
 	"strconv"
@@ -20,6 +23,7 @@ import (
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
@@ -38,6 +42,19 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 }
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
+	// set up env variables
+	organizationAvroTopic := uuid.NewString()
+	closer := env.EnvSetter(map[string]string{
+		"ORGANIZATION_AVRO_TOPIC": organizationAvroTopic,
+	})
+
+	defer t.Cleanup(closer)
+
+	// Start consumer
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
+	filereader.StartFileCreateConsumer(context.Background(), logger)
+
 	schemaRegistryClient := &src.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 	}
@@ -123,7 +140,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       "organization",
+		Topic:       organizationAvroTopic,
 		StartOffset: kafka.LastOffset,
 	})
 	for i := 0; i < numOrgs; i++ {

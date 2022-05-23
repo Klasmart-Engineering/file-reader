@@ -44,7 +44,6 @@ func (op Operation) IngestFile(ctx context.Context, config IngestFileConfig) {
 			logger.Error(ctx, "Error serialising record to bytes", err)
 			continue
 		}
-
 		// Put the row on the topic
 		err = config.KafkaWriter.WriteMessages(
 			ctx,
