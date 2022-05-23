@@ -113,7 +113,7 @@ func startFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	}
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
-		GroupID:     os.Getenv("ORGANIZATION_GROUP_ID"),
+		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID"),
 		StartOffset: kafka.LastOffset,
 		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 	})
