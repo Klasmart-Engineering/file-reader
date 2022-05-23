@@ -49,7 +49,6 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			return
 		default:
 			// Read file-create message off kafka topic
-			fmt.Println("about to read")
 			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
 				logger.Error(ctx, "could not read message ", err.Error())
