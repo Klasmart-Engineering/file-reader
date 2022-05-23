@@ -29,13 +29,6 @@ func RowToOrganizationProto(row []string, tracking_id string, schemaId int) ([]b
 		Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},
 		TrackingId:        &orgPb.StringValue{Value: tracking_id},
 	}
-
-	// validatedOrgId := validation.ValidatedOrganizationID{Uuid: row[0]}
-
-	// err := validation.UUIDValidate(validatedOrgId)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	pl := orgPb.OrganizationPayload{
 		Uuid: &orgPb.StringValue{Value: row[0]},
 		Name: &orgPb.StringValue{Value: row[1]},
