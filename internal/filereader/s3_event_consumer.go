@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 )
@@ -170,7 +171,7 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	}
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
-		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID"),
+		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID") + uuid.NewString(),
 		StartOffset: kafka.LastOffset,
 		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 	})
