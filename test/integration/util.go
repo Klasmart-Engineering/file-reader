@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	filepb "file_reader/src/protos/inputfile"
@@ -26,8 +27,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
-
-const defaultTimeOut = 5 * time.Minute
 
 func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(context.Context, string) (net.Conn, error) {
 	listener := bufconn.Listen(1024 * 1024)
@@ -89,7 +88,8 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 }
 
 func StartGrpc(logger *log.ZapLogger, cfg *config.Config, addr string) (context.Context, filepb.IngestFileServiceClient) {
-
+	timeout, _ := strconv.Atoi(os.Getenv("DEFAULT_SERVER_TIMEOUT_MINS"))
+	defaultTimeOut := time.Duration(timeout * int(time.Millisecond))
 	ctx, _ := context.WithTimeout(context.Background(), defaultTimeOut)
 
 	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
