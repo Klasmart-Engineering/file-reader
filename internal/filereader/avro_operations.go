@@ -41,14 +41,15 @@ func GetOrganizationSchemaId(schemaRegistryClient *src.SchemaRegistry) int {
 	return schemaRegistryClient.GetSchemaId(schemaBody, OrganizationTopicAvro)
 }
 
-func CreateOperationMapAvro(schemaRegistryClient *src.SchemaRegistry) map[string]Operation {
-	// creates a map of operation_type to Operation struct
-	return map[string]Operation{
-		"organization": {
-			Topic:        OrganizationTopicAvro,
-			Key:          "",
-			SchemaID:     GetOrganizationSchemaId(schemaRegistryClient),
-			SerializeRow: RowToOrganizationAvro,
+func InitAvroOperations(schemaRegistryClient *src.SchemaRegistry) Operations {
+	return Operations{
+		OperationMap: map[string]Operation{
+			"ORGANIZATION": {
+				Topic:        OrganizationTopicAvro,
+				Key:          "",
+				SchemaID:     GetOrganizationSchemaId(schemaRegistryClient),
+				SerializeRow: RowToOrganizationAvro,
+			},
 		},
 	}
 }

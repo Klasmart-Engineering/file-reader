@@ -10,6 +10,7 @@ import (
 	"file_reader/src/instrument"
 	zaplogger "file_reader/src/log"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -18,11 +19,20 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+type Operations struct {
+	OperationMap map[string]Operation
+}
+
+func (ops Operations) GetOperation(opKey string) (Operation, bool) {
+	op, exists := ops.OperationMap[strings.ToUpper(opKey)]
+	return op, exists
+}
+
 type ConsumeToIngestConfig struct {
 	OutputBrokerAddrs []string
 	AwsSession        *session.Session
 	SchemaRegistry    *src.SchemaRegistry
-	OperationMap      map[string]Operation
+	Operations        Operations
 	OutputDirectory   string
 	Logger            *zaplogger.ZapLogger
 }
@@ -90,7 +100,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			}
 
 			// Map to operation based on operation type
-			operation, exists := config.OperationMap[s3FileCreated.Payload.Operation_type]
+			operation, exists := config.Operations.GetOperation(s3FileCreated.Payload.Operation_type)
 			if !exists {
 				logger.Error(ctx, "invalid operation_type on file create message ")
 				continue

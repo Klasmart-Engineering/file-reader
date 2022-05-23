@@ -10,19 +10,30 @@ import (
 	"file_reader/src/log"
 	"file_reader/src/protos/inputfile"
 	"fmt"
+	"io"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 )
 
 // ingestFileService grpc service
 type IngestFileService struct {
-	ctx          context.Context
-	logger       *log.ZapLogger
-	cfg          *config.Config
-	operationMap map[string]filereader.Operation
+	ctx        context.Context
+	logger     *log.ZapLogger
+	cfg        *config.Config
+	operations filereader.Operations
 	inputfile.UnimplementedIngestFileServiceServer
+}
+
+var operationEnumMap = map[inputfile.Type]string{
+	inputfile.Type_ORGANIZATION: "organization",
+	inputfile.Type_SCHOOL:       "school",
+	inputfile.Type_CLASS:        "class",
+	inputfile.Type_USER:         "user",
+	inputfile.Type_ROLE:         "role",
+	inputfile.Type_PROGRAM:      "program",
 }
 
 // NewIngestFileService organizationServer constructor
@@ -31,16 +42,15 @@ func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *confi
 		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 		IdSchemaMap: make(map[int]string),
 	}
-	var operationMap map[string]filereader.Operation
-	schemaType := os.Getenv("SCHEMA_TYPE")
-	// Get correct operationMap based on schema type
+	schemaType := os.Getenv("SCHEMA_TYPE") // AVRO or PROTO.
+	var operations filereader.Operations
 	switch schemaType {
 	case "AVRO":
-		operationMap = filereader.CreateOperationMapAvro(schemaRegistryClient)
+		operations = filereader.InitAvroOperations(schemaRegistryClient)
 	case "PROTO":
-		operationMap = filereader.CreateOperationMapProto()
+		operations = filereader.InitProtoOperations()
 	}
-	return &IngestFileService{ctx: ctx, logger: logger, cfg: cfg, operationMap: operationMap}
+	return &IngestFileService{ctx: ctx, logger: logger, cfg: cfg, operations: operations}
 }
 
 func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, schemaType string, operationType string, trackingId string) (erroStr string) {
@@ -57,7 +67,10 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 		return fmt.Sprintf("%s", err)
 	}
 	// Get correct operation from operationType
-	operation := c.operationMap[operationType]
+	operation, exists := c.operations.GetOperation(operationType)
+	if !exists {
+		c.logger.Error(c.ctx, "invalid operation_type on file create message ")
+	}
 
 	ingestFileConfig := filereader.IngestFileConfig{
 		Reader: csv.NewReader(f),
@@ -77,103 +90,99 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 }
 
 // // Ingest a new input file
-// func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_IngestFilePROTOServer) error {
+func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_IngestFilePROTOServer) error {
 
-// 	errors := []*inputfile.InputFileError{}
-// 	for {
-// 		// Start receiving stream messages from client
+	errors := []*inputfile.InputFileError{}
+	for {
+		// Start receiving stream messages from client
+		req, err := stream.Recv()
+		succeed := true
+		if err == io.EOF {
+			// Close the connection and return response to client
+			if len(errors) > 0 {
+				succeed = false
+			}
+			return stream.SendAndClose(&inputfile.InputFileResponse{Success: succeed, Errors: errors})
+		}
 
-// 		req, err := stream.Recv()
-// 		succeed := true
-// 		if err == io.EOF {
-// 			// Close the connection and return response to client
-// 			if len(errors) > 0 {
-// 				succeed = false
-// 			}
-// 			return stream.SendAndClose(&inputfile.InputFileResponse{Success: succeed, Errors: errors})
-// 		}
+		//Handle any possible errors when streaming requests
+		if err != nil {
+			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
+		}
 
-// 		//Handle any possible errors when streaming requests
-// 		if err != nil {
-// 			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
-// 		}
+		filePath := req.InputFile.GetPath()
+		fileId := req.InputFile.GetFileId()
+		fileTypeName := req.InputFile.GetInputFileType().String()
+		operationType := operationEnumMap[req.GetType()]
+		trackingId := uuid.NewString()
 
-// 		filePath := req.InputFile.GetPath()
-// 		fileId := req.InputFile.GetFileId()
-// 		fileTypeName := req.InputFile.GetInputFileType().String()
+		t := req.GetType().String()
 
-// 		t := req.GetType().String()
+		switch t {
 
-// 		switch t {
+		case "ORGANIZATION":
 
-// 		case "ORGANIZATION":
+			// process organization
+			if errStr := c.processInputFile(filePath, fileTypeName, "PROTO", operationType, trackingId); errStr != "" {
+				if errStr != "[]" {
+					c.logger.Errorf(c.ctx, "Failed to process csv file: %s, %s", filePath, errStr)
 
-// 			// process organization
-// 			if errStr := c.processInputFile(filePath, fileTypeName, "PROTO"); errStr != "" {
-// 				if errStr != "[]" {
-// 					c.logger.Errorf(c.ctx, "Failed to process csv file: %s, %s", filePath, errStr)
+					e := &inputfile.InputFileError{
+						FileId:  fileId,
+						Message: []string{"Failed to process csv file", fmt.Sprint("Error: %s", errStr)},
+					}
 
-// 					e := &inputfile.InputFileError{
-// 						FileId:  fileId,
-// 						Message: []string{"Failed to process csv file", fmt.Sprint("Error: %s", errStr)},
-// 					}
+					// Append new error message
+					errors = append(errors, e)
+				}
 
-// 					// Append new error message
-// 					errors = append(errors, e)
-// 				}
+			}
 
-// 			}
+		}
+	}
+}
 
-// 		}
-// 	}
-// }
+// Ingest a new input file
+func (c *IngestFileService) IngestFileAVROS(stream inputfile.IngestFileService_IngestFileAVROSServer) error {
 
-// // Ingest a new input file
-// func (c *IngestFileService) IngestFileAVROS(stream inputfile.IngestFileService_IngestFileAVROSServer) error {
+	errors := []*inputfile.InputFileError{}
+	for {
+		// Start receiving stream messages from client
 
-// 	errors := []*inputfile.InputFileError{}
-// 	for {
-// 		// Start receiving stream messages from client
+		req, err := stream.Recv()
+		succeed := true
+		if err == io.EOF {
+			// Close the connection and return response to client
+			if len(errors) > 0 {
+				succeed = false
+			}
+			return stream.SendAndClose(&inputfile.InputFileResponse{Success: succeed, Errors: errors})
+		}
 
-// 		req, err := stream.Recv()
-// 		succeed := true
-// 		if err == io.EOF {
-// 			// Close the connection and return response to client
-// 			if len(errors) > 0 {
-// 				succeed = false
-// 			}
-// 			return stream.SendAndClose(&inputfile.InputFileResponse{Success: succeed, Errors: errors})
-// 		}
+		//Handle any possible errors when streaming requests
+		if err != nil {
+			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
+		}
 
-// 		//Handle any possible errors when streaming requests
-// 		if err != nil {
-// 			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
-// 		}
+		filePath := req.InputFile.GetPath()
+		fileId := req.InputFile.GetFileId()
+		fileTypeName := req.InputFile.GetInputFileType().String()
+		operationType := operationEnumMap[req.GetType()]
+		trackingId := uuid.NewString()
 
-// 		filePath := req.InputFile.GetPath()
-// 		fileId := req.InputFile.GetFileId()
-// 		fileTypeName := req.InputFile.GetInputFileType().String()
+		if errStr := c.processInputFile(filePath, fileTypeName, "AVROS", operationType, trackingId); errStr != "" {
+			c.logger.Errorf(c.ctx, "Failed to process input file: %s, %s", filePath, errStr)
 
-// 		t := req.GetType().String()
+			e := &inputfile.InputFileError{
+				FileId:  fileId,
+				Message: []string{"Failed to process input file", fmt.Sprint("Error: %s", errStr)},
+			}
 
-// 		switch t {
+			// Append new error message
+			errors = append(errors, e)
 
-// 		case "ORGANIZATION":
+		}
 
-// 			// process organization
-// 			if errStr := c.processInputFile(filePath, fileTypeName, "AVROS"); errStr != "" {
-// 				c.logger.Errorf(c.ctx, "Failed to process input file: %s, %s", filePath, errStr)
+	}
 
-// 				e := &inputfile.InputFileError{
-// 					FileId:  fileId,
-// 					Message: []string{"Failed to process input file", fmt.Sprint("Error: %s", errStr)},
-// 				}
-
-// 				// Append new error message
-// 				errors = append(errors, e)
-
-// 			}
-
-// 		}
-// 	}
-// }
+}

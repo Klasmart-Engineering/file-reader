@@ -77,12 +77,12 @@ func startFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	}
 
 	schemaType := os.Getenv("SCHEMA_TYPE") // AVRO or PROTO.
-	var operationMap map[string]filereader.Operation
+	var operations filereader.Operations
 	switch schemaType {
 	case "AVRO":
-		operationMap = filereader.CreateOperationMapAvro(schemaRegistryClient)
+		operations = filereader.InitAvroOperations(schemaRegistryClient)
 	case "PROTO":
-		operationMap = filereader.CreateOperationMapProto()
+		operations = filereader.InitProtoOperations()
 	}
 
 	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
@@ -106,7 +106,7 @@ func startFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	var consumerConfig = filereader.ConsumeToIngestConfig{
 		OutputBrokerAddrs: brokerAddrs,
 		AwsSession:        sess,
-		OperationMap:      operationMap,
+		Operations:        operations,
 		SchemaRegistry:    schemaRegistryClient,
 		OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
 		Logger:            logger,

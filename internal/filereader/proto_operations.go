@@ -11,14 +11,15 @@ const (
 	OrganizationTopicProto = "organization-proto"
 )
 
-func CreateOperationMapProto() map[string]Operation {
-	// creates a map of operation_type to Operation struct
-	return map[string]Operation{
-		"organization": {
-			Topic:        OrganizationTopicProto,
-			Key:          "",
-			SchemaID:     proto.SchemaRegistryClient.GetSchemaID(OrganizationTopicProto),
-			SerializeRow: RowToOrganizationProto,
+func InitProtoOperations() Operations {
+	return Operations{
+		OperationMap: map[string]Operation{
+			"ORGANIZATION": {
+				Topic:        OrganizationTopicProto,
+				Key:          "",
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(OrganizationTopicProto),
+				SerializeRow: RowToOrganizationProto,
+			},
 		},
 	}
 }
