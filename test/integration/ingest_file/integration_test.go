@@ -119,7 +119,7 @@ func TestFileProcessingServer(t *testing.T) {
 		"GRPC_SERVER_PORT":         "6000",
 		"PROTO_SCHEMA_DIRECTORY":   "protos/onboarding",
 		"SCHEMA_CLIENT_ENDPOINT":   "http://localhost:8081",
-		"ORGANIZATION_PROTO_TOPIC": uuid.NewString(),
+		"ORGANIZATION_PROTO_TOPIC": "orgprototest", //uuid.NewString(),
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+

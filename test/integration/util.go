@@ -68,11 +68,11 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	if err != nil {
 		fmt.Printf("Failed to initialize new aws session: %v", err)
 	}
-	operationMap := filereader.CreateOperationMapAvro(schemaRegistryClient)
+	operations := filereader.InitAvroOperations(schemaRegistryClient)
 	var consumerConfig = filereader.ConsumeToIngestConfig{
 		OutputBrokerAddrs: brokerAddrs,
 		AwsSession:        sess,
-		OperationMap:      operationMap,
+		Operations:        operations,
 		SchemaRegistry:    schemaRegistryClient,
 		OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
 		Logger:            logger,
@@ -88,7 +88,7 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 }
 
 func StartGrpc(logger *log.ZapLogger, cfg *config.Config, addr string) (context.Context, filepb.IngestFileServiceClient) {
-	timeout, _ := strconv.Atoi(os.Getenv("DEFAULT_SERVER_TIMEOUT_MINS"))
+	timeout, _ := strconv.Atoi(os.Getenv("DEFAULT_SERVER_TIMEOUT_MS"))
 	defaultTimeOut := time.Duration(timeout * int(time.Millisecond))
 	ctx, _ := context.WithTimeout(context.Background(), defaultTimeOut)
 

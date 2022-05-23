@@ -116,26 +116,18 @@ func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_I
 		operationType := operationEnumMap[req.GetType()]
 		trackingId := uuid.NewString()
 
-		t := req.GetType().String()
+		// process organization
+		if errStr := c.processInputFile(filePath, fileTypeName, "PROTO", operationType, trackingId); errStr != "" {
+			if errStr != "[]" {
+				c.logger.Errorf(c.ctx, "Failed to process csv file: %s, %s", filePath, errStr)
 
-		switch t {
-
-		case "ORGANIZATION":
-
-			// process organization
-			if errStr := c.processInputFile(filePath, fileTypeName, "PROTO", operationType, trackingId); errStr != "" {
-				if errStr != "[]" {
-					c.logger.Errorf(c.ctx, "Failed to process csv file: %s, %s", filePath, errStr)
-
-					e := &inputfile.InputFileError{
-						FileId:  fileId,
-						Message: []string{"Failed to process csv file", fmt.Sprint("Error: %s", errStr)},
-					}
-
-					// Append new error message
-					errors = append(errors, e)
+				e := &inputfile.InputFileError{
+					FileId:  fileId,
+					Message: []string{"Failed to process csv file", fmt.Sprint("Error: %s", errStr)},
 				}
 
+				// Append new error message
+				errors = append(errors, e)
 			}
 
 		}
