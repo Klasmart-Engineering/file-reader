@@ -40,7 +40,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				logger.Error(ctx, "could not read message ", err.Error())
 				continue
 			}
-			logger.Info(ctx, "received message: ", string(msg.Value))
+			logger.Debug(ctx, "received message: ", string(msg.Value))
 
 			// Deserialize file create message
 			schemaIdBytes := msg.Value[1:5]
