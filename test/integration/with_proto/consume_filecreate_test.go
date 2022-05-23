@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -44,6 +45,14 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 }
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
+
+	// Start consumer
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
+
+	// start consumer
+	go util.StartFileCreateConsumer(context.Background(), logger)
+	time.Sleep(time.Millisecond)
 
 	schemaRegistryClient := &src.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
@@ -124,12 +133,6 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		},
 	)
 	assert.Nil(t, err, "error writing message to topic")
-
-	l, _ := zap.NewDevelopment()
-	logger := zapLogger.Wrap(l)
-
-	// start consumer
-	go util.StartFileCreateConsumer(ctx, logger)
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
