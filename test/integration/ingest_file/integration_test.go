@@ -8,11 +8,11 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
+	"file_reader/src/protos/onboarding"
 	clientPb "file_reader/test/client"
 	util "file_reader/test/integration"
 	"time"
 
-	"file_reader/src/protos/onboarding"
 	orgPb "file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
 
@@ -35,9 +35,6 @@ import (
 
 //go:embed data/good
 var testGoodDataDir embed.FS
-
-//go:embed data/bad
-var testBadDataDir embed.FS
 
 var testCases = []struct {
 	name        string
@@ -127,7 +124,6 @@ func TestFileProcessingServer(t *testing.T) {
 	ctx, client := util.StartGrpc(logger, cfg, addr)
 
 	csvFh := clientPb.NewInputFileHandlers(logger)
-	schemaType := "PROTO"
 	orgProtoTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: instrument.GetBrokers(),
@@ -147,7 +143,7 @@ func TestFileProcessingServer(t *testing.T) {
 			defer ctrl.Finish()
 
 			// grpc call
-			res := csvFh.ProcessRequests(ctx, client, schemaType, testCase.req)
+			res := csvFh.ProcessRequests(ctx, client, testCase.req)
 			switch testCase.name {
 
 			case "req ok":

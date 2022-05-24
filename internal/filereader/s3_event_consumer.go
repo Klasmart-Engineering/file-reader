@@ -70,7 +70,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				continue
 			}
 
-			// Open file on /tmp/
+			// Create and open file on /tmp/
 			f, err := ioutil.TempFile("", "file-reader-"+s3FileCreated.Payload.Key)
 			if err != nil {
 				log.Fatal("Failed to make tmp file", err)

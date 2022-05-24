@@ -53,7 +53,7 @@ func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *confi
 	return &IngestFileService{ctx: ctx, logger: logger, cfg: cfg, operations: operations}
 }
 
-func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, schemaType string, operationType string, trackingId string) (erroStr string) {
+func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, operationType string, trackingId string) (erroStr string) {
 	//Setup
 	c.logger.Infof(c.ctx, "Processing input file in ", filePath)
 	f, err := os.Open(filePath)
@@ -90,7 +90,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 }
 
 // // Ingest a new input file
-func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_IngestFilePROTOServer) error {
+func (c *IngestFileService) IngestFile(stream inputfile.IngestFileService_IngestFileServer) error {
 
 	errors := []*inputfile.InputFileError{}
 	for {
@@ -117,64 +117,18 @@ func (c *IngestFileService) IngestFilePROTO(stream inputfile.IngestFileService_I
 		trackingId := uuid.NewString()
 
 		// process organization
-		if errStr := c.processInputFile(filePath, fileTypeName, "PROTO", operationType, trackingId); errStr != "" {
+		if errStr := c.processInputFile(filePath, fileTypeName, operationType, trackingId); errStr != "" {
 			if errStr != "[]" {
 				c.logger.Errorf(c.ctx, "Failed to process csv file: %s, %s", filePath, errStr)
 
 				e := &inputfile.InputFileError{
 					FileId:  fileId,
-					Message: []string{"Failed to process csv file", fmt.Sprint("Error: %s", errStr)},
+					Message: []string{"Failed to process csv file", fmt.Sprintf("Error: %s", errStr)},
 				}
 
 				// Append new error message
 				errors = append(errors, e)
 			}
-
 		}
 	}
-}
-
-// Ingest a new input file
-func (c *IngestFileService) IngestFileAVROS(stream inputfile.IngestFileService_IngestFileAVROSServer) error {
-
-	errors := []*inputfile.InputFileError{}
-	for {
-		// Start receiving stream messages from client
-
-		req, err := stream.Recv()
-		succeed := true
-		if err == io.EOF {
-			// Close the connection and return response to client
-			if len(errors) > 0 {
-				succeed = false
-			}
-			return stream.SendAndClose(&inputfile.InputFileResponse{Success: succeed, Errors: errors})
-		}
-
-		//Handle any possible errors when streaming requests
-		if err != nil {
-			c.logger.Fatalf(c.ctx, "Error when reading client request stream: %v", err)
-		}
-
-		filePath := req.InputFile.GetPath()
-		fileId := req.InputFile.GetFileId()
-		fileTypeName := req.InputFile.GetInputFileType().String()
-		operationType := operationEnumMap[req.GetType()]
-		trackingId := uuid.NewString()
-
-		if errStr := c.processInputFile(filePath, fileTypeName, "AVROS", operationType, trackingId); errStr != "" {
-			c.logger.Errorf(c.ctx, "Failed to process input file: %s, %s", filePath, errStr)
-
-			e := &inputfile.InputFileError{
-				FileId:  fileId,
-				Message: []string{"Failed to process input file", fmt.Sprint("Error: %s", errStr)},
-			}
-
-			// Append new error message
-			errors = append(errors, e)
-
-		}
-
-	}
-
 }

@@ -22,8 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type IngestFileServiceClient interface {
-	IngestFilePROTO(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFilePROTOClient, error)
-	IngestFileAVROS(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFileAVROSClient, error)
+	IngestFile(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFileClient, error)
 }
 
 type ingestFileServiceClient struct {
@@ -34,64 +33,30 @@ func NewIngestFileServiceClient(cc grpc.ClientConnInterface) IngestFileServiceCl
 	return &ingestFileServiceClient{cc}
 }
 
-func (c *ingestFileServiceClient) IngestFilePROTO(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFilePROTOClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IngestFileService_ServiceDesc.Streams[0], "/protos.inputfile.IngestFileService/IngestFilePROTO", opts...)
+func (c *ingestFileServiceClient) IngestFile(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFileClient, error) {
+	stream, err := c.cc.NewStream(ctx, &IngestFileService_ServiceDesc.Streams[0], "/protos.inputfile.IngestFileService/IngestFile", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &ingestFileServiceIngestFilePROTOClient{stream}
+	x := &ingestFileServiceIngestFileClient{stream}
 	return x, nil
 }
 
-type IngestFileService_IngestFilePROTOClient interface {
+type IngestFileService_IngestFileClient interface {
 	Send(*InputFileRequest) error
 	CloseAndRecv() (*InputFileResponse, error)
 	grpc.ClientStream
 }
 
-type ingestFileServiceIngestFilePROTOClient struct {
+type ingestFileServiceIngestFileClient struct {
 	grpc.ClientStream
 }
 
-func (x *ingestFileServiceIngestFilePROTOClient) Send(m *InputFileRequest) error {
+func (x *ingestFileServiceIngestFileClient) Send(m *InputFileRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *ingestFileServiceIngestFilePROTOClient) CloseAndRecv() (*InputFileResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(InputFileResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *ingestFileServiceClient) IngestFileAVROS(ctx context.Context, opts ...grpc.CallOption) (IngestFileService_IngestFileAVROSClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IngestFileService_ServiceDesc.Streams[1], "/protos.inputfile.IngestFileService/IngestFileAVROS", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &ingestFileServiceIngestFileAVROSClient{stream}
-	return x, nil
-}
-
-type IngestFileService_IngestFileAVROSClient interface {
-	Send(*InputFileRequest) error
-	CloseAndRecv() (*InputFileResponse, error)
-	grpc.ClientStream
-}
-
-type ingestFileServiceIngestFileAVROSClient struct {
-	grpc.ClientStream
-}
-
-func (x *ingestFileServiceIngestFileAVROSClient) Send(m *InputFileRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *ingestFileServiceIngestFileAVROSClient) CloseAndRecv() (*InputFileResponse, error) {
+func (x *ingestFileServiceIngestFileClient) CloseAndRecv() (*InputFileResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -106,8 +71,7 @@ func (x *ingestFileServiceIngestFileAVROSClient) CloseAndRecv() (*InputFileRespo
 // All implementations must embed UnimplementedIngestFileServiceServer
 // for forward compatibility
 type IngestFileServiceServer interface {
-	IngestFilePROTO(IngestFileService_IngestFilePROTOServer) error
-	IngestFileAVROS(IngestFileService_IngestFileAVROSServer) error
+	IngestFile(IngestFileService_IngestFileServer) error
 	mustEmbedUnimplementedIngestFileServiceServer()
 }
 
@@ -115,11 +79,8 @@ type IngestFileServiceServer interface {
 type UnimplementedIngestFileServiceServer struct {
 }
 
-func (UnimplementedIngestFileServiceServer) IngestFilePROTO(IngestFileService_IngestFilePROTOServer) error {
-	return status.Errorf(codes.Unimplemented, "method IngestFilePROTO not implemented")
-}
-func (UnimplementedIngestFileServiceServer) IngestFileAVROS(IngestFileService_IngestFileAVROSServer) error {
-	return status.Errorf(codes.Unimplemented, "method IngestFileAVROS not implemented")
+func (UnimplementedIngestFileServiceServer) IngestFile(IngestFileService_IngestFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method IngestFile not implemented")
 }
 func (UnimplementedIngestFileServiceServer) mustEmbedUnimplementedIngestFileServiceServer() {}
 
@@ -134,51 +95,25 @@ func RegisterIngestFileServiceServer(s grpc.ServiceRegistrar, srv IngestFileServ
 	s.RegisterService(&IngestFileService_ServiceDesc, srv)
 }
 
-func _IngestFileService_IngestFilePROTO_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IngestFileServiceServer).IngestFilePROTO(&ingestFileServiceIngestFilePROTOServer{stream})
+func _IngestFileService_IngestFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(IngestFileServiceServer).IngestFile(&ingestFileServiceIngestFileServer{stream})
 }
 
-type IngestFileService_IngestFilePROTOServer interface {
+type IngestFileService_IngestFileServer interface {
 	SendAndClose(*InputFileResponse) error
 	Recv() (*InputFileRequest, error)
 	grpc.ServerStream
 }
 
-type ingestFileServiceIngestFilePROTOServer struct {
+type ingestFileServiceIngestFileServer struct {
 	grpc.ServerStream
 }
 
-func (x *ingestFileServiceIngestFilePROTOServer) SendAndClose(m *InputFileResponse) error {
+func (x *ingestFileServiceIngestFileServer) SendAndClose(m *InputFileResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *ingestFileServiceIngestFilePROTOServer) Recv() (*InputFileRequest, error) {
-	m := new(InputFileRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func _IngestFileService_IngestFileAVROS_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IngestFileServiceServer).IngestFileAVROS(&ingestFileServiceIngestFileAVROSServer{stream})
-}
-
-type IngestFileService_IngestFileAVROSServer interface {
-	SendAndClose(*InputFileResponse) error
-	Recv() (*InputFileRequest, error)
-	grpc.ServerStream
-}
-
-type ingestFileServiceIngestFileAVROSServer struct {
-	grpc.ServerStream
-}
-
-func (x *ingestFileServiceIngestFileAVROSServer) SendAndClose(m *InputFileResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *ingestFileServiceIngestFileAVROSServer) Recv() (*InputFileRequest, error) {
+func (x *ingestFileServiceIngestFileServer) Recv() (*InputFileRequest, error) {
 	m := new(InputFileRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -195,13 +130,8 @@ var IngestFileService_ServiceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "IngestFilePROTO",
-			Handler:       _IngestFileService_IngestFilePROTO_Handler,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "IngestFileAVROS",
-			Handler:       _IngestFileService_IngestFileAVROS_Handler,
+			StreamName:    "IngestFile",
+			Handler:       _IngestFileService_IngestFile_Handler,
 			ClientStreams: true,
 		},
 	},
