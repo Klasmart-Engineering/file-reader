@@ -8,7 +8,6 @@ import (
 	"os"
 
 	inputfile "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
-	"github.com/KL-Engineering/file-reader/internal/avro"
 	"github.com/KL-Engineering/file-reader/internal/core"
 
 	"github.com/KL-Engineering/file-reader/internal/config"
@@ -40,7 +39,7 @@ var operationEnumMap = map[inputfile.Type]string{
 
 // NewIngestFileService organizationServer constructor
 func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *config.Config) *IngestFileService {
-	schemaRegistryClient := &avro.SchemaRegistry{
+	schemaRegistryClient := &core.SchemaRegistry{
 		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 		IdSchemaMap: make(map[int]string),
 	}

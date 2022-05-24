@@ -11,10 +11,8 @@ import (
 	"strings"
 
 	avrogen "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
-	avro "github.com/KL-Engineering/file-reader/internal/avro"
 	"github.com/KL-Engineering/file-reader/internal/instrument"
 	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
-	proto "github.com/KL-Engineering/file-reader/internal/proto"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -37,7 +35,7 @@ func (ops Operations) GetOperation(opKey string) (Operation, bool) {
 type ConsumeToIngestConfig struct {
 	OutputBrokerAddrs []string
 	AwsSession        *session.Session
-	SchemaRegistry    *avro.SchemaRegistry
+	SchemaRegistry    *SchemaRegistry
 	Operations        Operations
 	Logger            *zaplogger.ZapLogger
 }
@@ -128,7 +126,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 }
 
 func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
-	schemaRegistryClient := &avro.SchemaRegistry{
+	schemaRegistryClient := &SchemaRegistry{
 		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 		IdSchemaMap: make(map[int]string),
 	}
@@ -137,9 +135,9 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	var operations Operations
 	switch schemaType {
 	case "AVRO":
-		operations = avro.InitAvroOperations(schemaRegistryClient)
+		operations = InitAvroOperations(schemaRegistryClient)
 	case "PROTO":
-		operations = proto.InitProtoOperations()
+		operations = InitProtoOperations()
 	}
 
 	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")

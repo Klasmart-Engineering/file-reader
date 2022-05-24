@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 
-	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
-
 	filepb "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
-	fileGrpc "github.com/KL-Engineering/file-reader/internal/services/delivery/grpc"
-
 	"github.com/KL-Engineering/file-reader/internal/config"
 	"github.com/KL-Engineering/file-reader/internal/core"
+	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
+	fileGrpc "github.com/KL-Engineering/file-reader/internal/services/delivery/grpc"
+
 	"github.com/KL-Engineering/file-reader/internal/instrument"
 	"go.uber.org/zap"
 

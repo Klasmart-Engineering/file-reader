@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/KL-Engineering/file-reader/cmd/config"
-	"github.com/KL-Engineering/file-reader/cmd/instrument"
-	"github.com/KL-Engineering/file-reader/cmd/log"
+	"github.com/KL-Engineering/file-reader/internal/config"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
+	"github.com/KL-Engineering/file-reader/internal/log"
 
-	filepb "github.com/KL-Engineering/file-reader/cmd/protos/inputfile"
-	fileGrpc "github.com/KL-Engineering/file-reader/cmd/services/organization/delivery/grpc"
+	filepb "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
+	fileGrpc "github.com/KL-Engineering/file-reader/internal/services/delivery/grpc"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

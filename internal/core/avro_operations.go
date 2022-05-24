@@ -1,4 +1,4 @@
-package avro
+package core
 
 import (
 	"bytes"
@@ -7,8 +7,6 @@ import (
 	"os"
 
 	avrogen "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
-	avro "github.com/KL-Engineering/file-reader/internal/avro"
-	"github.com/KL-Engineering/file-reader/internal/core"
 	"github.com/KL-Engineering/file-reader/internal/instrument"
 )
 
@@ -35,15 +33,15 @@ func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
 	return recordValue
 }
 
-func GetOrganizationSchemaId(schemaRegistryClient *avro.SchemaRegistry, organizationTopic string) int {
+func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
 	schemaBody := avrogen.Organization.Schema(avrogen.NewOrganization())
 	return schemaRegistryClient.GetSchemaId(schemaBody, organizationTopic)
 }
 
-func InitAvroOperations(schemaRegistryClient *avro.SchemaRegistry) core.Operations {
+func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
-	return core.Operations{
-		OperationMap: map[string]core.Operation{
+	return Operations{
+		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
 				Topic:        organizationTopic,
 				Key:          "",

@@ -5,12 +5,11 @@ import (
 	"context"
 	"encoding/binary"
 
-	avro "github.com/KL-Engineering/file-reader/avro_gencode"
-	src "github.com/KL-Engineering/file-reader/cmd"
-	zapLogger "github.com/KL-Engineering/file-reader/cmd/log"
-	"github.com/KL-Engineering/file-reader/cmd/protos/onboarding"
-	"github.com/KL-Engineering/file-reader/cmd/third_party/protobuf"
-	"github.com/KL-Engineering/file-reader/internal/filereader"
+	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
+	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
+	"github.com/KL-Engineering/file-reader/internal/core"
+	zapLogger "github.com/KL-Engineering/file-reader/internal/log"
+	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 	"github.com/KL-Engineering/file-reader/test/env"
 
 	"log"
@@ -61,9 +60,9 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	// Start consumer
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
-	filereader.StartFileCreateConsumer(context.Background(), logger)
+	core.StartFileCreateConsumer(context.Background(), logger)
 
-	schemaRegistryClient := &src.SchemaRegistry{
+	schemaRegistryClient := &core.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 	}
 	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())

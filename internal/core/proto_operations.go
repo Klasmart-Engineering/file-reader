@@ -1,19 +1,18 @@
-package proto
+package core
 
 import (
 	"os"
 
-	"github.com/KL-Engineering/file-reader/cmd/instrument"
-	orgPb "github.com/KL-Engineering/file-reader/cmd/protos/onboarding"
-	"github.com/KL-Engineering/file-reader/internal/core"
+	orgPb "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
 	proto "github.com/KL-Engineering/file-reader/pkg/proto"
 	protobuf "github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 )
 
-func InitProtoOperations() core.Operations {
+func InitProtoOperations() Operations {
 	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
-	return core.Operations{
-		OperationMap: map[string]core.Operation{
+	return Operations{
+		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
 				Topic:        orgTopic,
 				Key:          "",
