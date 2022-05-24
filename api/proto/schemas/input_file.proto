@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package protos.inputfile;
+option go_package = "./input_file"; 
+
+message InputFile { 
+	string file_id = 1;
+	InputFileType input_file_type = 2;
+	string path = 3;
+}
+enum InputFileType {
+	CSV = 0;
+}
+enum Type {
+	ORGANIZATION = 0;
+	SCHOOL = 1;
+	CLASS = 2;
+	USER = 3;
+	ROLE = 4;
+	PROGRAM = 5;
+	UNKNOWN = 6;
+  }
+message InputFileRequest {
+	Type type = 1;
+	InputFile input_file = 2;
+ }
+ 
+message InputFileResponse {
+	bool success = 2;
+    repeated InputFileError errors = 3;
+}
+message InputFileError {
+  string file_id = 1;
+	
+  repeated string message = 2;
+}
+service IngestFileService {
+	rpc IngestFile (stream InputFileRequest) returns (InputFileResponse) {}
+ }
