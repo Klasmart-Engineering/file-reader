@@ -26,3 +26,5 @@ newrelic_agent.log
 .idea/*
 
 downloaded/*
+
+.DS_Store

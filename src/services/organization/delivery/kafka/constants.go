@@ -17,9 +17,6 @@ const (
 	writerRequiredAcks = -1
 	writerMaxAttempts  = 3
 
-	createOrganizationTopic   = "organization"
-	createOrganizationWorkers = 3
-
 	deadLetterQueueTopic = "dead-letter-queue"
 
 	organizationsGroupID = "organizations_group"

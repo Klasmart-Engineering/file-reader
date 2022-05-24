@@ -18,4 +18,3 @@ EXPOSE 9000
 
 # Run the executable
 CMD ["./main"]
-

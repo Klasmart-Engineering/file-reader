@@ -65,6 +65,14 @@ func (l *ZapLogger) Fatalf(ctx context.Context, s string, i ...interface{}) {
 	l.WithCtxValue(ctx).Sugar().Fatal(fmt.Sprintf(s, i...))
 }
 
+func (l *ZapLogger) Debug(ctx context.Context, i ...interface{}) {
+	l.WithCtxValue(ctx).Sugar().Debug(fmt.Sprint(i...))
+}
+
+func (l *ZapLogger) Debugf(ctx context.Context, s string, i ...interface{}) {
+	l.WithCtxValue(ctx).Sugar().Debugf(fmt.Sprintf(s, i...))
+}
+
 func (l *ZapLogger) Info(ctx context.Context, i ...interface{}) {
 	l.WithCtxValue(ctx).Sugar().Info(fmt.Sprint(i...))
 }

@@ -90,16 +90,11 @@ func NewInputFileHandlers(
 	}
 }
 
-func (h *inputFileHandlers) ProcessRequests(ctx context.Context, fileClient filepb.IngestFileServiceClient, schemaType string, req []*filepb.InputFileRequest) *filepb.InputFileResponse {
-	var stream filepb.IngestFileService_IngestFilePROTOClient
+func (h *inputFileHandlers) ProcessRequests(ctx context.Context, fileClient filepb.IngestFileServiceClient, req []*filepb.InputFileRequest) *filepb.InputFileResponse {
+	var stream filepb.IngestFileService_IngestFileClient
 	var err error
 
-	switch schemaType {
-	case "AVROS":
-		stream, err = fileClient.IngestFileAVROS(ctx)
-	case "PROTO":
-		stream, err = fileClient.IngestFilePROTO(ctx)
-	}
+	stream, err = fileClient.IngestFile(ctx)
 	if err != nil {
 		h.logger.Errorf(ctx, "Error on IngestFile rpc call: %v", err.Error())
 	}
@@ -121,7 +116,7 @@ func (h *inputFileHandlers) ProcessRequests(ctx context.Context, fileClient file
 	return res
 }
 
-func (h *inputFileHandlers) process(ctx context.Context, fileClient filepb.IngestFileServiceClient, schemaType string, fileNames []string, filePaths []string, entityTypeKey int32, inputFileTypeKey int32) *filepb.InputFileResponse {
+func (h *inputFileHandlers) process(ctx context.Context, fileClient filepb.IngestFileServiceClient, fileNames []string, filePaths []string, entityTypeKey int32, inputFileTypeKey int32) *filepb.InputFileResponse {
 
 	// Create a request for retrieving csv file
 
@@ -130,6 +125,6 @@ func (h *inputFileHandlers) process(ctx context.Context, fileClient filepb.Inges
 
 	req := RequestBuilder{}.initRequests(fileNames, filePaths, entityTypeName, inputFileTypeName)
 	// Process request
-	return h.ProcessRequests(ctx, fileClient, schemaType, req)
+	return h.ProcessRequests(ctx, fileClient, req)
 
 }

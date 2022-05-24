@@ -8,7 +8,10 @@ import (
 	"file_reader/internal/filereader"
 	"file_reader/src"
 	zapLogger "file_reader/src/log"
+	"file_reader/src/protos/onboarding"
+	"file_reader/src/third_party/protobuf"
 	"file_reader/test/env"
+
 	"log"
 	"os"
 	"strconv"
@@ -43,13 +46,13 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
 	// set up env variables
-	organizationAvroTopic := "orgAvroTopic" + uuid.NewString()
+	organizationProtoTopic := "orgProtoTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"ORGANIZATION_AVRO_TOPIC":          organizationAvroTopic,
+		"ORGANIZATION_PROTO_TOPIC":         organizationProtoTopic,
 		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
 		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
-		"SCHEMA_TYPE":                      "AVRO",
+		"SCHEMA_TYPE":                      "PROTO",
 	})
 
 	defer t.Cleanup(closer)
@@ -91,7 +94,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	})
 	assert.Nil(t, err, "error creating aws session")
 
-	// Upload file to s3
+	// Upload file togo  s3
 	numOrgs := 5
 	file, orgs := MakeOrgsCsv(numOrgs)
 	uploader := s3manager.NewUploader(sess)
@@ -143,20 +146,25 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       organizationAvroTopic,
+		Topic:       organizationProtoTopic,
 		StartOffset: kafka.LastOffset,
 	})
+
+	serde := protobuf.NewProtoSerDe()
+	orgOutput := &onboarding.Organization{}
+
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
-		orgOutput, err := avro.DeserializeOrganization(bytes.NewReader(msg.Value[5:]))
-		assert.Nil(t, err, "error deserialising message to org")
-		t.Log(orgOutput)
 
-		assert.Equal(t, trackingId, orgOutput.Metadata.Tracking_id)
+		_, err = serde.Deserialize(msg.Value, orgOutput)
+
+		assert.Nil(t, err, "error deserializing message from topic")
+
+		assert.Equal(t, trackingId, orgOutput.Metadata.TrackingId.Value)
 
 		orgInput := orgs[i]
-		assert.Equal(t, orgInput[0], orgOutput.Payload.Guid)
-		assert.Equal(t, orgInput[1], orgOutput.Payload.Organization_name)
+		assert.Equal(t, orgInput[0], orgOutput.Payload.Uuid.Value)
+		assert.Equal(t, orgInput[1], orgOutput.Payload.Name.Value)
 	}
 }

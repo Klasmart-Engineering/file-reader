@@ -26,23 +26,23 @@ func NewSchemaRegistrator(srclient srclient.Client) *SchemaRegistrator {
 	}
 }
 
-func (r *SchemaRegistrator) RegisterKey(ctx context.Context, topic string, msg interface{}) (int, error) {
+func (r *SchemaRegistrator) RegisterKey(ctx context.Context, topic string, msg interface{}) (*srclient.Schema, error) {
 	return r.register(ctx, topic+"-key", msg)
 }
 
-func (r *SchemaRegistrator) RegisterValue(ctx context.Context, topic string, msg interface{}) (int, error) {
+func (r *SchemaRegistrator) RegisterValue(ctx context.Context, topic string, msg interface{}) (*srclient.Schema, error) {
 	return r.register(ctx, topic+"-value", msg)
 }
 
-func (r *SchemaRegistrator) register(ctx context.Context, topic string, msg interface{}) (int, error) {
+func (r *SchemaRegistrator) register(ctx context.Context, topic string, msg interface{}) (*srclient.Schema, error) {
 	protoMsg, ok := msg.(proto.Message)
 	if !ok {
-		return 0, fmt.Errorf("record type must be of proto.Message")
+		return nil, fmt.Errorf("record type must be of proto.Message")
 	}
 
 	msgDesc, err := desc.LoadMessageDescriptorForMessage(protoMsg)
 	if err != nil {
-		return 0, fmt.Errorf("error loading message descriptor for message %w", err)
+		return nil, fmt.Errorf("error loading message descriptor for message %w", err)
 	}
 
 	fileDesc := msgDesc.GetFile()
@@ -51,7 +51,7 @@ func (r *SchemaRegistrator) register(ctx context.Context, topic string, msg inte
 	for _, dep := range deps {
 		depSchema, err := fileDescriptorToSchemaString(r.printer, dep)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 
 		name := dep.GetName()
@@ -62,7 +62,7 @@ func (r *SchemaRegistrator) register(ctx context.Context, topic string, msg inte
 		})
 
 		if err != nil {
-			return 0, fmt.Errorf("Error creating schema: %w", err)
+			return nil, fmt.Errorf("Error creating schema: %w", err)
 		}
 
 		refs = append(refs, srclient.Reference{
@@ -74,7 +74,7 @@ func (r *SchemaRegistrator) register(ctx context.Context, topic string, msg inte
 
 	protoStr, err := fileDescriptorToSchemaString(r.printer, fileDesc)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	schema, err := r.srclient.CreateSchema(ctx, &srclient.Schema{
 		Subject:    topic,
@@ -83,10 +83,10 @@ func (r *SchemaRegistrator) register(ctx context.Context, topic string, msg inte
 		References: refs,
 	})
 	if err != nil {
-		return 0, fmt.Errorf("Error creating schema: %w", err)
+		return nil, fmt.Errorf("Error creating schema: %w", err)
 	}
 
-	return schema.ID, nil
+	return schema, nil
 }
 
 func (r *SchemaRegistrator) Load(ctx context.Context, schemaID int, name string) ([]*desc.FileDescriptor, error) {
