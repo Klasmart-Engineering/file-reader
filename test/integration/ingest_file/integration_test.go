@@ -8,14 +8,13 @@ import (
 	"file_reader/src/config"
 	"file_reader/src/instrument"
 	filepb "file_reader/src/protos/inputfile"
-	"time"
-
 	"file_reader/src/protos/onboarding"
 	orgPb "file_reader/src/protos/onboarding"
 	"file_reader/src/third_party/protobuf"
 	"fmt"
 	"io"
 	"net"
+	"time"
 
 	"file_reader/src/log"
 	"file_reader/src/pkg/validation"
@@ -154,6 +153,7 @@ func getCSVToProtos(entity string, filePath string, isGood bool) ([]*onboarding.
 func TestFileProcessingServer(t *testing.T) {
 	// set up env variables
 	closer := envSetter(map[string]string{
+		"ENV":                      "TEST",
 		"BROKERS":                  "localhost:9092",
 		"GRPC_SERVER":              "localhost",
 		"GRPC_SERVER_PORT":         "6000",
@@ -182,7 +182,7 @@ func TestFileProcessingServer(t *testing.T) {
 			Brokers:                instrument.GetBrokers(),
 			DialTimeout:            int(3 * time.Minute),
 			MaxAttempts:            3,
-			AllowAutoTopicCreation: true,
+			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 		},
 	}
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*5)
@@ -193,7 +193,7 @@ func TestFileProcessingServer(t *testing.T) {
 	conn, err := grpc.DialContext(ctx, "", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
 
 	if err != nil {
-		logger.Errorf(ctx, err.Error())
+		t.Errorf(err.Error())
 	}
 
 	client := filepb.NewIngestFileServiceClient(conn)
@@ -201,6 +201,7 @@ func TestFileProcessingServer(t *testing.T) {
 
 	schemaType := "PROTO"
 	orgProtoTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
+
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: instrument.GetBrokers(),
 		Topic:   orgProtoTopic,
