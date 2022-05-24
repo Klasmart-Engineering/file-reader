@@ -118,13 +118,14 @@ func TestFileProcessingServer(t *testing.T) {
 			Brokers:                instrument.GetBrokers(),
 			DialTimeout:            int(3 * time.Minute),
 			MaxAttempts:            3,
-			AllowAutoTopicCreation: true,
+			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 		},
 	}
 	ctx, client := util.StartGrpc(logger, cfg, addr)
 
 	csvFh := clientPb.NewInputFileHandlers(logger)
 	orgProtoTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
+
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: instrument.GetBrokers(),
 		Topic:   orgProtoTopic,
