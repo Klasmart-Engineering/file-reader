@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 
-	"github.com/KL-Engineering/file-reader/src/log"
-	filepb "github.com/KL-Engineering/file-reader/src/protos/inputfile"
+	"github.com/KL-Engineering/file-reader/cmd/log"
+	filepb "github.com/KL-Engineering/file-reader/cmd/protos/inputfile"
 )
 
 type Type string

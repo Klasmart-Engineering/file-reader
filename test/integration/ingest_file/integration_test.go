@@ -7,23 +7,23 @@ import (
 	"encoding/csv"
 	"time"
 
-	"github.com/KL-Engineering/file-reader/src/config"
-	"github.com/KL-Engineering/file-reader/src/instrument"
-	filepb "github.com/KL-Engineering/file-reader/src/protos/inputfile"
-	"github.com/KL-Engineering/file-reader/src/protos/onboarding"
+	"github.com/KL-Engineering/file-reader/cmd/config"
+	"github.com/KL-Engineering/file-reader/cmd/instrument"
+	filepb "github.com/KL-Engineering/file-reader/cmd/protos/inputfile"
+	"github.com/KL-Engineering/file-reader/cmd/protos/onboarding"
 	clientPb "github.com/KL-Engineering/file-reader/test/client"
 	util "github.com/KL-Engineering/file-reader/test/integration"
 
-	orgPb "github.com/KL-Engineering/file-reader/src/protos/onboarding"
-	"github.com/KL-Engineering/file-reader/src/third_party/protobuf"
+	orgPb "github.com/KL-Engineering/file-reader/cmd/protos/onboarding"
+	"github.com/KL-Engineering/file-reader/cmd/third_party/protobuf"
 
 	"io"
 
 	"os"
 	"testing"
 
-	"github.com/KL-Engineering/file-reader/src/log"
-	"github.com/KL-Engineering/file-reader/src/pkg/validation"
+	"github.com/KL-Engineering/file-reader/cmd/log"
+	"github.com/KL-Engineering/file-reader/cmd/pkg/validation"
 	"github.com/KL-Engineering/file-reader/test/env"
 
 	"go.uber.org/zap"

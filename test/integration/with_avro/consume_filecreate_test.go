@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	avro "github.com/KL-Engineering/file-reader/avro_gencode"
+	src "github.com/KL-Engineering/file-reader/cmd"
+	zapLogger "github.com/KL-Engineering/file-reader/cmd/log"
 	"github.com/KL-Engineering/file-reader/internal/filereader"
-	"github.com/KL-Engineering/file-reader/src"
-	zapLogger "github.com/KL-Engineering/file-reader/src/log"
 	"github.com/KL-Engineering/file-reader/test/env"
 
 	"github.com/aws/aws-sdk-go/aws"
