@@ -9,7 +9,6 @@ import (
 	"file_reader/src"
 	"file_reader/src/instrument"
 	zaplogger "file_reader/src/log"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -156,7 +155,7 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 		},
 	})
 	if err != nil {
-		fmt.Printf("Failed to initialize new aws session: %v", err)
+		logger.Infof(ctx, "Failed to initialize new aws session: %s", err)
 	}
 
 	var consumerConfig = ConsumeToIngestConfig{
