@@ -72,7 +72,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	awsRegion := "eu-west-1"
 
 	bucket := "organization"
-	s3key := "organization1.csv"
+	s3key := "organization" + uuid.NewString() + ".csv"
 
 	ctx := context.Background()
 
