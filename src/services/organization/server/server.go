@@ -2,13 +2,14 @@ package server
 
 import (
 	"context"
-	"file_reader/src/config"
-	"file_reader/src/instrument"
-	zaplogger "file_reader/src/log"
 
-	filepb "file_reader/src/protos/inputfile"
+	"github.com/KL-Engineering/file-reader/src/config"
+	"github.com/KL-Engineering/file-reader/src/instrument"
+	zaplogger "github.com/KL-Engineering/file-reader/src/log"
 
-	fileGrpc "file_reader/src/services/organization/delivery/grpc"
+	filepb "github.com/KL-Engineering/file-reader/src/protos/inputfile"
+
+	fileGrpc "github.com/KL-Engineering/file-reader/src/services/organization/delivery/grpc"
 
 	"go.uber.org/zap"
 )

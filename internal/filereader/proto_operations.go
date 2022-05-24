@@ -1,11 +1,12 @@
 package filereader
 
 import (
-	"file_reader/src/instrument"
-	"file_reader/src/pkg/proto"
-	orgPb "file_reader/src/protos/onboarding"
-	"file_reader/src/third_party/protobuf"
 	"os"
+
+	"github.com/KL-Engineering/file-reader/src/instrument"
+	"github.com/KL-Engineering/file-reader/src/pkg/proto"
+	orgPb "github.com/KL-Engineering/file-reader/src/protos/onboarding"
+	"github.com/KL-Engineering/file-reader/src/third_party/protobuf"
 )
 
 func InitProtoOperations() Operations {

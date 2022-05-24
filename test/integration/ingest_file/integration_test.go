@@ -5,24 +5,26 @@ import (
 	"context"
 	"embed"
 	"encoding/csv"
-	"file_reader/src/config"
-	"file_reader/src/instrument"
-	filepb "file_reader/src/protos/inputfile"
-	"file_reader/src/protos/onboarding"
-	clientPb "file_reader/test/client"
-	util "file_reader/test/integration"
 	"time"
 
-	orgPb "file_reader/src/protos/onboarding"
-	"file_reader/src/third_party/protobuf"
+	"github.com/KL-Engineering/file-reader/src/config"
+	"github.com/KL-Engineering/file-reader/src/instrument"
+	filepb "github.com/KL-Engineering/file-reader/src/protos/inputfile"
+	"github.com/KL-Engineering/file-reader/src/protos/onboarding"
+	clientPb "github.com/KL-Engineering/file-reader/test/client"
+	util "github.com/KL-Engineering/file-reader/test/integration"
+
+	orgPb "github.com/KL-Engineering/file-reader/src/protos/onboarding"
+	"github.com/KL-Engineering/file-reader/src/third_party/protobuf"
 
 	"io"
 
-	"file_reader/src/log"
-	"file_reader/src/pkg/validation"
-	"file_reader/test/env"
 	"os"
 	"testing"
+
+	"github.com/KL-Engineering/file-reader/src/log"
+	"github.com/KL-Engineering/file-reader/src/pkg/validation"
+	"github.com/KL-Engineering/file-reader/test/env"
 
 	"go.uber.org/zap"
 

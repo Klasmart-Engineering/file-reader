@@ -3,15 +3,16 @@ package grpc
 import (
 	"context"
 	"encoding/csv"
-	"file_reader/internal/filereader"
-	"file_reader/src"
-	"file_reader/src/config"
-	"file_reader/src/instrument"
-	"file_reader/src/log"
-	"file_reader/src/protos/inputfile"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/KL-Engineering/file-reader/internal/filereader"
+	"github.com/KL-Engineering/file-reader/src"
+	"github.com/KL-Engineering/file-reader/src/config"
+	"github.com/KL-Engineering/file-reader/src/instrument"
+	"github.com/KL-Engineering/file-reader/src/log"
+	"github.com/KL-Engineering/file-reader/src/protos/inputfile"
 
 	"github.com/google/uuid"
 	"github.com/riferrei/srclient"

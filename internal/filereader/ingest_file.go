@@ -2,8 +2,9 @@ package filereader
 
 import (
 	"context"
-	zaplogger "file_reader/src/log"
 	"io"
+
+	zaplogger "github.com/KL-Engineering/file-reader/src/log"
 
 	"github.com/segmentio/kafka-go"
 )

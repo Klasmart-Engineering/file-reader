@@ -1,11 +1,12 @@
 package instrument
 
 import (
-	"file_reader/src/log"
 	"fmt"
 	"net"
 	"os"
 	"strings"
+
+	"github.com/KL-Engineering/file-reader/src/log"
 
 	"github.com/newrelic/go-agent/_integrations/nrgrpc"
 	"github.com/pkg/errors"

@@ -1,55 +1,47 @@
-module file_reader
+module github.com/KL-Engineering/file-reader
 
 go 1.18
 
 require (
 	github.com/actgardner/gogen-avro/v10 v10.2.1
-	github.com/aws/aws-sdk-go v1.44.9
+	github.com/aws/aws-sdk-go v1.44.20
+	github.com/go-playground/validator/v10 v10.11.0
+	github.com/goburrow/cache v0.1.4
 	github.com/golang/mock v1.6.0
+	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
-	github.com/newrelic/go-agent v3.15.2+incompatible
+	github.com/jhump/protoreflect v1.12.0
+	github.com/newrelic/go-agent v3.16.0+incompatible
 	github.com/onsi/gomega v1.19.0
 	github.com/pkg/errors v0.9.1
-	github.com/riferrei/srclient v0.5.2
+	github.com/riferrei/srclient v0.5.3
 	github.com/segmentio/kafka-go v0.4.31
+	github.com/stretchr/testify v1.7.1
 	go.uber.org/zap v1.21.0
-	google.golang.org/grpc v1.45.0
+	google.golang.org/grpc v1.46.2
 	google.golang.org/protobuf v1.28.0
 )
 
 require (
-	github.com/goburrow/cache v0.1.3
-	github.com/stretchr/testify v1.7.1
-)
-
-require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-)
-
-require github.com/google/go-cmp v0.5.6 // indirect
-
-require (
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
-	github.com/go-playground/validator/v10 v10.11.0
-	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/jhump/protoreflect v1.12.0
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/linkedin/goavro/v2 v2.11.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.0.0 // indirect
-	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.0.0-20220408190544-5352b0902921 // indirect
-	golang.org/x/net v0.0.0-20220517181318-183a9ca12b87 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220517195934-5e4e11fc645e // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20220422154200-b37d22cd5731 // indirect
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

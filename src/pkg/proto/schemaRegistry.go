@@ -3,11 +3,12 @@ package proto
 import (
 	"context"
 	"encoding/binary"
-	"file_reader/src/instrument"
-	"file_reader/src/protos/onboarding"
-	"file_reader/src/third_party/protobuf"
-	"file_reader/src/third_party/protobuf/srclient"
 	"log"
+
+	"github.com/KL-Engineering/file-reader/src/instrument"
+	"github.com/KL-Engineering/file-reader/src/protos/onboarding"
+	"github.com/KL-Engineering/file-reader/src/third_party/protobuf"
+	"github.com/KL-Engineering/file-reader/src/third_party/protobuf/srclient"
 )
 
 var cachingEnabled = true

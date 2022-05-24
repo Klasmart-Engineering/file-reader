@@ -2,17 +2,18 @@ package util
 
 import (
 	"context"
-	"file_reader/src/config"
-	"file_reader/src/instrument"
-	"file_reader/src/log"
 	"fmt"
 	"net"
 	"os"
 	"strconv"
 	"time"
 
-	filepb "file_reader/src/protos/inputfile"
-	fileGrpc "file_reader/src/services/organization/delivery/grpc"
+	"github.com/KL-Engineering/file-reader/src/config"
+	"github.com/KL-Engineering/file-reader/src/instrument"
+	"github.com/KL-Engineering/file-reader/src/log"
+
+	filepb "github.com/KL-Engineering/file-reader/src/protos/inputfile"
+	fileGrpc "github.com/KL-Engineering/file-reader/src/services/organization/delivery/grpc"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

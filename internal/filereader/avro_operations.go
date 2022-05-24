@@ -3,11 +3,12 @@ package filereader
 import (
 	"bytes"
 	"encoding/binary"
-	avro "file_reader/avro_gencode"
-	"file_reader/src"
-	"file_reader/src/instrument"
 	"io"
 	"os"
+
+	avro "github.com/KL-Engineering/file-reader/avro_gencode"
+	"github.com/KL-Engineering/file-reader/src"
+	"github.com/KL-Engineering/file-reader/src/instrument"
 )
 
 type avroCodec interface {
