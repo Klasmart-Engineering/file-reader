@@ -74,7 +74,6 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 		AwsSession:        sess,
 		Operations:        operations,
 		SchemaRegistry:    schemaRegistryClient,
-		OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
 		Logger:            logger,
 	}
 	r := kafka.NewReader(kafka.ReaderConfig{

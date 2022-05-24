@@ -46,9 +46,13 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
 	// set up env variables
-	organizationProtoTopic := uuid.NewString()
+	organizationProtoTopic := "orgProtoTopic" + uuid.NewString()
+	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"ORGANIZATION_PROTO_TOPIC": organizationProtoTopic,
+		"ORGANIZATION_PROTO_TOPIC":         organizationProtoTopic,
+		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
+		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
+		"SCHEMA_TYPE":                      "PROTO",
 	})
 
 	defer t.Cleanup(closer)
@@ -61,7 +65,6 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	schemaRegistryClient := &src.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 	}
-	s3FileCreationTopic := "S3FileCreatedUpdated"
 	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
 	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaId(schemaBody, s3FileCreationTopic)
 	schemaIDBytes := make([]byte, 4)

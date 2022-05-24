@@ -10,6 +10,8 @@ import (
 	"file_reader/src/instrument"
 	zaplogger "file_reader/src/log"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -18,7 +20,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/google/uuid"
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 )
@@ -37,7 +38,6 @@ type ConsumeToIngestConfig struct {
 	AwsSession        *session.Session
 	SchemaRegistry    *src.SchemaRegistry
 	Operations        Operations
-	OutputDirectory   string
 	Logger            *zaplogger.ZapLogger
 }
 
@@ -71,16 +71,16 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				continue
 			}
 
-			// For now have the s3 downloader write to disk
-			file, err := os.Create(config.OutputDirectory + s3FileCreated.Payload.Key)
+			// Open file on /tmp/
+			f, err := ioutil.TempFile("", "file-reader-"+s3FileCreated.Payload.Key)
 			if err != nil {
-				logger.Error(ctx, err)
-				continue
+				log.Fatal("Failed to make tmp file", err)
 			}
-			defer file.Close()
+			defer os.Remove(f.Name())
 
+			// Download from S3 to file
 			downloader := s3manager.NewDownloader(config.AwsSession)
-			numBytes, err := downloader.Download(file,
+			numBytes, err := downloader.Download(f,
 				&s3.GetObjectInput{
 					Bucket: aws.String(s3FileCreated.Payload.Bucket_name),
 					Key:    aws.String(s3FileCreated.Payload.Key),
@@ -89,13 +89,12 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				logger.Error(ctx, err)
 				continue
 			}
-
 			logger.Infof(ctx, "Downloaded %s %d bytes", s3FileCreated.Payload.Key, numBytes)
-			file.Close()
-			// Reopen the same file for ingest (until thought of alternative)
-			f, _ := os.Open(config.OutputDirectory + s3FileCreated.Payload.Key)
-			defer f.Close()
 
+			// Close and reopen the same file for ingest (until thought of alternative)
+			f.Close()
+			f, _ = os.Open(f.Name())
+			defer f.Close()
 			// Compose the ingestFile() with different reader depending on file type
 			var reader Reader
 			switch s3FileCreated.Payload.Content_type {
@@ -165,12 +164,11 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 		AwsSession:        sess,
 		Operations:        operations,
 		SchemaRegistry:    schemaRegistryClient,
-		OutputDirectory:   os.Getenv("DOWNLOAD_DIRECTORY"),
 		Logger:            logger,
 	}
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
-		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID") + uuid.NewString(),
+		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID"),
 		StartOffset: kafka.LastOffset,
 		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 	})
