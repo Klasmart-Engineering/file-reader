@@ -4,10 +4,10 @@ import (
 	"os"
 
 	"github.com/KL-Engineering/file-reader/cmd/instrument"
-	"github.com/KL-Engineering/file-reader/cmd/pkg/proto"
 	orgPb "github.com/KL-Engineering/file-reader/cmd/protos/onboarding"
-	"github.com/KL-Engineering/file-reader/cmd/third_party/protobuf"
 	"github.com/KL-Engineering/file-reader/internal/core"
+	proto "github.com/KL-Engineering/file-reader/pkg/proto"
+	protobuf "github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 )
 
 func InitProtoOperations() core.Operations {

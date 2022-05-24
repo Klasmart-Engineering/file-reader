@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/KL-Engineering/file-reader/cmd/log"
+	"github.com/KL-Engineering/file-reader/internal/log"
 
 	"github.com/newrelic/go-agent/_integrations/nrgrpc"
 	"github.com/pkg/errors"

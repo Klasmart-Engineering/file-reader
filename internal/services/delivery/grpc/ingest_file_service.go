@@ -3,16 +3,18 @@ package grpc
 import (
 	"context"
 	"encoding/csv"
-	"file_reader/internal/filereader"
-	"file_reader/src"
-	"file_reader/src/config"
-	"file_reader/src/instrument"
-	"file_reader/src/log"
-	"file_reader/src/protos/inputfile"
-	"fmt"file-reader/cmd
-	"io"file-reader/cmd
-	"os"file-reader/cmd
-file-reader/cmd
+	"fmt"
+	"io"
+	"os"
+
+	inputfile "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
+	"github.com/KL-Engineering/file-reader/internal/avro"
+	"github.com/KL-Engineering/file-reader/internal/core"
+
+	"github.com/KL-Engineering/file-reader/internal/config"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
+	"github.com/KL-Engineering/file-reader/internal/log"
+
 	"github.com/google/uuid"
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
@@ -23,7 +25,7 @@ type IngestFileService struct {
 	ctx        context.Context
 	logger     *log.ZapLogger
 	cfg        *config.Config
-	operations filereader.Operations
+	operations core.Operations
 	inputfile.UnimplementedIngestFileServiceServer
 }
 
@@ -38,17 +40,17 @@ var operationEnumMap = map[inputfile.Type]string{
 
 // NewIngestFileService organizationServer constructor
 func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *config.Config) *IngestFileService {
-	schemaRegistryClient := &src.SchemaRegistry{
+	schemaRegistryClient := &avro.SchemaRegistry{
 		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 		IdSchemaMap: make(map[int]string),
 	}
 	schemaType := os.Getenv("SCHEMA_TYPE") // AVRO or PROTO.
-	var operations filereader.Operations
+	var operations core.Operations
 	switch schemaType {
 	case "AVRO":
-		operations = filereader.InitAvroOperations(schemaRegistryClient)
+		operations = core.InitAvroOperations(schemaRegistryClient)
 	case "PROTO":
-		operations = filereader.InitProtoOperations()
+		operations = core.InitProtoOperations()
 	}
 	return &IngestFileService{ctx: ctx, logger: logger, cfg: cfg, operations: operations}
 }
@@ -72,7 +74,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 		c.logger.Error(c.ctx, "invalid operation_type on file create message ")
 	}
 
-	ingestFileConfig := filereader.IngestFileConfig{
+	ingestFileConfig := core.IngestFileConfig{
 		Reader: csv.NewReader(f),
 		KafkaWriter: kafka.Writer{
 			Addr:                   kafka.TCP(c.cfg.Kafka.Brokers...),

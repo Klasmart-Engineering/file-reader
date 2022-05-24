@@ -5,10 +5,10 @@ import (
 	"encoding/binary"
 	"log"
 
-	"github.com/KL-Engineering/file-reader/cmd/instrument"
-	"github.com/KL-Engineering/file-reader/cmd/protos/onboarding"
-	"github.com/KL-Engineering/file-reader/cmd/third_party/protobuf"
-	"github.com/KL-Engineering/file-reader/cmd/third_party/protobuf/srclient"
+	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
+	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
+	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf/srclient"
 )
 
 var cachingEnabled = true

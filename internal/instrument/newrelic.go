@@ -3,7 +3,7 @@ package instrument
 import (
 	"strconv"
 
-	"github.com/KL-Engineering/file-reader/cmd/log"
+	"github.com/KL-Engineering/file-reader/internal/log"
 
 	newrelic "github.com/newrelic/go-agent"
 	"github.com/newrelic/go-agent/_integrations/nrzap"

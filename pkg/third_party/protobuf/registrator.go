@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/KL-Engineering/file-reader/cmd/third_party/protobuf/srclient"
+	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf/srclient"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"

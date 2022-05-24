@@ -1,4 +1,4 @@
-package src
+package avro
 
 import (
 	"log"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	zaplogger "github.com/KL-Engineering/file-reader/cmd/log"
+	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
 
 	"github.com/segmentio/kafka-go"
 )

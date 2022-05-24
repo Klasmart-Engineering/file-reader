@@ -10,9 +10,11 @@ import (
 	"os"
 	"strings"
 
-	avro "github.com/KL-Engineering/file-reader/avro_gencode"
-	"github.com/KL-Engineering/file-reader/cmd/instrument"
-	zaplogger "github.com/KL-Engineering/file-reader/cmd/log"
+	avrogen "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
+	avro "github.com/KL-Engineering/file-reader/internal/avro"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
+	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
+	proto "github.com/KL-Engineering/file-reader/internal/proto"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -35,7 +37,7 @@ func (ops Operations) GetOperation(opKey string) (Operation, bool) {
 type ConsumeToIngestConfig struct {
 	OutputBrokerAddrs []string
 	AwsSession        *session.Session
-	SchemaRegistry    *cmd.SchemaRegistry
+	SchemaRegistry    *avro.SchemaRegistry
 	Operations        Operations
 	Logger            *zaplogger.ZapLogger
 }
@@ -64,7 +66,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				continue
 			}
 			r := bytes.NewReader(msg.Value[5:])
-			s3FileCreated, err := avro.DeserializeS3FileCreatedFromSchema(r, schema)
+			s3FileCreated, err := avrogen.DeserializeS3FileCreatedFromSchema(r, schema)
 			if err != nil {
 				logger.Error(ctx, "could not deserialize message ", err.Error())
 				continue
@@ -126,7 +128,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 }
 
 func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
-	schemaRegistryClient := &cmd.SchemaRegistry{
+	schemaRegistryClient := &avro.SchemaRegistry{
 		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 		IdSchemaMap: make(map[int]string),
 	}
@@ -135,9 +137,9 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	var operations Operations
 	switch schemaType {
 	case "AVRO":
-		operations = InitAvroOperations(schemaRegistryClient)
+		operations = avro.InitAvroOperations(schemaRegistryClient)
 	case "PROTO":
-		operations = InitProtoOperations()
+		operations = proto.InitProtoOperations()
 	}
 
 	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")

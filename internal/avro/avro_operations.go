@@ -6,8 +6,10 @@ import (
 	"io"
 	"os"
 
-	avro "github.com/KL-Engineering/file-reader/avro_gencode"
-	"github.com/KL-Engineering/file-reader/cmd/instrument"
+	avrogen "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
+	avro "github.com/KL-Engineering/file-reader/internal/avro"
+	"github.com/KL-Engineering/file-reader/internal/core"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
 )
 
 type avroCodec interface {
@@ -33,15 +35,15 @@ func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
 	return recordValue
 }
 
-func GetOrganizationSchemaId(schemaRegistryClient *cmd.SchemaRegistry, organizationTopic string) int {
-	schemaBody := avro.Organization.Schema(avro.NewOrganization())
+func GetOrganizationSchemaId(schemaRegistryClient *avro.SchemaRegistry, organizationTopic string) int {
+	schemaBody := avrogen.Organization.Schema(avrogen.NewOrganization())
 	return schemaRegistryClient.GetSchemaId(schemaBody, organizationTopic)
 }
 
-func InitAvroOperations(schemaRegistryClient *cmd.SchemaRegistry) Operations {
+func InitAvroOperations(schemaRegistryClient *avro.SchemaRegistry) core.Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
-	return Operations{
-		OperationMap: map[string]Operation{
+	return core.Operations{
+		OperationMap: map[string]core.Operation{
 			"ORGANIZATION": {
 				Topic:        organizationTopic,
 				Key:          "",
@@ -55,16 +57,16 @@ func InitAvroOperations(schemaRegistryClient *cmd.SchemaRegistry) Operations {
 // ToDo: add logic for stripping header and figuring out column order
 func RowToOrganizationAvro(row []string, tracking_id string, schemaId int) ([]byte, error) {
 	// Takes a slice of columns representing an organization and encodes to avro bytes
-	md := avro.OrganizationMetadata{
+	md := avrogen.OrganizationMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:             os.Getenv("METADATA_REGION"),
 		Tracking_id:        tracking_id,
 	}
-	pl := avro.OrganizationPayload{
+	pl := avrogen.OrganizationPayload{
 		Guid:              row[0],
 		Organization_name: row[1],
 	}
-	codec := avro.Organization{Payload: pl, Metadata: md}
+	codec := avrogen.Organization{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 
 }

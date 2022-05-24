@@ -2,17 +2,18 @@ package main
 
 import (
 	"context"
-	zaplogger "file_reader/src/file-reader/cmd"
 
-	filepb "file_reader/src/protos/inputffile-reader/cmd"
-	fileGrpc "file_reader/src/services/organization/delivery/grpc"
+	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
 
-	"github.com/KL-Engineering/file-reader/cmd/config"
-	"github.com/KL-Engineering/file-reader/cmd/instrument"
+	filepb "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
+	fileGrpc "github.com/KL-Engineering/file-reader/internal/services/delivery/grpc"
+
+	"github.com/KL-Engineering/file-reader/internal/config"
 	"github.com/KL-Engineering/file-reader/internal/core"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
 	"go.uber.org/zap"
 
-	health "file_reader/src/pkg/healthcheck"
+	health "github.com/KL-Engineering/file-reader/internal/healthcheck"
 
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
