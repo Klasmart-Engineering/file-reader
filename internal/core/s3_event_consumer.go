@@ -40,8 +40,113 @@ type ConsumeToIngestConfig struct {
 	Logger            *zaplogger.ZapLogger
 }
 
+func processS3EventMessage(ctx context.Context, config ConsumeToIngestConfig, msg kafka.Message) bool {
+	// Get schema info
+	schema := getSchemaInfo(msg, config, ctx)
+	if schema == "" {
+		return false
+	}
+
+	// Deserialize file create message
+	s3FileCreated, ok := getS3CreatedFile(msg, schema, config, ctx)
+	if !ok {
+		return false
+	}
+
+	// Create and open file on /tmp/
+	f, ok := createAndOpenTempFile(s3FileCreated)
+	if !ok {
+		return false
+	}
+	defer os.Remove(f.Name())
+
+	// Download from S3 to file
+	numBytes, shouldReturn, returnValue := newFunction(config, f, s3FileCreated, ctx)
+	if shouldReturn {
+		return returnValue
+	}
+	config.Logger.Infof(ctx, "Downloaded %s %d bytes", s3FileCreated.Payload.Key, numBytes)
+
+	// Close and reopen the same file for ingest (until thought of alternative)
+	f.Close()
+	f, _ = os.Open(f.Name())
+	defer f.Close()
+	// Compose the ingestFile() with different reader depending on file type
+	var reader Reader
+	switch s3FileCreated.Payload.Content_type {
+	default:
+		reader = csv.NewReader(f)
+	}
+
+	// Map to operation based on operation type
+	operation, exists := config.Operations.GetOperation(s3FileCreated.Payload.Operation_type)
+	if !exists {
+		config.Logger.Error(ctx, "invalid operation_type on file create message ")
+		return false
+	}
+	ingestFileConfig := IngestFileConfig{
+		Reader: reader,
+		KafkaWriter: kafka.Writer{
+			Addr:                   kafka.TCP(config.OutputBrokerAddrs...),
+			Topic:                  operation.Topic,
+			Logger:                 config.Logger,
+			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
+		},
+		TrackingId: s3FileCreated.Metadata.Tracking_id,
+		Logger:     config.Logger,
+	}
+
+	operation.IngestFile(ctx, ingestFileConfig)
+	f.Close()
+	return true
+}
+
+func newFunction(config ConsumeToIngestConfig, f *os.File, s3FileCreated avrogen.S3FileCreated, ctx context.Context) (int64, bool, bool) {
+	downloader := s3manager.NewDownloader(config.AwsSession)
+	numBytes, err := downloader.Download(f,
+		&s3.GetObjectInput{
+			Bucket: aws.String(s3FileCreated.Payload.Bucket_name),
+			Key:    aws.String(s3FileCreated.Payload.Key),
+		})
+	if err != nil {
+		config.Logger.Error(ctx, err)
+		return 0, true, false
+	}
+	return numBytes, false, false
+}
+
+func createAndOpenTempFile(s3FileCreated avrogen.S3FileCreated) (*os.File, bool) {
+	f, err := ioutil.TempFile("", "file-reader-"+s3FileCreated.Payload.Key)
+	if err != nil {
+		log.Fatal("Failed to make tmp file", err)
+		return f, false
+	}
+	return f, true
+}
+
+func getS3CreatedFile(msg kafka.Message, schema string, config ConsumeToIngestConfig, ctx context.Context) (avrogen.S3FileCreated, bool) {
+	r := bytes.NewReader(msg.Value[5:])
+	s3FileCreated, err := avrogen.DeserializeS3FileCreatedFromSchema(r, schema)
+	if err != nil {
+		config.Logger.Error(ctx, "could not deserialize message ", err.Error())
+		return avrogen.S3FileCreated{}, false
+	}
+	return s3FileCreated, true
+}
+
+func getSchemaInfo(msg kafka.Message, config ConsumeToIngestConfig, ctx context.Context) string {
+	schemaIdBytes := msg.Value[1:5]
+	schemaId := int(binary.BigEndian.Uint32(schemaIdBytes))
+	schema, err := config.SchemaRegistry.GetSchema(schemaId)
+	if err != nil {
+		config.Logger.Error(ctx, "could not retrieve schema with id ", schemaId, err.Error())
+		return ""
+	}
+	return schema
+}
 func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config ConsumeToIngestConfig) {
 	logger := config.Logger
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -55,72 +160,9 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			}
 			logger.Debug(ctx, " received message: ", string(msg.Value))
 
-			// Deserialize file create message
-			schemaIdBytes := msg.Value[1:5]
-			schemaId := int(binary.BigEndian.Uint32(schemaIdBytes))
-			schema, err := config.SchemaRegistry.GetSchema(schemaId)
-			if err != nil {
-				logger.Error(ctx, "could not retrieve schema with id ", schemaId, err.Error())
+			if !processS3EventMessage(ctx, config, msg) {
 				continue
 			}
-			r := bytes.NewReader(msg.Value[5:])
-			s3FileCreated, err := avrogen.DeserializeS3FileCreatedFromSchema(r, schema)
-			if err != nil {
-				logger.Error(ctx, "could not deserialize message ", err.Error())
-				continue
-			}
-
-			// Create and open file on /tmp/
-			f, err := ioutil.TempFile("", "file-reader-"+s3FileCreated.Payload.Key)
-			if err != nil {
-				log.Fatal("Failed to make tmp file", err)
-			}
-			defer os.Remove(f.Name())
-
-			// Download from S3 to file
-			downloader := s3manager.NewDownloader(config.AwsSession)
-			numBytes, err := downloader.Download(f,
-				&s3.GetObjectInput{
-					Bucket: aws.String(s3FileCreated.Payload.Bucket_name),
-					Key:    aws.String(s3FileCreated.Payload.Key),
-				})
-			if err != nil {
-				logger.Error(ctx, err)
-				continue
-			}
-			logger.Infof(ctx, "Downloaded %s %d bytes", s3FileCreated.Payload.Key, numBytes)
-
-			// Close and reopen the same file for ingest (until thought of alternative)
-			f.Close()
-			f, _ = os.Open(f.Name())
-			defer f.Close()
-			// Compose the ingestFile() with different reader depending on file type
-			var reader Reader
-			switch s3FileCreated.Payload.Content_type {
-			default:
-				reader = csv.NewReader(f)
-			}
-
-			// Map to operation based on operation type
-			operation, exists := config.Operations.GetOperation(s3FileCreated.Payload.Operation_type)
-			if !exists {
-				logger.Error(ctx, "invalid operation_type on file create message ")
-				continue
-			}
-			ingestFileConfig := IngestFileConfig{
-				Reader: reader,
-				KafkaWriter: kafka.Writer{
-					Addr:                   kafka.TCP(config.OutputBrokerAddrs...),
-					Topic:                  operation.Topic,
-					Logger:                 logger,
-					AllowAutoTopicCreation: instrument.IsEnv("TEST"),
-				},
-				TrackingId: s3FileCreated.Metadata.Tracking_id,
-				Logger:     logger,
-			}
-
-			operation.IngestFile(ctx, ingestFileConfig)
-			f.Close()
 		}
 	}
 }

@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
@@ -40,7 +41,9 @@ func (op Operation) IngestFile(ctx context.Context, config IngestFileConfig) {
 		}
 
 		// Serialise row using schema
+		fmt.Println("row = ", row)
 		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID)
+		fmt.Println("recordValue = ", recordValue)
 		if err != nil {
 			logger.Error(ctx, "Error serialising record to bytes", err)
 			continue
