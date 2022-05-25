@@ -141,13 +141,14 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 			Value: recordValue,
 		},
 	)
+
 	assert.Nil(t, err, "error writing message to topic")
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationProtoTopic,
-		StartOffset: kafka.LastOffset,
+		StartOffset: kafka.FirstOffset,
 	})
 
 	serde := protobuf.NewProtoSerDe()
