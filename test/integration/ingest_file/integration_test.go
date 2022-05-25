@@ -78,9 +78,9 @@ func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization,
 			}
 
 			pl := onboarding.OrganizationPayload{
-				Uuid:             &onboarding.StringValue{Value: row[0]},
-				OrganizationName: &onboarding.StringValue{Value: row[1]},
-				OwnerUserId:      &onboarding.StringValue{Value: row[2]},
+				Uuid:        &onboarding.StringValue{Value: row[0]},
+				Name:        &onboarding.StringValue{Value: row[1]},
+				OwnerUserId: &onboarding.StringValue{Value: row[2]},
 			}
 
 			res = append(res, &onboarding.Organization{Payload: &pl, Metadata: &md})
@@ -183,7 +183,7 @@ func TestFileProcessingServer(t *testing.T) {
 						g.Expect(expected.Metadata.Region.Value).To(gomega.Equal(org.Metadata.Region.Value))
 						g.Expect(expected.Metadata.OriginApplication.Value).To(gomega.Equal(org.Metadata.OriginApplication.Value))
 						g.Expect(expected.Payload.Uuid.Value).To(gomega.Equal(org.Payload.Uuid.Value))
-						g.Expect(expected.Payload.OrganizationName.Value).To(gomega.Equal(org.Payload.OrganizationName.Value))
+						g.Expect(expected.Payload.Name.Value).To(gomega.Equal(org.Payload.Name.Value))
 						g.Expect(expected.Payload.OwnerUserId.Value).To(gomega.Equal(org.Payload.OwnerUserId.Value))
 
 					} else {

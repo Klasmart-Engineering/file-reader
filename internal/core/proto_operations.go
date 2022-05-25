@@ -30,9 +30,9 @@ func RowToOrganizationProto(row []string, tracking_id string, schemaId int) ([]b
 		TrackingId:        &onboarding.StringValue{Value: tracking_id},
 	}
 	pl := onboarding.OrganizationPayload{
-		Uuid:             &onboarding.StringValue{Value: row[0]},
-		OrganizationName: &onboarding.StringValue{Value: row[1]},
-		OwnerUserId:      &onboarding.StringValue{Value: row[2]},
+		Uuid:        &onboarding.StringValue{Value: row[0]},
+		Name:        &onboarding.StringValue{Value: row[1]},
+		OwnerUserId: &onboarding.StringValue{Value: row[2]},
 	}
 	codec := &onboarding.Organization{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
