@@ -12,7 +12,12 @@
 						"type": "string"
 					},
 					{
-						"name": "guid",
+						"name": "uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					},
+					{
+						"name": "owner_user_id",
 						"type": "string",
 						"logicalType": "uuid"
 					}

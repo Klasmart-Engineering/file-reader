@@ -33,7 +33,7 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 	organizations := [][]string{}
 	for i := 0; i < numOrgs; i++ {
 		// rows are `uuid,org{i}`
-		organizations = append(organizations, []string{uuid.NewString(), "org" + strconv.Itoa(i)})
+		organizations = append(organizations, []string{uuid.NewString(), "org" + strconv.Itoa(i), uuid.NewString()})
 	}
 	lines := []string{}
 	for _, org := range organizations {
@@ -165,6 +165,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 		orgInput := orgs[i]
 		assert.Equal(t, orgInput[0], orgOutput.Payload.Uuid.Value)
-		assert.Equal(t, orgInput[1], orgOutput.Payload.Name.Value)
+		assert.Equal(t, orgInput[1], orgOutput.Payload.OrganizationName.Value)
+		assert.Equal(t, orgInput[2], orgOutput.Payload.OwnerUserId.Value)
 	}
 }
