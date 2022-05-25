@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
@@ -73,8 +72,10 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 		c.logger.Error(c.ctx, "invalid operation_type on file create message ")
 	}
 
+	fileRows := make(chan []string)
+	go core.ReadRows(c.ctx, c.logger, f, "text/csv", fileRows)
+
 	ingestFileConfig := core.IngestFileConfig{
-		Reader: csv.NewReader(f),
 		KafkaWriter: kafka.Writer{
 			Addr:                   kafka.TCP(c.cfg.Kafka.Brokers...),
 			Topic:                  operation.Topic,
@@ -85,7 +86,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 		Logger:     c.logger,
 	}
 
-	operation.IngestFile(c.ctx, ingestFileConfig)
+	operation.IngestFile(c.ctx, fileRows, ingestFileConfig)
 
 	return ""
 }
