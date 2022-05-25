@@ -5,24 +5,25 @@ import (
 	"context"
 	"embed"
 	"encoding/csv"
-	"file_reader/src/config"
-	"file_reader/src/instrument"
-	filepb "file_reader/src/protos/inputfile"
-	"file_reader/src/protos/onboarding"
-	clientPb "file_reader/test/client"
-	util "file_reader/test/integration"
 	"time"
 
-	orgPb "file_reader/src/protos/onboarding"
-	"file_reader/src/third_party/protobuf"
+	filepb "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
+	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
+	"github.com/KL-Engineering/file-reader/internal/config"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
+	clientPb "github.com/KL-Engineering/file-reader/test/client"
+	util "github.com/KL-Engineering/file-reader/test/integration"
+
+	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 
 	"io"
 
-	"file_reader/src/log"
-	"file_reader/src/pkg/validation"
-	"file_reader/test/env"
 	"os"
 	"testing"
+
+	"github.com/KL-Engineering/file-reader/internal/log"
+	"github.com/KL-Engineering/file-reader/internal/validation"
+	"github.com/KL-Engineering/file-reader/test/env"
 
 	"go.uber.org/zap"
 
@@ -70,18 +71,18 @@ func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization,
 				}
 			}
 
-			md := orgPb.Metadata{
-				OriginApplication: &orgPb.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
-				Region:            &orgPb.StringValue{Value: os.Getenv("METADATA_REGION")},
-				TrackingId:        &orgPb.StringValue{Value: uuid.NewString()},
+			md := onboarding.Metadata{
+				OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
+				Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
+				TrackingId:        &onboarding.StringValue{Value: uuid.NewString()},
 			}
 
-			pl := orgPb.OrganizationPayload{
-				Uuid: &orgPb.StringValue{Value: row[0]},
-				Name: &orgPb.StringValue{Value: row[1]},
+			pl := onboarding.OrganizationPayload{
+				Uuid: &onboarding.StringValue{Value: row[0]},
+				Name: &onboarding.StringValue{Value: row[1]},
 			}
 
-			res = append(res, &orgPb.Organization{Payload: &pl, Metadata: &md})
+			res = append(res, &onboarding.Organization{Payload: &pl, Metadata: &md})
 		}
 
 	}

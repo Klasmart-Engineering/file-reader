@@ -2,8 +2,9 @@ package client
 
 import (
 	"context"
-	"file_reader/src/log"
-	filepb "file_reader/src/protos/inputfile"
+
+	filepb "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
+	"github.com/KL-Engineering/file-reader/internal/log"
 )
 
 type Type string
