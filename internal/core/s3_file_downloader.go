@@ -44,7 +44,7 @@ func DownloadFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *
 	f.Close()
 	f, _ = os.Open(f.Name())
 
-	// Read file and pass rows to channel (when download instead streams from S3, rows would instead pass to channel in that process)
+	// Read file and pass rows to fileRows channel
 	go ReadRows(ctx, logger, f, s3FileCreated.Payload.Content_type, fileRows)
 
 	return nil
