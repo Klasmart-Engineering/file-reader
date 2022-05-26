@@ -1,24 +1,16 @@
 package core
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
-	"encoding/csv"
-	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
-	avrogen "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
 	"github.com/KL-Engineering/file-reader/internal/instrument"
 	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 )
@@ -56,49 +48,18 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			logger.Debug(ctx, " received message: ", string(msg.Value))
 
 			// Deserialize file create message
-			schemaIdBytes := msg.Value[1:5]
-			schemaId := int(binary.BigEndian.Uint32(schemaIdBytes))
-			schema, err := config.SchemaRegistry.GetSchema(schemaId)
-			if err != nil {
-				logger.Error(ctx, "could not retrieve schema with id ", schemaId, err.Error())
-				continue
-			}
-			r := bytes.NewReader(msg.Value[5:])
-			s3FileCreated, err := avrogen.DeserializeS3FileCreatedFromSchema(r, schema)
+			s3FileCreated, err := deserializeS3Event(config.SchemaRegistry, msg.Value)
 			if err != nil {
 				logger.Error(ctx, "could not deserialize message ", err.Error())
 				continue
 			}
 
-			// Create and open file on /tmp/
-			f, err := ioutil.TempFile("", "file-reader-"+s3FileCreated.Payload.Key)
+			// Download S3 file
+			fileRows := make(chan []string)
+			err = DownloadFile(ctx, config.Logger, config.AwsSession, s3FileCreated, fileRows)
 			if err != nil {
-				log.Fatal("Failed to make tmp file", err)
-			}
-			defer os.Remove(f.Name())
-
-			// Download from S3 to file
-			downloader := s3manager.NewDownloader(config.AwsSession)
-			numBytes, err := downloader.Download(f,
-				&s3.GetObjectInput{
-					Bucket: aws.String(s3FileCreated.Payload.Bucket_name),
-					Key:    aws.String(s3FileCreated.Payload.Key),
-				})
-			if err != nil {
-				logger.Error(ctx, err)
+				logger.Error(ctx, "error downloading s3 File ", err.Error())
 				continue
-			}
-			logger.Infof(ctx, "Downloaded %s %d bytes", s3FileCreated.Payload.Key, numBytes)
-
-			// Close and reopen the same file for ingest (until thought of alternative)
-			f.Close()
-			f, _ = os.Open(f.Name())
-			defer f.Close()
-			// Compose the ingestFile() with different reader depending on file type
-			var reader Reader
-			switch s3FileCreated.Payload.Content_type {
-			default:
-				reader = csv.NewReader(f)
 			}
 
 			// Map to operation based on operation type
@@ -108,7 +69,6 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				continue
 			}
 			ingestFileConfig := IngestFileConfig{
-				Reader: reader,
 				KafkaWriter: kafka.Writer{
 					Addr:                   kafka.TCP(config.OutputBrokerAddrs...),
 					Topic:                  operation.Topic,
@@ -119,8 +79,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				Logger:     logger,
 			}
 
-			operation.IngestFile(ctx, ingestFileConfig)
-			f.Close()
+			operation.IngestFile(ctx, fileRows, ingestFileConfig)
 		}
 	}
 }
