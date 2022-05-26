@@ -33,11 +33,10 @@ func UpdateHeaderIndexes(headerIndexes map[string]int, headers []string) (map[st
 	}
 	// Set headers to the correct index using the header row
 	for i, header := range headers {
-		_, exists := headerIndexes[header]
-		if !exists {
-			return nil, errors.New(fmt.Sprint("unrecognised header ", header, " in headers: ", headers))
+		_, exists := headerIndexes[header] // check existence so we can ignore extra headers
+		if exists {
+			headerIndexes[header] = i
 		}
-		headerIndexes[header] = i
 	}
 	// If any expected headers have no index, return error
 	for header, index := range headerIndexes {
