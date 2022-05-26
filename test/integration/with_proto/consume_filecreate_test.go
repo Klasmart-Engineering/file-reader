@@ -80,7 +80,6 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	ctx := context.Background()
 
 	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: "localstack",
 		Config: aws.Config{
 			Credentials: credentials.NewStaticCredentials(
 				"test",
@@ -147,7 +146,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationProtoTopic,
-		StartOffset: kafka.LastOffset,
+		StartOffset: kafka.FirstOffset,
 	})
 
 	serde := protobuf.NewProtoSerDe()
