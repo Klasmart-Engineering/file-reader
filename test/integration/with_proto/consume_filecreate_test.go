@@ -35,7 +35,7 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 		// rows are `uuid,org{i}`
 		organizations = append(organizations, []string{uuid.NewString(), "org" + strconv.Itoa(i), uuid.NewString()})
 	}
-	lines := []string{}
+	lines := []string{"uuid,organization_name,owner_user_id"}
 	for _, org := range organizations {
 		s := strings.Join(org, ",")
 		lines = append(lines, s)

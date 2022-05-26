@@ -3,6 +3,8 @@ package core
 import (
 	"context"
 	"encoding/csv"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -17,17 +19,29 @@ type IngestFileConfig struct {
 	Logger      *zaplogger.ZapLogger
 }
 type Operation struct {
-	Topic        string
-	Key          string
-	SchemaID     int
-	SerializeRow func(row []string, trackingId string, schemaId int) ([]byte, error)
+	Topic         string
+	Key           string
+	SchemaID      int
+	SerializeRow  func(row []string, trackingId string, schemaId int, headerIndexes map[string]int) ([]byte, error)
+	HeaderIndexes map[string]int
+}
+
+func UpdateHeaderIndexes(headerIndexes map[string]int, row []string) (map[string]int, error) {
+	for i, col := range row {
+		_, exists := headerIndexes[col]
+		if !exists {
+			return nil, errors.New(fmt.Sprint("unrecognised header in file", row))
+		}
+		headerIndexes[col] = i
+	}
+	return headerIndexes, nil
 }
 
 func (op Operation) IngestFile(ctx context.Context, fileRows chan []string, config IngestFileConfig) {
 	logger := config.Logger
 	for row := range fileRows {
 		// Serialise row using schema
-		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID)
+		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID, op.HeaderIndexes)
 		if err != nil {
 			logger.Error(ctx, "Error serialising record to bytes", err)
 			continue

@@ -63,6 +63,7 @@ func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization,
 		content, _ = testGoodDataDir.ReadFile(filePath)
 
 		reader := csv.NewReader(bytes.NewBuffer(content))
+		_, _ = reader.Read() // strip headers
 		for {
 			row, err := reader.Read()
 			if err != nil {
