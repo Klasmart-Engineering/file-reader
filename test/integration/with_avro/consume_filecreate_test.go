@@ -143,7 +143,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationAvroTopic,
-		StartOffset: kafka.LastOffset,
+		StartOffset: kafka.FirstOffset,
 	})
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
