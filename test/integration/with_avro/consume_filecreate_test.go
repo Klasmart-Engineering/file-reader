@@ -30,7 +30,7 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
 	organizations := [][]string{}
 	for i := 0; i < numOrgs; i++ {
 		// rows are `uuid,org{i}`
-		organizations = append(organizations, []string{uuid.NewString(), "org" + strconv.Itoa(i)})
+		organizations = append(organizations, []string{uuid.NewString(), "org" + strconv.Itoa(i), uuid.NewString()})
 	}
 	lines := []string{}
 	for _, org := range organizations {
@@ -77,7 +77,6 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	ctx := context.Background()
 
 	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: "localstack",
 		Config: aws.Config{
 			Credentials: credentials.NewStaticCredentials(
 				"test",
@@ -156,7 +155,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		assert.Equal(t, trackingId, orgOutput.Metadata.Tracking_id)
 
 		orgInput := orgs[i]
-		assert.Equal(t, orgInput[0], orgOutput.Payload.Guid)
+		assert.Equal(t, orgInput[0], orgOutput.Payload.Uuid)
 		assert.Equal(t, orgInput[1], orgOutput.Payload.Organization_name)
+		assert.Equal(t, orgInput[2], orgOutput.Payload.Owner_user_id)
 	}
 }

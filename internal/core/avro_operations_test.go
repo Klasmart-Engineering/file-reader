@@ -18,7 +18,7 @@ func TestRowToOrganizationAvro(t *testing.T) {
 	for _, scenario := range []TestCases{
 		{
 			description: "should return byte encoding which starts with schemaId",
-			org:         []string{"38ad4d35-0a29-436a-97bd-df26adbea6b4", "org0"},
+			org:         []string{"38ad4d35-0a29-436a-97bd-df26adbea6b4", "org0", "e893b974-dc12-11ec-9d64-0242ac120002"},
 			trackingId:  "trackingid1",
 			schemaId:    3,
 			expected:    []byte{0, 0, 0, 0, 3},

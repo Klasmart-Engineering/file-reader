@@ -2,8 +2,10 @@ package core
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"io"
+	"os"
 
 	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
 
@@ -11,16 +13,10 @@ import (
 )
 
 type IngestFileConfig struct {
-	Reader      Reader
 	KafkaWriter kafka.Writer
 	TrackingId  string
 	Logger      *zaplogger.ZapLogger
 }
-
-type Reader interface {
-	Read() ([]string, error)
-}
-
 type Operation struct {
 	Topic        string
 	Key          string
@@ -28,18 +24,9 @@ type Operation struct {
 	SerializeRow func(row []string, trackingId string, schemaId int) ([]byte, error)
 }
 
-func (op Operation) IngestFile(ctx context.Context, config IngestFileConfig) {
+func (op Operation) IngestFile(ctx context.Context, fileRows chan []string, config IngestFileConfig) {
 	logger := config.Logger
-	for {
-		row, err := config.Reader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			logger.Error(ctx, "Error reading from file", err)
-			continue
-		}
-
+	for row := range fileRows {
 		// Serialise row using schema
 		fmt.Println("row = ", row)
 		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID)
@@ -61,4 +48,27 @@ func (op Operation) IngestFile(ctx context.Context, config IngestFileConfig) {
 			continue
 		}
 	}
+}
+
+func ReadRows(ctx context.Context, logger *zaplogger.ZapLogger, f *os.File, fileType string, fileRows chan []string) {
+	defer f.Close()
+	// Use different reader depending on filetype
+	var reader Reader
+	switch fileType {
+	default:
+		reader = csv.NewReader(f)
+	}
+	// Read rows and pass to fileRows channel
+	for {
+		row, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			logger.Error(ctx, "Error reading from file", err)
+			continue
+		}
+		fileRows <- row
+	}
+	close(fileRows)
 }
