@@ -6,14 +6,13 @@ import (
 	"encoding/binary"
 	"log"
 	"os"
-	"strconv"
-	"strings"
 	"testing"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
 	"github.com/KL-Engineering/file-reader/internal/core"
 	zapLogger "github.com/KL-Engineering/file-reader/internal/log"
 	"github.com/KL-Engineering/file-reader/test/env"
+	util "github.com/KL-Engineering/file-reader/test/integration"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -25,21 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
-
-func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
-	organizations := [][]string{}
-	for i := 0; i < numOrgs; i++ {
-		// rows are `uuid,org{i}`
-		organizations = append(organizations, []string{uuid.NewString(), "org" + strconv.Itoa(i), uuid.NewString()})
-	}
-	lines := []string{"uuid,organization_name,owner_user_id"}
-	for _, org := range organizations {
-		s := strings.Join(org, ",")
-		lines = append(lines, s)
-	}
-	file := strings.NewReader(strings.Join(lines, "\n"))
-	return file, organizations
-}
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
 	// set up env variables
@@ -92,7 +76,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 	// Upload file to s3
 	numOrgs := 5
-	file, orgs := MakeOrgsCsv(numOrgs)
+	file, orgs := util.MakeOrgsCsv(numOrgs)
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucket),
@@ -155,8 +139,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		assert.Equal(t, trackingId, orgOutput.Metadata.Tracking_id)
 
 		orgInput := orgs[i]
-		assert.Equal(t, orgInput[0], orgOutput.Payload.Uuid)
-		assert.Equal(t, orgInput[1], orgOutput.Payload.Organization_name)
-		assert.Equal(t, orgInput[2], orgOutput.Payload.Owner_user_id)
+		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid)
+		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Organization_name)
+		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.Owner_user_id)
 	}
 }
