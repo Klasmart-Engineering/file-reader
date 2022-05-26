@@ -11,7 +11,7 @@ RUN go get -d -v ./...
 # Install the package
 RUN go install -v ./...
 
-RUN go build -ldflags "-s -w" -o main src/server/main.go
+RUN go build -ldflags "-s -w" -o main cmd/server/main.go
 
 EXPOSE 6000
 EXPOSE 9000

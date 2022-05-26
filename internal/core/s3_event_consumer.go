@@ -142,7 +142,6 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 
 	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
 	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: os.Getenv("AWS_PROFILE"),
 		Config: aws.Config{
 			Credentials: credentials.NewStaticCredentials(
 				os.Getenv("AWS_ACCESS_KEY_ID"),
@@ -168,7 +167,7 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
 		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID"),
-		StartOffset: kafka.LastOffset,
+		StartOffset: kafka.FirstOffset,
 		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 	})
 
