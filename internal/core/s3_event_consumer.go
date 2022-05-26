@@ -73,7 +73,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			headers := <-fileRows
 			operation.HeaderIndexes, err = UpdateHeaderIndexes(operation.HeaderIndexes, headers)
 			if err != nil {
-				logger.Error(ctx, "error parsing file headers", err.Error())
+				logger.Error(ctx, "Error parsing file headers. ", err.Error())
 				continue
 			}
 

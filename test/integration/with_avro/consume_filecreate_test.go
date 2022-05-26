@@ -37,11 +37,11 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	})
 
 	defer t.Cleanup(closer)
-
+	ctx := context.Background()
 	// Start consumer
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
-	core.StartFileCreateConsumer(context.Background(), logger)
+	core.StartFileCreateConsumer(ctx, logger)
 
 	schemaRegistryClient := &core.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
@@ -57,8 +57,6 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 	bucket := "organization"
 	s3key := "organization" + uuid.NewString() + ".csv"
-
-	ctx := context.Background()
 
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{

@@ -26,13 +26,24 @@ type Operation struct {
 	HeaderIndexes map[string]int
 }
 
-func UpdateHeaderIndexes(headerIndexes map[string]int, row []string) (map[string]int, error) {
-	for i, col := range row {
-		_, exists := headerIndexes[col]
+func UpdateHeaderIndexes(headerIndexes map[string]int, headers []string) (map[string]int, error) {
+	// headerIndexes for an operation should have all -1 in its definition, but make sure of it anyway
+	for header := range headerIndexes {
+		headerIndexes[header] = -1
+	}
+	// Set headers to the correct index using the header row
+	for i, header := range headers {
+		_, exists := headerIndexes[header]
 		if !exists {
-			return nil, errors.New(fmt.Sprint("unrecognised header in file", row))
+			return nil, errors.New(fmt.Sprint("unrecognised header ", header, " in headers: ", headers))
 		}
-		headerIndexes[col] = i
+		headerIndexes[header] = i
+	}
+	// If any expected headers have no index, return error
+	for header, index := range headerIndexes {
+		if index == -1 {
+			return nil, errors.New(fmt.Sprint("missing header ", header, " in headers: ", headers))
+		}
 	}
 	return headerIndexes, nil
 }
