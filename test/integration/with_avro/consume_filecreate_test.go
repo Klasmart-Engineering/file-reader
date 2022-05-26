@@ -77,7 +77,6 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	ctx := context.Background()
 
 	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: "localstack",
 		Config: aws.Config{
 			Credentials: credentials.NewStaticCredentials(
 				"test",
