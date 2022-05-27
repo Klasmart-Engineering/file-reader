@@ -18,7 +18,7 @@ func InitProtoOperations() Operations {
 				Key:          "",
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgTopic),
 				SerializeRow: RowToOrganizationProto,
-				Headers:      []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID},
+				Headers:      OrganizationHeaders,
 			},
 		},
 	}

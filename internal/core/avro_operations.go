@@ -39,6 +39,10 @@ const (
 	OWNER_USER_ID     = "owner_user_id"
 )
 
+var (
+	OrganizationHeaders = []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID}
+)
+
 func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
 	schemaBody := avrogen.Organization.Schema(avrogen.NewOrganization())
 	return schemaRegistryClient.GetSchemaId(schemaBody, organizationTopic)
@@ -53,7 +57,7 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				Key:          "",
 				SchemaID:     GetOrganizationSchemaId(schemaRegistryClient, organizationTopic),
 				SerializeRow: RowToOrganizationAvro,
-				Headers:      []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID},
+				Headers:      OrganizationHeaders,
 			},
 		},
 	}
