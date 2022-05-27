@@ -73,8 +73,22 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	assert.Nil(t, err, "error creating aws session")
 
 	// Upload file to s3
+
 	numOrgs := 5
-	file, orgs := util.MakeOrgsCsv(numOrgs)
+	headers := []string{"organization_name", "uuid", "owner_user_id", "foo", "bar"}
+	fieldTypeMap := map[string]int{
+		"organization_name": util.TYPE_OPERATION_NAME,
+		"uuid":              util.TYPE_OF_UUID,
+		"owner_user_id":     util.TYPE_OF_UUID,
+	}
+	prefix := "org"
+	fieldFuncMap := make(map[string]util.DataGenerator)
+
+	opConfig := util.NewOperationConfig(util.ORGANIZATION_NAME, prefix, numOrgs, headers, fieldFuncMap, fieldTypeMap, nil)
+	opConfig.BuildFuncMap(headers)
+
+	file, orgs := opConfig.MakeCsv()
+	//file, orgs := util.MakeOrgsCsv(numOrgs)
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucket),
@@ -126,6 +140,9 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationAvroTopic,
 		StartOffset: kafka.FirstOffset,
+		Dialer: &kafka.Dialer{
+			Timeout: kafka.DefaultDialer.Timeout,
+		},
 	})
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
