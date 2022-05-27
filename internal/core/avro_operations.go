@@ -33,6 +33,12 @@ func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
 	return recordValue
 }
 
+const (
+	UUID              = "uuid"
+	ORGANIZATION_NAME = "organization_name"
+	OWNER_USER_ID     = "owner_user_id"
+)
+
 func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
 	schemaBody := avrogen.Organization.Schema(avrogen.NewOrganization())
 	return schemaRegistryClient.GetSchemaId(schemaBody, organizationTopic)
@@ -48,9 +54,9 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SchemaID:     GetOrganizationSchemaId(schemaRegistryClient, organizationTopic),
 				SerializeRow: RowToOrganizationAvro,
 				HeaderIndexes: map[string]int{
-					"uuid":              -1,
-					"organization_name": -1,
-					"owner_user_id":     -1,
+					UUID:              -1,
+					ORGANIZATION_NAME: -1,
+					OWNER_USER_ID:     -1,
 				},
 			},
 		},
@@ -66,9 +72,9 @@ func RowToOrganizationAvro(row []string, tracking_id string, schemaId int, heade
 		Tracking_id:        tracking_id,
 	}
 	pl := avrogen.OrganizationPayload{
-		Uuid:          row[headerIndexes["uuid"]],
-		Name:          row[headerIndexes["organization_name"]],
-		Owner_user_id: row[headerIndexes["owner_user_id"]],
+		Uuid:          row[headerIndexes[UUID]],
+		Name:          row[headerIndexes[ORGANIZATION_NAME]],
+		Owner_user_id: row[headerIndexes[OWNER_USER_ID]],
 	}
 	codec := avrogen.Organization{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil

@@ -19,9 +19,9 @@ func InitProtoOperations() Operations {
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgTopic),
 				SerializeRow: RowToOrganizationProto,
 				HeaderIndexes: map[string]int{
-					"uuid":              -1,
-					"organization_name": -1,
-					"owner_user_id":     -1,
+					UUID:              -1,
+					ORGANIZATION_NAME: -1,
+					OWNER_USER_ID:     -1,
 				},
 			},
 		},
@@ -35,9 +35,9 @@ func RowToOrganizationProto(row []string, tracking_id string, schemaId int, head
 		TrackingId:        &onboarding.StringValue{Value: tracking_id},
 	}
 	pl := onboarding.OrganizationPayload{
-		Uuid:        &onboarding.StringValue{Value: row[headerIndexes["uuid"]]},
-		Name:        &onboarding.StringValue{Value: row[headerIndexes["organization_name"]]},
-		OwnerUserId: &onboarding.StringValue{Value: row[headerIndexes["owner_user_id"]]},
+		Uuid:        &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
+		Name:        &onboarding.StringValue{Value: row[headerIndexes[ORGANIZATION_NAME]]},
+		OwnerUserId: &onboarding.StringValue{Value: row[headerIndexes[OWNER_USER_ID]]},
 	}
 	codec := &onboarding.Organization{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
