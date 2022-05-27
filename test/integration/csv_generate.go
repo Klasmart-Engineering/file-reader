@@ -35,9 +35,9 @@ func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs []map[string]string) {
 	lines := []string{strings.Join(columnNames, ",")}
 	for _, org := range organizations {
 		cols := make([]string, len(columnNames))
-		cols[colIndexMap["uuid"]] = org["uuid"]
-		cols[colIndexMap["organization_name"]] = org["organization_name"]
-		cols[colIndexMap["owner_user_id"]] = org["owner_user_id"]
+		for _, col := range columnNames {
+			cols[colIndexMap[col]] = org[col]
+		}
 
 		line := strings.Join(cols, ",")
 		lines = append(lines, line)
