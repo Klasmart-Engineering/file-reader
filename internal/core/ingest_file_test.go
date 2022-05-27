@@ -84,34 +84,34 @@ func TestReadRows(t *testing.T) {
 
 func TestUpdateHeaderIndexes(t *testing.T) {
 	type TestCases struct {
-		description   string
-		headerIndexes map[string]int
-		headers       []string
-		expected      map[string]int
+		description     string
+		expectedHeaders []string
+		headers         []string
+		expected        map[string]int
 	}
 	testcases := []TestCases{
 		{
-			description:   "When headers are supplied in some order, the index map should match that order",
-			headerIndexes: map[string]int{"uuid": -1, "organization_name": -1, "owner_user_id": -1},
-			headers:       []string{"organization_name", "owner_user_id", "uuid"},
-			expected:      map[string]int{"uuid": 2, "organization_name": 0, "owner_user_id": 1},
+			description:     "When headers are supplied in some order, the index map should match that order",
+			expectedHeaders: []string{"uuid", "organization_name", "owner_user_id"},
+			headers:         []string{"organization_name", "owner_user_id", "uuid"},
+			expected:        map[string]int{"uuid": 2, "organization_name": 0, "owner_user_id": 1},
 		},
 		{
-			description:   "When extra headers are supplied, the index map should still be correct",
-			headerIndexes: map[string]int{"uuid": -1, "organization_name": -1, "owner_user_id": -1},
-			headers:       []string{"uuid", "slogan", "owner_user_id", "organization_name"},
-			expected:      map[string]int{"uuid": 0, "organization_name": 3, "owner_user_id": 2},
+			description:     "When extra headers are supplied, the index map should still be correct",
+			expectedHeaders: []string{"uuid", "organization_name", "owner_user_id"},
+			headers:         []string{"uuid", "slogan", "owner_user_id", "organization_name"},
+			expected:        map[string]int{"uuid": 0, "organization_name": 3, "owner_user_id": 2},
 		},
 		{
-			description:   "When headers are missing, an error should be raised",
-			headerIndexes: map[string]int{"uuid": -1, "organization_name": -1, "owner_user_id": -1},
-			headers:       []string{"uuid", "owner_user_id"},
-			expected:      nil,
+			description:     "When headers are missing, an error should be raised",
+			expectedHeaders: []string{"uuid", "organization_name", "owner_user_id"},
+			headers:         []string{"uuid", "owner_user_id"},
+			expected:        nil,
 		},
 	}
 	for _, scenario := range testcases {
 		t.Run(scenario.description, func(t *testing.T) {
-			headerIndexes, err := UpdateHeaderIndexes(scenario.headerIndexes, scenario.headers)
+			headerIndexes, err := GetHeaderIndexes(scenario.expectedHeaders, scenario.headers)
 			assert.Equal(t, scenario.expected, headerIndexes)
 			if headerIndexes == nil {
 				assert.ErrorContains(t, err, "missing header")

@@ -53,17 +53,12 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				Key:          "",
 				SchemaID:     GetOrganizationSchemaId(schemaRegistryClient, organizationTopic),
 				SerializeRow: RowToOrganizationAvro,
-				HeaderIndexes: map[string]int{
-					UUID:              -1,
-					ORGANIZATION_NAME: -1,
-					OWNER_USER_ID:     -1,
-				},
+				Headers:      []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID},
 			},
 		},
 	}
 }
 
-// ToDo: add logic for stripping header and figuring out column order
 func RowToOrganizationAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	// Takes a slice of columns representing an organization and encodes to avro bytes
 	md := avrogen.OrganizationMetadata{

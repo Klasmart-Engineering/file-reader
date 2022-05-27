@@ -19,16 +19,17 @@ type IngestFileConfig struct {
 	Logger      *zaplogger.ZapLogger
 }
 type Operation struct {
-	Topic         string
-	Key           string
-	SchemaID      int
-	SerializeRow  func(row []string, trackingId string, schemaId int, headerIndexes map[string]int) ([]byte, error)
-	HeaderIndexes map[string]int
+	Topic        string
+	Key          string
+	SchemaID     int
+	SerializeRow func(row []string, trackingId string, schemaId int, headerIndexes map[string]int) ([]byte, error)
+	Headers      []string
 }
 
-func UpdateHeaderIndexes(headerIndexes map[string]int, headers []string) (map[string]int, error) {
+func GetHeaderIndexes(expectedHeaders []string, headers []string) (map[string]int, error) {
 	// headerIndexes for an operation should have all -1 in its definition, but make sure of it anyway
-	for header := range headerIndexes {
+	headerIndexes := map[string]int{}
+	for _, header := range expectedHeaders {
 		headerIndexes[header] = -1
 	}
 	// Set headers to the correct index using the header row
@@ -47,11 +48,11 @@ func UpdateHeaderIndexes(headerIndexes map[string]int, headers []string) (map[st
 	return headerIndexes, nil
 }
 
-func (op Operation) IngestFile(ctx context.Context, fileRows chan []string, config IngestFileConfig) {
+func (op Operation) IngestFile(ctx context.Context, fileRows chan []string, headerIndexes map[string]int, config IngestFileConfig) {
 	logger := config.Logger
 	for row := range fileRows {
 		// Serialise row using schema
-		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID, op.HeaderIndexes)
+		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID, headerIndexes)
 		if err != nil {
 			logger.Error(ctx, "Error serialising record to bytes", err)
 			continue

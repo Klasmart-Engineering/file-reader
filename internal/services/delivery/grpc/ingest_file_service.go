@@ -76,7 +76,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 	go core.ReadRows(c.ctx, c.logger, f, "text/csv", fileRows)
 
 	headers := <-fileRows
-	operation.HeaderIndexes, err = core.UpdateHeaderIndexes(operation.HeaderIndexes, headers)
+	headerIndexes, _ := core.GetHeaderIndexes(operation.Headers, headers)
 
 	ingestFileConfig := core.IngestFileConfig{
 		KafkaWriter: kafka.Writer{
@@ -89,7 +89,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 		Logger:     c.logger,
 	}
 
-	operation.IngestFile(c.ctx, fileRows, ingestFileConfig)
+	operation.IngestFile(c.ctx, fileRows, headerIndexes, ingestFileConfig)
 
 	return ""
 }
