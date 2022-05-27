@@ -68,6 +68,15 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				logger.Error(ctx, "invalid operation_type on file create message ")
 				continue
 			}
+
+			// Parse file headers
+			headers := <-fileRows
+			headerIndexes, err := GetHeaderIndexes(operation.Headers, headers)
+			if err != nil {
+				logger.Error(ctx, "Error parsing file headers. ", err.Error())
+				continue
+			}
+
 			ingestFileConfig := IngestFileConfig{
 				KafkaWriter: kafka.Writer{
 					Addr:                   kafka.TCP(config.OutputBrokerAddrs...),
@@ -79,7 +88,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				Logger:     logger,
 			}
 
-			operation.IngestFile(ctx, fileRows, ingestFileConfig)
+			operation.IngestFile(ctx, fileRows, headerIndexes, ingestFileConfig)
 		}
 	}
 }

@@ -33,6 +33,16 @@ func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
 	return recordValue
 }
 
+const (
+	UUID              = "uuid"
+	ORGANIZATION_NAME = "organization_name"
+	OWNER_USER_ID     = "owner_user_id"
+)
+
+var (
+	OrganizationHeaders = []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID}
+)
+
 func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
 	schemaBody := avrogen.Organization.Schema(avrogen.NewOrganization())
 	return schemaRegistryClient.GetSchemaId(schemaBody, organizationTopic)
@@ -47,13 +57,13 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				Key:          "",
 				SchemaID:     GetOrganizationSchemaId(schemaRegistryClient, organizationTopic),
 				SerializeRow: RowToOrganizationAvro,
+				Headers:      OrganizationHeaders,
 			},
 		},
 	}
 }
 
-// ToDo: add logic for stripping header and figuring out column order
-func RowToOrganizationAvro(row []string, tracking_id string, schemaId int) ([]byte, error) {
+func RowToOrganizationAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	// Takes a slice of columns representing an organization and encodes to avro bytes
 	md := avrogen.OrganizationMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
@@ -61,9 +71,9 @@ func RowToOrganizationAvro(row []string, tracking_id string, schemaId int) ([]by
 		Tracking_id:        tracking_id,
 	}
 	pl := avrogen.OrganizationPayload{
-		Uuid:              row[0],
-		Organization_name: row[1],
-		Owner_user_id:     row[2],
+		Uuid:          row[headerIndexes[UUID]],
+		Name:          row[headerIndexes[ORGANIZATION_NAME]],
+		Owner_user_id: row[headerIndexes[OWNER_USER_ID]],
 	}
 	codec := avrogen.Organization{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil

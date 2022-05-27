@@ -19,14 +19,14 @@ import (
 var _ = fmt.Printf
 
 type OrganizationPayload struct {
-	Organization_name string `json:"organization_name"`
+	Name string `json:"name"`
 
 	Uuid string `json:"uuid"`
 
 	Owner_user_id string `json:"owner_user_id"`
 }
 
-const OrganizationPayloadAvroCRC64Fingerprint = "\x14\x14\xfab\xc0\x19\t\xe3"
+const OrganizationPayloadAvroCRC64Fingerprint = "\xfb\xd4!\xac\xf7\x99\xc5\x1d"
 
 func NewOrganizationPayload() OrganizationPayload {
 	r := OrganizationPayload{}
@@ -58,7 +58,7 @@ func DeserializeOrganizationPayloadFromSchema(r io.Reader, schema string) (Organ
 
 func writeOrganizationPayload(r OrganizationPayload, w io.Writer) error {
 	var err error
-	err = vm.WriteString(r.Organization_name, w)
+	err = vm.WriteString(r.Name, w)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (r OrganizationPayload) Serialize(w io.Writer) error {
 }
 
 func (r OrganizationPayload) Schema() string {
-	return "{\"fields\":[{\"name\":\"organization_name\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"owner_user_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.OrganizationPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"owner_user_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.OrganizationPayload\",\"type\":\"record\"}"
 }
 
 func (r OrganizationPayload) SchemaName() string {
@@ -97,7 +97,7 @@ func (_ OrganizationPayload) SetUnionElem(v int64) { panic("Unsupported operatio
 func (r *OrganizationPayload) Get(i int) types.Field {
 	switch i {
 	case 0:
-		w := types.String{Target: &r.Organization_name}
+		w := types.String{Target: &r.Name}
 
 		return w
 
@@ -139,7 +139,7 @@ func (_ OrganizationPayload) AvroCRC64Fingerprint() []byte {
 func (r OrganizationPayload) MarshalJSON() ([]byte, error) {
 	var err error
 	output := make(map[string]json.RawMessage)
-	output["organization_name"], err = json.Marshal(r.Organization_name)
+	output["name"], err = json.Marshal(r.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -162,18 +162,18 @@ func (r *OrganizationPayload) UnmarshalJSON(data []byte) error {
 
 	var val json.RawMessage
 	val = func() json.RawMessage {
-		if v, ok := fields["organization_name"]; ok {
+		if v, ok := fields["name"]; ok {
 			return v
 		}
 		return nil
 	}()
 
 	if val != nil {
-		if err := json.Unmarshal([]byte(val), &r.Organization_name); err != nil {
+		if err := json.Unmarshal([]byte(val), &r.Name); err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for organization_name")
+		return fmt.Errorf("no value specified for name")
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["uuid"]; ok {

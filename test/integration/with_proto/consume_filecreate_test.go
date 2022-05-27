@@ -9,13 +9,13 @@ import (
 	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
 	"github.com/KL-Engineering/file-reader/internal/core"
 	zapLogger "github.com/KL-Engineering/file-reader/internal/log"
+	util "github.com/KL-Engineering/file-reader/test/integration"
+
 	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 	"github.com/KL-Engineering/file-reader/test/env"
 
 	"log"
 	"os"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -28,21 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
-
-func MakeOrgsCsv(numOrgs int) (csv *strings.Reader, orgs [][]string) {
-	organizations := [][]string{}
-	for i := 0; i < numOrgs; i++ {
-		// rows are `uuid,org{i}`
-		organizations = append(organizations, []string{uuid.NewString(), "org" + strconv.Itoa(i), uuid.NewString()})
-	}
-	lines := []string{}
-	for _, org := range organizations {
-		s := strings.Join(org, ",")
-		lines = append(lines, s)
-	}
-	file := strings.NewReader(strings.Join(lines, "\n"))
-	return file, organizations
-}
 
 func TestConsumeS3CsvOrganization(t *testing.T) {
 	// set up env variables
@@ -95,7 +80,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 	// Upload file togo  s3
 	numOrgs := 5
-	file, orgs := MakeOrgsCsv(numOrgs)
+	file, orgs := util.MakeOrgsCsv(numOrgs)
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucket),
@@ -164,8 +149,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		assert.Equal(t, trackingId, orgOutput.Metadata.TrackingId.Value)
 
 		orgInput := orgs[i]
-		assert.Equal(t, orgInput[0], orgOutput.Payload.Uuid.Value)
-		assert.Equal(t, orgInput[1], orgOutput.Payload.Name.Value)
-		assert.Equal(t, orgInput[2], orgOutput.Payload.OwnerUserId.Value)
+		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid.Value)
+		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name.Value)
+		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.OwnerUserId.Value)
 	}
 }

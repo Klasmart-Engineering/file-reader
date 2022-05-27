@@ -3,6 +3,8 @@ package core
 import (
 	"context"
 	"encoding/csv"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -20,14 +22,37 @@ type Operation struct {
 	Topic        string
 	Key          string
 	SchemaID     int
-	SerializeRow func(row []string, trackingId string, schemaId int) ([]byte, error)
+	SerializeRow func(row []string, trackingId string, schemaId int, headerIndexes map[string]int) ([]byte, error)
+	Headers      []string
 }
 
-func (op Operation) IngestFile(ctx context.Context, fileRows chan []string, config IngestFileConfig) {
+func GetHeaderIndexes(expectedHeaders []string, headers []string) (map[string]int, error) {
+	// Create index header map using the expected headers
+	headerIndexes := map[string]int{}
+	for _, header := range expectedHeaders {
+		headerIndexes[header] = -1
+	}
+	// Set headers to the correct index using the header row
+	for i, header := range headers {
+		_, exists := headerIndexes[header] // check existence so we can ignore extra headers
+		if exists {
+			headerIndexes[header] = i
+		}
+	}
+	// If any expected headers have no index, return error
+	for header, index := range headerIndexes {
+		if index == -1 {
+			return nil, errors.New(fmt.Sprint("missing header ", header, " in headers: ", headers))
+		}
+	}
+	return headerIndexes, nil
+}
+
+func (op Operation) IngestFile(ctx context.Context, fileRows chan []string, headerIndexes map[string]int, config IngestFileConfig) {
 	logger := config.Logger
 	for row := range fileRows {
 		// Serialise row using schema
-		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID)
+		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID, headerIndexes)
 		if err != nil {
 			logger.Error(ctx, "Error serialising record to bytes", err)
 			continue

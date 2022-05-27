@@ -62,7 +62,13 @@ func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization,
 	case "ORGANIZATION":
 		content, _ = testGoodDataDir.ReadFile(filePath)
 
+		// Keep store of header order
 		reader := csv.NewReader(bytes.NewBuffer(content))
+		headers, _ := reader.Read()
+		headerIndexMap := map[string]int{}
+		for i, header := range headers {
+			headerIndexMap[header] = i
+		}
 		for {
 			row, err := reader.Read()
 			if err != nil {
@@ -78,9 +84,9 @@ func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization,
 			}
 
 			pl := onboarding.OrganizationPayload{
-				Uuid:        &onboarding.StringValue{Value: row[0]},
-				Name:        &onboarding.StringValue{Value: row[1]},
-				OwnerUserId: &onboarding.StringValue{Value: row[2]},
+				Uuid:        &onboarding.StringValue{Value: row[headerIndexMap["uuid"]]},
+				Name:        &onboarding.StringValue{Value: row[headerIndexMap["organization_name"]]},
+				OwnerUserId: &onboarding.StringValue{Value: row[headerIndexMap["owner_user_id"]]},
 			}
 
 			res = append(res, &onboarding.Organization{Payload: &pl, Metadata: &md})

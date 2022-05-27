@@ -18,21 +18,22 @@ func InitProtoOperations() Operations {
 				Key:          "",
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgTopic),
 				SerializeRow: RowToOrganizationProto,
+				Headers:      OrganizationHeaders,
 			},
 		},
 	}
 }
 
-func RowToOrganizationProto(row []string, tracking_id string, schemaId int) ([]byte, error) {
+func RowToOrganizationProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	md := onboarding.Metadata{
 		OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
 		Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
 		TrackingId:        &onboarding.StringValue{Value: tracking_id},
 	}
 	pl := onboarding.OrganizationPayload{
-		Uuid:        &onboarding.StringValue{Value: row[0]},
-		Name:        &onboarding.StringValue{Value: row[1]},
-		OwnerUserId: &onboarding.StringValue{Value: row[2]},
+		Uuid:        &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
+		Name:        &onboarding.StringValue{Value: row[headerIndexes[ORGANIZATION_NAME]]},
+		OwnerUserId: &onboarding.StringValue{Value: row[headerIndexes[OWNER_USER_ID]]},
 	}
 	codec := &onboarding.Organization{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
