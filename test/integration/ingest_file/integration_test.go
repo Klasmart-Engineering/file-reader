@@ -143,10 +143,8 @@ func TestFileProcessingServer(t *testing.T) {
 	serde := protobuf.NewProtoSerDe()
 	org := &onboarding.Organization{}
 
-	for _, tc := range testCases {
-		testCase := tc
-
-		t.Run(tc.name, func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 			g := gomega.NewWithT(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()

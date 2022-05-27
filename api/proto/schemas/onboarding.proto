@@ -90,6 +90,7 @@ message School_payload {
     StringValue uuid = 1;
     StringValue organization_uuid = 2;
     StringValue name = 3;
+    repeated StringValue program_ids = 4;
 }
 
 message User {

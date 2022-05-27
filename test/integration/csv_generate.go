@@ -84,3 +84,46 @@ func MakeCsv(numRows int, fieldGenMap map[string]func() string) (csv *strings.Re
 	return file, ops
 
 }
+
+func MakeSchoolsCsv(numSchools int) (*strings.Reader, []map[string]string) {
+	columnNames := []string{"uuid", "school_name", "organization_uuid", "program_ids"}
+	// Reorder columns to random order and map column names to their random index
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(columnNames), func(i, j int) {
+		columnNames[i], columnNames[j] = columnNames[j], columnNames[i]
+	})
+	colIndexMap := map[string]int{}
+	for i, col := range columnNames {
+		colIndexMap[col] = i
+	}
+
+	// Create organizations (gets returned for use in assertions)
+	schools := []map[string]string{}
+	for i := 0; i < numSchools; i++ {
+		school := map[string]string{}
+		school["uuid"] = uuid.NewString()
+		school["school_name"] = "school" + strconv.Itoa(i)
+		school["organization_uuid"] = uuid.NewString()
+		programIds := []string{}
+		for i := 0; i < 10; i++ {
+			programIds = append(programIds, uuid.NewString())
+		}
+		school["program_ids"] = strings.Join(programIds, ";")
+		schools = append(schools, school)
+	}
+
+	// Create file for test
+	lines := []string{strings.Join(columnNames, ",")}
+	for _, school := range schools {
+		cols := make([]string, len(columnNames))
+		for _, col := range columnNames {
+			cols[colIndexMap[col]] = school[col]
+		}
+
+		line := strings.Join(cols, ",")
+		lines = append(lines, line)
+	}
+
+	file := strings.NewReader(strings.Join(lines, "\n"))
+	return file, schools
+}
