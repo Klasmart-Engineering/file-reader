@@ -27,7 +27,7 @@ type Operation struct {
 }
 
 func GetHeaderIndexes(expectedHeaders []string, headers []string) (map[string]int, error) {
-	// headerIndexes for an operation should have all -1 in its definition, but make sure of it anyway
+	// Create index header map using the expected headers
 	headerIndexes := map[string]int{}
 	for _, header := range expectedHeaders {
 		headerIndexes[header] = -1
