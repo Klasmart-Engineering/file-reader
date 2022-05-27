@@ -74,16 +74,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 	// Upload file to s3
 	numOrgs := 5
-	headers := []string{"organization_name", "uuid", "owner_user_id", "foo", "bar"}
-	fieldTypeMap := map[string]int{
-		"organization_name": util.TYPE_DEFAULT,
-		"uuid":              util.TYPE_OF_UUID,
-		"owner_user_id":     util.TYPE_OF_UUID,
-	}
-	opConfig := util.NewOperationConfig(util.ORGANIZATION_NAME, numOrgs, headers, fieldTypeMap, nil)
-	file, orgs := opConfig.MakeCsv()
-	//file, orgs := util.MakeOrgsCsv(numOrgs)
-
+	file, orgs := util.MakeOrgsCsv(numOrgs)
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucket),
@@ -134,7 +125,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationAvroTopic,
-		StartOffset: kafka.LastOffset,
+		StartOffset: kafka.FirstOffset,
 	})
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
