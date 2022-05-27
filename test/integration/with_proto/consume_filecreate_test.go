@@ -133,6 +133,9 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationProtoTopic,
 		StartOffset: kafka.FirstOffset,
+		Dialer: &kafka.Dialer{
+			Timeout: kafka.DefaultDialer.Timeout,
+		},
 	})
 
 	serde := protobuf.NewProtoSerDe()

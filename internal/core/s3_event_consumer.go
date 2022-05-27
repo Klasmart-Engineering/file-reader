@@ -87,7 +87,6 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 				TrackingId: s3FileCreated.Metadata.Tracking_id,
 				Logger:     logger,
 			}
-
 			operation.IngestFile(ctx, fileRows, headerIndexes, ingestFileConfig)
 		}
 	}
@@ -137,6 +136,9 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID"),
 		StartOffset: kafka.FirstOffset,
 		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
+		Dialer: &kafka.Dialer{
+			Timeout: kafka.DefaultDialer.Timeout,
+		},
 	})
 
 	go ConsumeToIngest(ctx, r, consumerConfig)

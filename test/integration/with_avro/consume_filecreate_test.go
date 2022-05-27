@@ -126,6 +126,9 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationAvroTopic,
 		StartOffset: kafka.FirstOffset,
+		Dialer: &kafka.Dialer{
+			Timeout: kafka.DefaultDialer.Timeout,
+		},
 	})
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
