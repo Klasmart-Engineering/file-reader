@@ -17,7 +17,7 @@ message Organization {
 
 message Organization_payload {
     StringValue uuid = 1;
-    StringValue organization_name = 2;
+    StringValue name = 2;
     StringValue owner_user_id = 3;
 }
 

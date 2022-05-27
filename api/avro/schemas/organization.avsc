@@ -8,7 +8,7 @@
 				"name": "OrganizationPayload",
 				"type": "record",
 				"fields": [{
-						"name": "organization_name",
+						"name": "name",
 						"type": "string"
 					},
 					{

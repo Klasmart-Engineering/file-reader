@@ -62,8 +62,13 @@ func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization,
 	case "ORGANIZATION":
 		content, _ = testGoodDataDir.ReadFile(filePath)
 
+		// Keep store of header order
 		reader := csv.NewReader(bytes.NewBuffer(content))
-		_, _ = reader.Read() // strip headers
+		headers, _ := reader.Read()
+		headerIndexMap := map[string]int{}
+		for i, header := range headers {
+			headerIndexMap[header] = i
+		}
 		for {
 			row, err := reader.Read()
 			if err != nil {
@@ -79,9 +84,9 @@ func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization,
 			}
 
 			pl := onboarding.OrganizationPayload{
-				Uuid:             &onboarding.StringValue{Value: row[0]},
-				OrganizationName: &onboarding.StringValue{Value: row[1]},
-				OwnerUserId:      &onboarding.StringValue{Value: row[2]},
+				Uuid:        &onboarding.StringValue{Value: row[headerIndexMap["uuid"]]},
+				Name:        &onboarding.StringValue{Value: row[headerIndexMap["organization_name"]]},
+				OwnerUserId: &onboarding.StringValue{Value: row[headerIndexMap["owner_user_id"]]},
 			}
 
 			res = append(res, &onboarding.Organization{Payload: &pl, Metadata: &md})
@@ -184,7 +189,7 @@ func TestFileProcessingServer(t *testing.T) {
 						g.Expect(expected.Metadata.Region.Value).To(gomega.Equal(org.Metadata.Region.Value))
 						g.Expect(expected.Metadata.OriginApplication.Value).To(gomega.Equal(org.Metadata.OriginApplication.Value))
 						g.Expect(expected.Payload.Uuid.Value).To(gomega.Equal(org.Payload.Uuid.Value))
-						g.Expect(expected.Payload.OrganizationName.Value).To(gomega.Equal(org.Payload.OrganizationName.Value))
+						g.Expect(expected.Payload.Name.Value).To(gomega.Equal(org.Payload.Name.Value))
 						g.Expect(expected.Payload.OwnerUserId.Value).To(gomega.Equal(org.Payload.OwnerUserId.Value))
 
 					} else {

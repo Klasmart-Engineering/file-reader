@@ -138,7 +138,7 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 		orgInput := orgs[i]
 		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid)
-		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Organization_name)
+		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
 		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.Owner_user_id)
 	}
 }

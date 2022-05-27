@@ -66,9 +66,9 @@ func RowToOrganizationAvro(row []string, tracking_id string, schemaId int, heade
 		Tracking_id:        tracking_id,
 	}
 	pl := avrogen.OrganizationPayload{
-		Uuid:              row[headerIndexes["uuid"]],
-		Organization_name: row[headerIndexes["organization_name"]],
-		Owner_user_id:     row[headerIndexes["owner_user_id"]],
+		Uuid:          row[headerIndexes["uuid"]],
+		Name:          row[headerIndexes["organization_name"]],
+		Owner_user_id: row[headerIndexes["owner_user_id"]],
 	}
 	codec := avrogen.Organization{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
