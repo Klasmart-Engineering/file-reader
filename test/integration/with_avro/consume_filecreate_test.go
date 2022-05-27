@@ -74,7 +74,16 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 	// Upload file to s3
 	numOrgs := 5
-	file, orgs := util.MakeOrgsCsv(numOrgs)
+	headers := []string{"organization_name", "uuid", "owner_user_id", "foo", "bar"}
+	fieldTypeMap := map[string]int{
+		"organization_name": util.TYPE_DEFAULT,
+		"uuid":              util.TYPE_OF_UUID,
+		"owner_user_id":     util.TYPE_OF_UUID,
+	}
+	opConfig := util.NewOperationConfig(util.ORGANIZATION_NAME, numOrgs, headers, fieldTypeMap, nil)
+	file, orgs := opConfig.MakeCsv()
+	//file, orgs := util.MakeOrgsCsv(numOrgs)
+
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucket),
