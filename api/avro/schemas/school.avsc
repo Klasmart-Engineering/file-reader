@@ -22,8 +22,7 @@
 						"name": "program_ids",
 						"type": {
 							"type": "array",
-							"items": "string",
-							"logicalType": "uuid"
+							"items": "string"
 						}
 					}
 				]
