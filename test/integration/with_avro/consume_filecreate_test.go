@@ -82,10 +82,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		"owner_user_id":     util.TYPE_OF_UUID,
 	}
 	prefix := "org"
-	fieldFuncMap := make(map[string]util.DataGenerator)
 
-	opConfig := util.NewOperationConfig(util.ORGANIZATION_NAME, prefix, numOrgs, headers, fieldFuncMap, fieldTypeMap, nil)
-	opConfig.BuildFuncMap(headers)
+	opConfig := util.NewOperationConfig(util.ORGANIZATION_NAME, prefix, numOrgs, headers, fieldTypeMap, nil)
 
 	file, orgs := opConfig.MakeCsv()
 	//file, orgs := util.MakeOrgsCsv(numOrgs)
@@ -140,9 +138,6 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationAvroTopic,
 		StartOffset: kafka.FirstOffset,
-		Dialer: &kafka.Dialer{
-			Timeout: kafka.DefaultDialer.Timeout,
-		},
 	})
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
