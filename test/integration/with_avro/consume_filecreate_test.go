@@ -76,16 +76,13 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 	numOrgs := 5
 	headers := []string{"organization_name", "uuid", "owner_user_id", "foo", "bar"}
-	fieldTypeMap := map[string]int{
-		"organization_name": util.TYPE_OPERATION_NAME,
-		"uuid":              util.TYPE_OF_UUID,
-		"owner_user_id":     util.TYPE_OF_UUID,
+	orgGeneratorMap := map[string]func() string{
+		"uuid":              util.UuidFieldGenerator(),
+		"owner_user_id":     util.UuidFieldGenerator(),
+		"organization_name": util.NameFieldGenerator("org", numOrgs),
 	}
-	prefix := "org"
 
-	opConfig := util.NewOperationConfig(util.ORGANIZATION_NAME, prefix, numOrgs, headers, fieldTypeMap, nil)
-
-	file, orgs := opConfig.MakeCsv()
+	file, orgs := util.MakeCsv(headers, numOrgs, orgGeneratorMap)
 	//file, orgs := util.MakeOrgsCsv(numOrgs)
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{

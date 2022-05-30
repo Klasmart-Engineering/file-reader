@@ -9,81 +9,59 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	UUID                = "uuid"
-	ORGANIZATION_NAME   = "organization_name"
-	OWNER_USER_ID       = "owner_user_id"
-	TYPE_OF_UUID        = 0
-	TYPE_OF_ID_LIST     = 1
-	TYPE_DEFAULT        = 2
-	TYPE_OPERATION_NAME = 3
-)
-
-// Define func for different data field types
-type DataGenerator func(string, int) string
-type operationConfig struct {
-	name           string
-	prefix         string
-	opNum          int
-	headers        []string
-	fieldFunc      DataGenerator
-	fieldType      map[string]int
-	fieldIdListNum map[string]int
-}
-
-func (c operationConfig) generateData(col string, i int) string {
-	switch c.fieldType[col] {
-	case TYPE_OPERATION_NAME:
-		return c.prefix + strconv.Itoa(i)
-	case TYPE_OF_UUID:
-		return uuid.NewString()
-	case TYPE_DEFAULT:
-		return uuid.NewString()
-	case TYPE_OF_ID_LIST:
-		return generateUuidListAsString(c.fieldIdListNum[col])
-	default:
-		return uuid.NewString()
-	}
-
-}
-
-func NewOperationConfig(name string, prefix string, opNum int, headers []string, fieldType map[string]int, fieldIdListNum map[string]int) *operationConfig {
-	return &operationConfig{
-		name:           name,
-		prefix:         prefix,
-		opNum:          opNum,
-		headers:        headers,
-		fieldType:      fieldType,
-		fieldIdListNum: fieldIdListNum,
+func NameFieldGenerator(prefix string, n int) func() string {
+	// Return a generator which adds a random number up to n to the supplied prefix
+	rand.Seed(time.Now().UnixNano())
+	return func() string {
+		i := rand.Intn(n)
+		return prefix + strconv.Itoa(i)
 	}
 }
 
-func generateUuidListAsString(idNum int) string {
-	res := make([]string, idNum)
-	for i := 0; i < idNum; i++ {
-		res[i] = uuid.NewString()
+func UuidFieldGenerator() func() string {
+	return func() string {
+		return uuid.NewString()
 	}
-	return strings.Join(res, ";")
 }
-func (c operationConfig) MakeCsv() (csv *strings.Reader, op []map[string]string) {
-	columnNames := c.headers
-	c.fieldFunc = c.generateData
+
+func RepeatedFieldGenerator(gen func() string, min int, max int) func() string {
+	// Supply a field generator function and min and max number of times to repeat it.
+	// Returns a generator which generates a ; delimited string of those fields
+	rand.Seed(time.Now().UnixNano())
+	return func() string {
+		numFields := rand.Intn(max-min) + min
+		fields := []string{}
+		for i := 0; i < numFields; i++ {
+			fields = append(fields, gen())
+		}
+		return strings.Join(fields, ";")
+	}
+}
+
+func MakeCsv(headers []string, numRows int, fieldGenMap map[string]func() string) (csv *strings.Reader, op []map[string]string) {
+
 	// Reorder columns to random order and map column names to their random index
 	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(columnNames), func(i, j int) {
-		columnNames[i], columnNames[j] = columnNames[j], columnNames[i]
+	rand.Shuffle(len(headers), func(i, j int) {
+		headers[i], headers[j] = headers[j], headers[i]
 	})
 	colIndexMap := map[string]int{}
-	for i, col := range columnNames {
+	for i, col := range headers {
 		colIndexMap[col] = i
 	}
 
 	// Create operation (gets returned for use in assertions)
 	ops := []map[string]string{}
-	for i := 0; i < c.opNum; i++ {
+	for i := 0; i < numRows; i++ {
 		op := map[string]string{}
-		for _, col := range columnNames {
-			op[col] = c.fieldFunc(col, i)
+		for _, col := range headers {
+			// check existence so we can generate default value for extra headers
+			_, exists := fieldGenMap[col]
+			if exists {
+				op[col] = fieldGenMap[col]()
+			} else {
+				op[col] = uuid.NewString()
+			}
 
 		}
 
@@ -91,11 +69,13 @@ func (c operationConfig) MakeCsv() (csv *strings.Reader, op []map[string]string)
 	}
 
 	// Create file for test
-	lines := []string{strings.Join(columnNames, ",")}
+	lines := []string{strings.Join(headers, ",")}
 	for _, op := range ops {
-		cols := make([]string, len(columnNames))
-		for _, col := range columnNames {
+		cols := make([]string, len(headers))
+		for _, col := range headers {
+
 			cols[colIndexMap[col]] = op[col]
+
 		}
 		line := strings.Join(cols, ",")
 		lines = append(lines, line)
