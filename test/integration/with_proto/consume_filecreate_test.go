@@ -80,14 +80,16 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 
 	// Upload file togo  s3
 	numOrgs := 5
-	headers := []string{"organization_name", "uuid", "owner_user_id", "foo", "bar"}
 	orgGeneratorMap := map[string]func() string{
 		"uuid":              util.UuidFieldGenerator(),
 		"owner_user_id":     util.UuidFieldGenerator(),
+		"foo":               util.UuidFieldGenerator(),
+		"bar":               util.UuidFieldGenerator(),
+		"id_list":           util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
 		"organization_name": util.NameFieldGenerator("org", numOrgs),
 	}
 
-	file, orgs := util.MakeCsv(headers, numOrgs, orgGeneratorMap)
+	file, orgs := util.MakeCsv(numOrgs, orgGeneratorMap)
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucket),
