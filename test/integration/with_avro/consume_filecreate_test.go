@@ -73,8 +73,19 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	assert.Nil(t, err, "error creating aws session")
 
 	// Upload file to s3
+
 	numOrgs := 5
-	file, orgs := util.MakeOrgsCsv(numOrgs)
+	orgGeneratorMap := map[string]func() string{
+		"uuid":              util.UuidFieldGenerator(),
+		"owner_user_id":     util.UuidFieldGenerator(),
+		"id_list":           util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
+		"foo":               util.UuidFieldGenerator(),
+		"bar":               util.UuidFieldGenerator(),
+		"organization_name": util.NameFieldGenerator("org", numOrgs),
+	}
+
+	file, orgs := util.MakeCsv(numOrgs, orgGeneratorMap)
+	//file, orgs := util.MakeOrgsCsv(numOrgs)
 	uploader := s3manager.NewUploader(sess)
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucket),
