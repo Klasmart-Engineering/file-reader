@@ -103,6 +103,7 @@ func TestFileProcessingServer(t *testing.T) {
 		"GRPC_SERVER":              "localhost",
 		"GRPC_SERVER_PORT":         "6000",
 		"ORGANIZATION_PROTO_TOPIC": uuid.NewString(),
+		"SCHOOL_PROTO_TOPIC":       uuid.NewString(),
 		"SCHEMA_TYPE":              "PROTO",
 	})
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
+	"github.com/KL-Engineering/file-reader/internal/instrument"
 	proto "github.com/KL-Engineering/file-reader/pkg/proto"
 	protobuf "github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 )
@@ -18,8 +19,8 @@ func createRepeatedString(vals []string) []*onboarding.StringValue {
 }
 
 func InitProtoOperations() Operations {
-	orgTopic := os.Getenv("ORGANIZATION_PROTO_TOPIC")
-	schoolTopic := os.Getenv("SCHOOL_PROTO_TOPIC")
+	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
+	schoolTopic := instrument.MustGetEnv("SCHOOL_PROTO_TOPIC")
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
