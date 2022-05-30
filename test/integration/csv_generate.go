@@ -60,7 +60,6 @@ func MakeCsv(numRows int, fieldGenMap map[string]func() string) (csv *strings.Re
 	for i := 0; i < numRows; i++ {
 		op := map[string]string{}
 		for _, col := range headers {
-			// check existence so we can generate default value for extra headers
 			op[col] = fieldGenMap[col]()
 
 		}
