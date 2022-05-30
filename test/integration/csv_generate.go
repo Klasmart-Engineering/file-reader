@@ -26,16 +26,11 @@ type operationConfig struct {
 	prefix         string
 	opNum          int
 	headers        []string
-	fieldFunc      map[string]DataGenerator
+	fieldFunc      DataGenerator
 	fieldType      map[string]int
 	fieldIdListNum map[string]int
 }
 
-func (c operationConfig) BuildFuncMap(cols []string) {
-	for _, col := range cols {
-		c.fieldFunc[col] = c.generateData
-	}
-}
 func (c operationConfig) generateData(col string, i int) string {
 	switch c.fieldType[col] {
 	case TYPE_OPERATION_NAME:
@@ -52,13 +47,12 @@ func (c operationConfig) generateData(col string, i int) string {
 
 }
 
-func NewOperationConfig(name string, prefix string, opNum int, headers []string, fieldFunc map[string]DataGenerator, fieldType map[string]int, fieldIdListNum map[string]int) *operationConfig {
+func NewOperationConfig(name string, prefix string, opNum int, headers []string, fieldType map[string]int, fieldIdListNum map[string]int) *operationConfig {
 	return &operationConfig{
 		name:           name,
 		prefix:         prefix,
 		opNum:          opNum,
 		headers:        headers,
-		fieldFunc:      fieldFunc,
 		fieldType:      fieldType,
 		fieldIdListNum: fieldIdListNum,
 	}
@@ -73,7 +67,7 @@ func generateUuidListAsString(idNum int) string {
 }
 func (c operationConfig) MakeCsv() (csv *strings.Reader, op []map[string]string) {
 	columnNames := c.headers
-
+	c.fieldFunc = c.generateData
 	// Reorder columns to random order and map column names to their random index
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(columnNames), func(i, j int) {
@@ -89,7 +83,7 @@ func (c operationConfig) MakeCsv() (csv *strings.Reader, op []map[string]string)
 	for i := 0; i < c.opNum; i++ {
 		op := map[string]string{}
 		for _, col := range columnNames {
-			op[col] = c.fieldFunc[col](col, i)
+			op[col] = c.fieldFunc(col, i)
 
 		}
 
