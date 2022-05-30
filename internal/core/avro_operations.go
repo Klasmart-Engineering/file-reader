@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	avrogen "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
-	"github.com/KL-Engineering/file-reader/internal/instrument"
 )
 
 type avroCodec interface {
@@ -59,8 +58,8 @@ func GetSchoolSchemaId(schemaRegistryClient *SchemaRegistry, schoolTopic string)
 }
 
 func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
-	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
-	schoolTopic := instrument.MustGetEnv("SCHOOL_AVRO_TOPIC")
+	organizationTopic := os.Getenv("ORGANIZATION_AVRO_TOPIC")
+	schoolTopic := os.Getenv("SCHOOL_AVRO_TOPIC")
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
