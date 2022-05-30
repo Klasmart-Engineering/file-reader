@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"time"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
 	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
@@ -62,7 +63,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	bucket := "organization"
 	s3key := "organization" + uuid.NewString() + ".csv"
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{

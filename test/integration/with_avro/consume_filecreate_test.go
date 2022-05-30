@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"fmt"
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
 	"github.com/KL-Engineering/file-reader/internal/core"
@@ -37,7 +39,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	})
 
 	defer t.Cleanup(closer)
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	// Start consumer
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
@@ -140,6 +143,8 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	})
 	for i := 0; i < numOrgs; i++ {
 		msg, err := r.ReadMessage(ctx)
+
+		fmt.Println("error: ", err)
 		assert.Nil(t, err, "error reading message from topic")
 		orgOutput, err := avro.DeserializeOrganization(bytes.NewReader(msg.Value[5:]))
 		assert.Nil(t, err, "error deserialising message to org")
