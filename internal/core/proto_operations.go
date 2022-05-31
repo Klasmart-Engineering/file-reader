@@ -21,6 +21,7 @@ func createRepeatedString(vals []string) []*onboarding.StringValue {
 func InitProtoOperations() Operations {
 	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_PROTO_TOPIC")
+	userTopic := instrument.MustGetEnv("USER_PROTO_TOPIC")
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
@@ -36,6 +37,13 @@ func InitProtoOperations() Operations {
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(schoolTopic),
 				SerializeRow: RowToSchoolProto,
 				Headers:      SchoolHeaders,
+			},
+			"USER": {
+				Topic:        userTopic,
+				Key:          "",
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(userTopic),
+				SerializeRow: RowToUserProto,
+				Headers:      UserHeaders,
 			},
 		},
 	}
@@ -76,6 +84,30 @@ func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerInde
 		ProgramIds:     repeatedProgramIds,
 	}
 	codec := &onboarding.School{Payload: &pl, Metadata: &md}
+	serde := protobuf.NewProtoSerDe()
+	valueBytes, err := serde.Serialize(schemaId, codec)
+	if err != nil {
+		return nil, err
+	}
+	return valueBytes, nil
+}
+
+func RowToUserProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	md := onboarding.Metadata{
+		OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
+		Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
+		TrackingId:        &onboarding.StringValue{Value: tracking_id},
+	}
+	pl := onboarding.UserPayload{
+		Uuid:        &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
+		GivenName:   &onboarding.StringValue{Value: row[headerIndexes[GIVEN_NAME]]},
+		FamilyName:  &onboarding.StringValue{Value: row[headerIndexes[FAMILY_NAME]]},
+		Email:       &onboarding.StringValue{Value: row[headerIndexes[EMAIL]]},
+		PhoneNumber: &onboarding.StringValue{Value: row[headerIndexes[PHONE_NUMBER]]},
+		DateOfBirth: &onboarding.StringValue{Value: row[headerIndexes[DATE_OF_BIRTH]]},
+		Gender:      &onboarding.StringValue{Value: row[headerIndexes[GENDER]]},
+	}
+	codec := &onboarding.User{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
 	valueBytes, err := serde.Serialize(schemaId, codec)
 	if err != nil {

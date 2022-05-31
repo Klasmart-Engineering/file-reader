@@ -23,10 +23,12 @@ require (
 )
 
 require (
+	github.com/corpix/uarand v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect

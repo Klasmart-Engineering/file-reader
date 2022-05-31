@@ -13,11 +13,6 @@
 						"logicalType": "uuid"
 					},
 					{
-						"name": "organization_uuid",
-						"type": "string",
-						"logicalType": "uuid"
-					},
-					{
 						"name": "given_name",
 						"type": "string"
 					},
@@ -39,15 +34,7 @@
 					},
 					{
 						"name": "gender",
-						"type": {
-							"name": "GenderType",
-							"type": "enum",
-							"symbols": [
-								"MALE",
-								"FEMALE"
-							]
-						}
-
+						"type": "string"
 					}
 				]
 			}

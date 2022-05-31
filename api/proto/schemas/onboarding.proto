@@ -100,12 +100,12 @@ message User {
 
 message User_payload {
     StringValue uuid = 1;
-    StringValue organization_uuid = 2;
-    StringValue given_name = 3;
-    StringValue family_name = 4;
-    StringValue email = 5;
-    StringValue phone_number = 6;
-    StringValue date_of_birth = 7;
+    StringValue given_name = 2;
+    StringValue family_name = 3;
+    StringValue email = 4;
+    StringValue phone_number = 5;
+    StringValue date_of_birth = 6;
+    StringValue gender = 7;
 }
 
 message Class {
@@ -117,11 +117,6 @@ message Class_payload {
     StringValue uuid = 1;
     StringValue organization_uuid = 2;
     StringValue name = 3;
-}
-
-enum Gender {
-  MALE = 0;
-  FEMALE = 1;
 }
 
 message Metadata {

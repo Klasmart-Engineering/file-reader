@@ -20,7 +20,7 @@ import (
 
 var _ = fmt.Printf
 
-type SchoolMetadata struct {
+type UserMetadata struct {
 	Origin_application string `json:"origin_application"`
 
 	Region string `json:"region"`
@@ -28,15 +28,15 @@ type SchoolMetadata struct {
 	Tracking_id string `json:"tracking_id"`
 }
 
-const SchoolMetadataAvroCRC64Fingerprint = "E\x9c\xef\x04q\xe8=\xc3"
+const UserMetadataAvroCRC64Fingerprint = "ǓWsi\xb3\xb8\x1e"
 
-func NewSchoolMetadata() SchoolMetadata {
-	r := SchoolMetadata{}
+func NewUserMetadata() UserMetadata {
+	r := UserMetadata{}
 	return r
 }
 
-func DeserializeSchoolMetadata(r io.Reader) (SchoolMetadata, error) {
-	t := NewSchoolMetadata()
+func DeserializeUserMetadata(r io.Reader) (UserMetadata, error) {
+	t := NewUserMetadata()
 	deser, err := compiler.CompileSchemaBytes([]byte(t.Schema()), []byte(t.Schema()))
 	if err != nil {
 		return t, err
@@ -46,8 +46,8 @@ func DeserializeSchoolMetadata(r io.Reader) (SchoolMetadata, error) {
 	return t, err
 }
 
-func DeserializeSchoolMetadataFromSchema(r io.Reader, schema string) (SchoolMetadata, error) {
-	t := NewSchoolMetadata()
+func DeserializeUserMetadataFromSchema(r io.Reader, schema string) (UserMetadata, error) {
+	t := NewUserMetadata()
 
 	deser, err := compiler.CompileSchemaBytes([]byte(schema), []byte(t.Schema()))
 	if err != nil {
@@ -58,7 +58,7 @@ func DeserializeSchoolMetadataFromSchema(r io.Reader, schema string) (SchoolMeta
 	return t, err
 }
 
-func writeSchoolMetadata(r SchoolMetadata, w io.Writer) error {
+func writeUserMetadata(r UserMetadata, w io.Writer) error {
 	var err error
 	err = vm.WriteString(r.Origin_application, w)
 	if err != nil {
@@ -75,28 +75,28 @@ func writeSchoolMetadata(r SchoolMetadata, w io.Writer) error {
 	return err
 }
 
-func (r SchoolMetadata) Serialize(w io.Writer) error {
-	return writeSchoolMetadata(r, w)
+func (r UserMetadata) Serialize(w io.Writer) error {
+	return writeUserMetadata(r, w)
 }
 
-func (r SchoolMetadata) Schema() string {
-	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.SchoolMetadata\",\"type\":\"record\"}"
+func (r UserMetadata) Schema() string {
+	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserMetadata\",\"type\":\"record\"}"
 }
 
-func (r SchoolMetadata) SchemaName() string {
-	return "com.kidsloop.onboarding.SchoolMetadata"
+func (r UserMetadata) SchemaName() string {
+	return "com.kidsloop.onboarding.user.UserMetadata"
 }
 
-func (_ SchoolMetadata) SetBoolean(v bool)    { panic("Unsupported operation") }
-func (_ SchoolMetadata) SetInt(v int32)       { panic("Unsupported operation") }
-func (_ SchoolMetadata) SetLong(v int64)      { panic("Unsupported operation") }
-func (_ SchoolMetadata) SetFloat(v float32)   { panic("Unsupported operation") }
-func (_ SchoolMetadata) SetDouble(v float64)  { panic("Unsupported operation") }
-func (_ SchoolMetadata) SetBytes(v []byte)    { panic("Unsupported operation") }
-func (_ SchoolMetadata) SetString(v string)   { panic("Unsupported operation") }
-func (_ SchoolMetadata) SetUnionElem(v int64) { panic("Unsupported operation") }
+func (_ UserMetadata) SetBoolean(v bool)    { panic("Unsupported operation") }
+func (_ UserMetadata) SetInt(v int32)       { panic("Unsupported operation") }
+func (_ UserMetadata) SetLong(v int64)      { panic("Unsupported operation") }
+func (_ UserMetadata) SetFloat(v float32)   { panic("Unsupported operation") }
+func (_ UserMetadata) SetDouble(v float64)  { panic("Unsupported operation") }
+func (_ UserMetadata) SetBytes(v []byte)    { panic("Unsupported operation") }
+func (_ UserMetadata) SetString(v string)   { panic("Unsupported operation") }
+func (_ UserMetadata) SetUnionElem(v int64) { panic("Unsupported operation") }
 
-func (r *SchoolMetadata) Get(i int) types.Field {
+func (r *UserMetadata) Get(i int) types.Field {
 	switch i {
 	case 0:
 		w := types.String{Target: &r.Origin_application}
@@ -117,28 +117,28 @@ func (r *SchoolMetadata) Get(i int) types.Field {
 	panic("Unknown field index")
 }
 
-func (r *SchoolMetadata) SetDefault(i int) {
+func (r *UserMetadata) SetDefault(i int) {
 	switch i {
 	}
 	panic("Unknown field index")
 }
 
-func (r *SchoolMetadata) NullField(i int) {
+func (r *UserMetadata) NullField(i int) {
 	switch i {
 	}
 	panic("Not a nullable field index")
 }
 
-func (_ SchoolMetadata) AppendMap(key string) types.Field { panic("Unsupported operation") }
-func (_ SchoolMetadata) AppendArray() types.Field         { panic("Unsupported operation") }
-func (_ SchoolMetadata) HintSize(int)                     { panic("Unsupported operation") }
-func (_ SchoolMetadata) Finalize()                        {}
+func (_ UserMetadata) AppendMap(key string) types.Field { panic("Unsupported operation") }
+func (_ UserMetadata) AppendArray() types.Field         { panic("Unsupported operation") }
+func (_ UserMetadata) HintSize(int)                     { panic("Unsupported operation") }
+func (_ UserMetadata) Finalize()                        {}
 
-func (_ SchoolMetadata) AvroCRC64Fingerprint() []byte {
-	return []byte(SchoolMetadataAvroCRC64Fingerprint)
+func (_ UserMetadata) AvroCRC64Fingerprint() []byte {
+	return []byte(UserMetadataAvroCRC64Fingerprint)
 }
 
-func (r SchoolMetadata) MarshalJSON() ([]byte, error) {
+func (r UserMetadata) MarshalJSON() ([]byte, error) {
 	var err error
 	output := make(map[string]json.RawMessage)
 	output["origin_application"], err = json.Marshal(r.Origin_application)
@@ -156,7 +156,7 @@ func (r SchoolMetadata) MarshalJSON() ([]byte, error) {
 	return json.Marshal(output)
 }
 
-func (r *SchoolMetadata) UnmarshalJSON(data []byte) error {
+func (r *UserMetadata) UnmarshalJSON(data []byte) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return err

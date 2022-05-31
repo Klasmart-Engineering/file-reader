@@ -3,6 +3,7 @@
  * SOURCES:
  *     organization.avsc
  *     school.avsc
+ *     user.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -77,7 +78,7 @@ func (r School) Serialize(w io.Writer) error {
 }
 
 func (r School) Schema() string {
-	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":{\"items\":\"string\",\"logicalType\":\"uuid\",\"type\":\"array\"}}],\"name\":\"SchoolPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"SchoolMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.School\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":{\"items\":\"string\",\"type\":\"array\"}}],\"name\":\"SchoolPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"SchoolMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.School\",\"type\":\"record\"}"
 }
 
 func (r School) SchemaName() string {

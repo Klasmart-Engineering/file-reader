@@ -41,11 +41,18 @@ const (
 	ORGANIZATION_UUID = "organization_id"
 	SCHOOL_NAME       = "school_name"
 	PROGRAM_IDS       = "program_ids"
+	GIVEN_NAME        = "user_given_name"
+	FAMILY_NAME       = "user_family_name"
+	EMAIL             = "user_email"
+	PHONE_NUMBER      = "user_phone_number"
+	DATE_OF_BIRTH     = "user_date_of_birth"
+	GENDER            = "user_gender"
 )
 
 var (
 	OrganizationHeaders = []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID}
 	SchoolHeaders       = []string{UUID, ORGANIZATION_UUID, SCHOOL_NAME, PROGRAM_IDS}
+	UserHeaders         = []string{UUID, GIVEN_NAME, FAMILY_NAME, EMAIL, PHONE_NUMBER, DATE_OF_BIRTH, GENDER}
 )
 
 func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
@@ -58,9 +65,15 @@ func GetSchoolSchemaId(schemaRegistryClient *SchemaRegistry, schoolTopic string)
 	return schemaRegistryClient.GetSchemaId(schemaBody, schoolTopic)
 }
 
+func GetUserSchemaId(schemaRegistryClient *SchemaRegistry, userTopic string) int {
+	schemaBody := avrogen.User.Schema(avrogen.NewUser())
+	return schemaRegistryClient.GetSchemaId(schemaBody, userTopic)
+}
+
 func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_AVRO_TOPIC")
+	userTopic := instrument.MustGetEnv("USER_AVRO_TOPIC")
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
@@ -76,6 +89,13 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SchemaID:     GetSchoolSchemaId(schemaRegistryClient, schoolTopic),
 				SerializeRow: RowToSchoolAvro,
 				Headers:      SchoolHeaders,
+			},
+			"USER": {
+				Topic:        userTopic,
+				Key:          "",
+				SchemaID:     GetUserSchemaId(schemaRegistryClient, userTopic),
+				SerializeRow: RowToUserAvro,
+				Headers:      UserHeaders,
 			},
 		},
 	}
@@ -98,7 +118,7 @@ func RowToOrganizationAvro(row []string, tracking_id string, schemaId int, heade
 }
 
 func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
-	// Takes a slice of columns representing an organization and encodes to avro bytes
+	// Takes a slice of columns representing a school and encodes to avro bytes
 	programIds := strings.Split(row[headerIndexes[PROGRAM_IDS]], ";")
 	md := avrogen.SchoolMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
@@ -112,5 +132,25 @@ func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndex
 		Program_ids:     programIds,
 	}
 	codec := avrogen.School{Payload: pl, Metadata: md}
+	return serializeAvroRecord(codec, schemaId), nil
+}
+
+func RowToUserAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	// Takes a slice of columns representing a user and encodes to avro bytes
+	md := avrogen.UserMetadata{
+		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:             os.Getenv("METADATA_REGION"),
+		Tracking_id:        tracking_id,
+	}
+	pl := avrogen.UserPayload{
+		Uuid:          row[headerIndexes[UUID]],
+		Given_name:    row[headerIndexes[GIVEN_NAME]],
+		Family_name:   row[headerIndexes[FAMILY_NAME]],
+		Email:         row[headerIndexes[EMAIL]],
+		Phone_number:  row[headerIndexes[PHONE_NUMBER]],
+		Date_of_birth: row[headerIndexes[DATE_OF_BIRTH]],
+		Gender:        row[headerIndexes[GENDER]],
+	}
+	codec := avrogen.User{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }

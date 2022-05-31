@@ -1,58 +1,58 @@
 package integration_test
 
 import (
+	"bytes"
 	"context"
-	"strings"
 	"testing"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
-	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
 	"github.com/KL-Engineering/file-reader/internal/core"
 	zapLogger "github.com/KL-Engineering/file-reader/internal/log"
-	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 	"github.com/KL-Engineering/file-reader/test/env"
 	util "github.com/KL-Engineering/file-reader/test/integration"
 	"github.com/google/uuid"
+	"github.com/icrowley/fake"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
-func TestProtoConsumeSchoolCsv(t *testing.T) {
+func TestAvroConsumeUserCsv(t *testing.T) {
 	// set up env variables
-	schoolProtoTopic := "schoolProtoTopic" + uuid.NewString()
+	userAvroTopic := "userAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"SCHOOL_PROTO_TOPIC":               schoolProtoTopic,
+		"USER_AVRO_TOPIC":                  userAvroTopic,
 		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
 		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
-		"SCHEMA_TYPE":                      "PROTO",
+		"SCHEMA_TYPE":                      "AVRO",
 	})
 
 	defer t.Cleanup(closer)
-
+	ctx := context.Background()
 	// Start consumer
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
-	ctx := context.Background()
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "school"
-	operationType := "school"
-	s3key := "school" + uuid.NewString() + ".csv"
+	bucket := "user"
+	s3key := "user" + uuid.NewString() + ".csv"
+	operationType := "user"
 
 	// Make test csv file
-	numSchools := 5
-	schoolGeneratorMap := map[string]func() string{
-		"uuid":            util.UuidFieldGenerator(),
-		"organization_id": util.UuidFieldGenerator(),
-		"school_name":     util.NameFieldGenerator("school", numSchools),
-		"program_ids":     util.OptionalField(util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10)),
-		"fake_ids":        util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 1, 5),
+	numUsers := 5
+	userGeneratorMap := map[string]func() string{
+		"uuid":               util.OptionalField(util.UuidFieldGenerator()),
+		"user_given_name":    util.HumanNameFieldGenerator(2, 10),
+		"user_family_name":   util.HumanNameFieldGenerator(2, 10),
+		"user_email":         util.OptionalField(fake.EmailAddress),
+		"user_phone_number":  util.OptionalField(fake.Phone),
+		"user_date_of_birth": util.OptionalField(util.DateGenerator(1950, 2022, "2006-01-02")),
+		"user_gender":        util.GenderGenerator(),
 	}
-	file, schools := util.MakeCsv(numSchools, schoolGeneratorMap)
+	file, users := util.MakeCsv(numUsers, userGeneratorMap)
 
 	// Upload csv to S3
 	err := util.UploadFileToS3(bucket, s3key, awsRegion, file)
@@ -82,33 +82,27 @@ func TestProtoConsumeSchoolCsv(t *testing.T) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       schoolProtoTopic,
+		Topic:       userAvroTopic,
 		StartOffset: kafka.FirstOffset,
 	})
-
-	serde := protobuf.NewProtoSerDe()
-	schoolOutput := &onboarding.School{}
-
-	for i := 0; i < numSchools; i++ {
+	for i := 0; i < numUsers; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
+		userOutput, err := avro.DeserializeUser(bytes.NewReader(msg.Value[5:]))
+		assert.Nil(t, err, "error deserialising message to user")
+		t.Log(userOutput)
 
-		_, err = serde.Deserialize(msg.Value, schoolOutput)
+		assert.Equal(t, trackingId, userOutput.Metadata.Tracking_id)
 
-		assert.Nil(t, err, "error deserializing message from topic")
+		userInput := users[i]
+		assert.Equal(t, userInput["uuid"], userOutput.Payload.Uuid)
+		assert.Equal(t, userInput["user_given_name"], userOutput.Payload.Given_name)
+		assert.Equal(t, userInput["user_family_name"], userOutput.Payload.Family_name)
+		assert.Equal(t, userInput["user_email"], userOutput.Payload.Email)
+		assert.Equal(t, userInput["user_phone_number"], userOutput.Payload.Phone_number)
+		assert.Equal(t, userInput["user_date_of_birth"], userOutput.Payload.Date_of_birth)
+		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender)
 
-		assert.Equal(t, trackingId, schoolOutput.Metadata.TrackingId.Value)
-
-		schoolInput := schools[i]
-		assert.Equal(t, schoolInput["uuid"], schoolOutput.Payload.Uuid.Value)
-		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name.Value)
-		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.OrganizationId.Value)
-		program_ids := strings.Split(schoolInput["program_ids"], ";")
-		output_program_ids := []string{}
-		for _, program_id := range schoolOutput.Payload.ProgramIds {
-			output_program_ids = append(output_program_ids, program_id.Value)
-		}
-		assert.Equal(t, program_ids, output_program_ids)
 	}
 	ctx.Done()
 }
