@@ -25,7 +25,7 @@ type School struct {
 	Metadata SchoolMetadata `json:"metadata"`
 }
 
-const SchoolAvroCRC64Fingerprint = "\x11\u007fd\xb0\xef\xd0){"
+const SchoolAvroCRC64Fingerprint = "\x11q\xe5\xe9\xe8Ɋ\x1d"
 
 func NewSchool() School {
 	r := School{}
@@ -77,7 +77,7 @@ func (r School) Serialize(w io.Writer) error {
 }
 
 func (r School) Schema() string {
-	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":{\"items\":\"string\",\"logicalType\":\"uuid\",\"type\":\"array\"}}],\"name\":\"SchoolPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"SchoolMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.School\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":{\"items\":\"string\",\"logicalType\":\"uuid\",\"type\":\"array\"}}],\"name\":\"SchoolPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"SchoolMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.School\",\"type\":\"record\"}"
 }
 
 func (r School) SchemaName() string {

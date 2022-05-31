@@ -10,6 +10,14 @@ import (
 	protobuf "github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 )
 
+func createRepeatedString(vals []string) []*onboarding.StringValue {
+	protoStrings := []*onboarding.StringValue{}
+	for _, val := range vals {
+		protoStrings = append(protoStrings, &onboarding.StringValue{Value: val})
+	}
+	return protoStrings
+}
+
 func InitProtoOperations() Operations {
 	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_PROTO_TOPIC")
@@ -55,20 +63,17 @@ func RowToOrganizationProto(row []string, tracking_id string, schemaId int, head
 
 func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	programIds := strings.Split(row[headerIndexes[PROGRAM_IDS]], ";")
-	repeatedProgramIds := []*onboarding.StringValue{}
-	for _, programId := range programIds {
-		repeatedProgramIds = append(repeatedProgramIds, &onboarding.StringValue{Value: programId})
-	}
+	repeatedProgramIds := createRepeatedString(programIds)
 	md := onboarding.Metadata{
 		OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
 		Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
 		TrackingId:        &onboarding.StringValue{Value: tracking_id},
 	}
 	pl := onboarding.SchoolPayload{
-		Uuid:             &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
-		OrganizationUuid: &onboarding.StringValue{Value: row[headerIndexes[ORGANIZATION_UUID]]},
-		Name:             &onboarding.StringValue{Value: row[headerIndexes[SCHOOL_NAME]]},
-		ProgramIds:       repeatedProgramIds,
+		Uuid:           &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
+		OrganizationId: &onboarding.StringValue{Value: row[headerIndexes[ORGANIZATION_UUID]]},
+		Name:           &onboarding.StringValue{Value: row[headerIndexes[SCHOOL_NAME]]},
+		ProgramIds:     repeatedProgramIds,
 	}
 	codec := &onboarding.School{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()

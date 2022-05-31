@@ -22,14 +22,14 @@ var _ = fmt.Printf
 type SchoolPayload struct {
 	Uuid string `json:"uuid"`
 
-	Organization_uuid string `json:"organization_uuid"`
+	Organization_id string `json:"organization_id"`
 
 	Name string `json:"name"`
 
 	Program_ids []string `json:"program_ids"`
 }
 
-const SchoolPayloadAvroCRC64Fingerprint = ".ɵ\xf2\xd2-%\x00"
+const SchoolPayloadAvroCRC64Fingerprint = "w\x96rjTǥQ"
 
 func NewSchoolPayload() SchoolPayload {
 	r := SchoolPayload{}
@@ -67,7 +67,7 @@ func writeSchoolPayload(r SchoolPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = vm.WriteString(r.Organization_uuid, w)
+	err = vm.WriteString(r.Organization_id, w)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (r SchoolPayload) Serialize(w io.Writer) error {
 }
 
 func (r SchoolPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":{\"items\":\"string\",\"logicalType\":\"uuid\",\"type\":\"array\"}}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":{\"items\":\"string\",\"logicalType\":\"uuid\",\"type\":\"array\"}}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
 }
 
 func (r SchoolPayload) SchemaName() string {
@@ -111,7 +111,7 @@ func (r *SchoolPayload) Get(i int) types.Field {
 		return w
 
 	case 1:
-		w := types.String{Target: &r.Organization_uuid}
+		w := types.String{Target: &r.Organization_id}
 
 		return w
 
@@ -159,7 +159,7 @@ func (r SchoolPayload) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	output["organization_uuid"], err = json.Marshal(r.Organization_uuid)
+	output["organization_id"], err = json.Marshal(r.Organization_id)
 	if err != nil {
 		return nil, err
 	}
@@ -196,18 +196,18 @@ func (r *SchoolPayload) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("no value specified for uuid")
 	}
 	val = func() json.RawMessage {
-		if v, ok := fields["organization_uuid"]; ok {
+		if v, ok := fields["organization_id"]; ok {
 			return v
 		}
 		return nil
 	}()
 
 	if val != nil {
-		if err := json.Unmarshal([]byte(val), &r.Organization_uuid); err != nil {
+		if err := json.Unmarshal([]byte(val), &r.Organization_id); err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for organization_uuid")
+		return fmt.Errorf("no value specified for organization_id")
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["name"]; ok {

@@ -38,7 +38,7 @@ const (
 	UUID              = "uuid"
 	ORGANIZATION_NAME = "organization_name"
 	OWNER_USER_ID     = "owner_user_id"
-	ORGANIZATION_UUID = "organization_uuid"
+	ORGANIZATION_UUID = "organization_id"
 	SCHOOL_NAME       = "school_name"
 	PROGRAM_IDS       = "program_ids"
 )
@@ -106,10 +106,10 @@ func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndex
 		Tracking_id:        tracking_id,
 	}
 	pl := avrogen.SchoolPayload{
-		Uuid:              row[headerIndexes[UUID]],
-		Organization_uuid: row[headerIndexes[ORGANIZATION_UUID]],
-		Name:              row[headerIndexes[SCHOOL_NAME]],
-		Program_ids:       programIds,
+		Uuid:            row[headerIndexes[UUID]],
+		Organization_id: row[headerIndexes[ORGANIZATION_UUID]],
+		Name:            row[headerIndexes[SCHOOL_NAME]],
+		Program_ids:     programIds,
 	}
 	codec := avrogen.School{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
