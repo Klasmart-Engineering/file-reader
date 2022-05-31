@@ -1,9 +1,7 @@
 package integration_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
 	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
@@ -14,22 +12,15 @@ import (
 	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 	"github.com/KL-Engineering/file-reader/test/env"
 
-	"log"
-	"os"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/uuid"
-	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
-func TestConsumeS3CsvOrganization(t *testing.T) {
+func TestProtoConsumeOrganizationCsv(t *testing.T) {
 	// set up env variables
 	organizationProtoTopic := "orgProtoTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -45,98 +36,54 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 	// Start consumer
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
-	core.StartFileCreateConsumer(context.Background(), logger)
+	ctx := context.Background()
+	core.StartFileCreateConsumer(ctx, logger)
 
-	schemaRegistryClient := &core.SchemaRegistry{
-		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
-	}
-	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
-	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaId(schemaBody, s3FileCreationTopic)
-	schemaIDBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(schemaIDBytes, uint32(s3FileCreationSchemaId))
-	kafkakey := ""
 	brokerAddrs := []string{"localhost:9092"}
-
 	awsRegion := "eu-west-1"
-
 	bucket := "organization"
+	operationType := "organization"
 	s3key := "organization" + uuid.NewString() + ".csv"
 
-	ctx := context.Background()
-
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config: aws.Config{
-			Credentials: credentials.NewStaticCredentials(
-				"test",
-				"test",
-				"",
-			),
-			Region:           aws.String("eu-west-1"),
-			Endpoint:         aws.String("http://localhost:4566"),
-			S3ForcePathStyle: aws.Bool(true),
-		},
-	})
-	assert.Nil(t, err, "error creating aws session")
-
-	// Upload file togo  s3
+	// Make test csv file
 	numOrgs := 5
 	orgGeneratorMap := map[string]func() string{
 		"uuid":              util.UuidFieldGenerator(),
 		"owner_user_id":     util.UuidFieldGenerator(),
+		"id_list":           util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
 		"foo":               util.UuidFieldGenerator(),
 		"bar":               util.UuidFieldGenerator(),
-		"id_list":           util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
 		"organization_name": util.NameFieldGenerator("org", numOrgs),
 	}
 
 	file, orgs := util.MakeCsv(numOrgs, orgGeneratorMap)
-	uploader := s3manager.NewUploader(sess)
-	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(s3key),
-		Body:   file,
-	})
-	assert.Nil(t, err, "error putting s3 object to bucket")
+
+	// Upload csv to S3
+	err := util.UploadFileToS3(bucket, s3key, awsRegion, file)
+	assert.Nil(t, err, "error uploading file to s3")
 
 	// Put file create message on topic
 	trackingId := uuid.NewString()
-	s3FileCreatedCodec := avro.S3FileCreated{
+	s3FileCreated := avro.S3FileCreated{
 		Payload: avro.S3FileCreatedPayload{
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
 			Content_length: 0, // Content length isn't yet implemented
 			Content_type:   "text/csv",
-			Operation_type: "organization",
+			Operation_type: operationType,
 		},
 		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId},
 	}
-	var buf bytes.Buffer
-	s3FileCreatedCodec.Serialize(&buf)
-	valueBytes := buf.Bytes()
-
-	// Combine row bytes with schema id to make a record
-	var recordValue []byte
-	recordValue = append(recordValue, byte(0))
-	recordValue = append(recordValue, schemaIDBytes...)
-	recordValue = append(recordValue, valueBytes...)
-
-	w := kafka.Writer{
-		Addr:                   kafka.TCP(brokerAddrs...),
-		Topic:                  s3FileCreationTopic,
-		AllowAutoTopicCreation: true,
-		Logger:                 log.New(os.Stdout, "kafka writer: ", 0),
-	}
-	err = w.WriteMessages(
+	err = util.ProduceFileCreateMessage(
 		ctx,
-		kafka.Message{
-			Key:   []byte(kafkakey),
-			Value: recordValue,
-		},
+		s3FileCreationTopic,
+		brokerAddrs,
+		s3FileCreated,
 	)
+	assert.Nil(t, err, "error producing file create message to topic")
 
-	assert.Nil(t, err, "error writing message to topic")
-
+	// Consume from output topic and make assertions
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
@@ -162,4 +109,5 @@ func TestConsumeS3CsvOrganization(t *testing.T) {
 		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name.Value)
 		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.OwnerUserId.Value)
 	}
+	ctx.Done()
 }

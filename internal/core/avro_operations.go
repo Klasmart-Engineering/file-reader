@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"io"
 	"os"
+	"strings"
 
 	avrogen "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
 	"github.com/KL-Engineering/file-reader/internal/instrument"
@@ -37,10 +38,14 @@ const (
 	UUID              = "uuid"
 	ORGANIZATION_NAME = "organization_name"
 	OWNER_USER_ID     = "owner_user_id"
+	ORGANIZATION_UUID = "organization_id"
+	SCHOOL_NAME       = "school_name"
+	PROGRAM_IDS       = "program_ids"
 )
 
 var (
 	OrganizationHeaders = []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID}
+	SchoolHeaders       = []string{UUID, ORGANIZATION_UUID, SCHOOL_NAME, PROGRAM_IDS}
 )
 
 func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
@@ -48,8 +53,14 @@ func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationT
 	return schemaRegistryClient.GetSchemaId(schemaBody, organizationTopic)
 }
 
+func GetSchoolSchemaId(schemaRegistryClient *SchemaRegistry, schoolTopic string) int {
+	schemaBody := avrogen.School.Schema(avrogen.NewSchool())
+	return schemaRegistryClient.GetSchemaId(schemaBody, schoolTopic)
+}
+
 func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
+	schoolTopic := instrument.MustGetEnv("SCHOOL_AVRO_TOPIC")
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
@@ -58,6 +69,13 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SchemaID:     GetOrganizationSchemaId(schemaRegistryClient, organizationTopic),
 				SerializeRow: RowToOrganizationAvro,
 				Headers:      OrganizationHeaders,
+			},
+			"SCHOOL": {
+				Topic:        schoolTopic,
+				Key:          "",
+				SchemaID:     GetSchoolSchemaId(schemaRegistryClient, schoolTopic),
+				SerializeRow: RowToSchoolAvro,
+				Headers:      SchoolHeaders,
 			},
 		},
 	}
@@ -77,5 +95,22 @@ func RowToOrganizationAvro(row []string, tracking_id string, schemaId int, heade
 	}
 	codec := avrogen.Organization{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
+}
 
+func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	// Takes a slice of columns representing an organization and encodes to avro bytes
+	programIds := strings.Split(row[headerIndexes[PROGRAM_IDS]], ";")
+	md := avrogen.SchoolMetadata{
+		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:             os.Getenv("METADATA_REGION"),
+		Tracking_id:        tracking_id,
+	}
+	pl := avrogen.SchoolPayload{
+		Uuid:            row[headerIndexes[UUID]],
+		Organization_id: row[headerIndexes[ORGANIZATION_UUID]],
+		Name:            row[headerIndexes[SCHOOL_NAME]],
+		Program_ids:     programIds,
+	}
+	codec := avrogen.School{Payload: pl, Metadata: md}
+	return serializeAvroRecord(codec, schemaId), nil
 }

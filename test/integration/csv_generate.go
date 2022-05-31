@@ -82,5 +82,8 @@ func MakeCsv(numRows int, fieldGenMap map[string]func() string) (csv *strings.Re
 
 	file := strings.NewReader(strings.Join(lines, "\n"))
 	return file, ops
+}
 
+func MakeEmptyFile() *strings.Reader {
+	return strings.NewReader("")
 }

@@ -8,17 +8,24 @@
 				"name": "SchoolPayload",
 				"type": "record",
 				"fields": [{
-					"name": "uuid",
-					"type": "string",
-					"logicalType": "uuid"
-				}, {
-					"name": "organization_uuid",
-					"type": "string",
-					"logicalType": "uuid"
-				}, {
-					"name": "name",
-					"type": "string"
-				}]
+						"name": "uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "organization_id",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "name",
+						"type": "string"
+					}, {
+						"name": "program_ids",
+						"type": {
+							"type": "array",
+							"items": "string"
+						}
+					}
+				]
 			}
 		},
 		{
