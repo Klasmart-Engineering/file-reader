@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestAvroConsumeClassCsv(t *testing.T) {
+func testAvroConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogger.ZapLogger) {
 	// set up env variables
 	classAvroTopic := "classAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -29,10 +29,8 @@ func TestAvroConsumeClassCsv(t *testing.T) {
 	})
 
 	defer t.Cleanup(closer)
-	ctx := context.Background()
+
 	// Start consumer
-	l, _ := zap.NewDevelopment()
-	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
@@ -77,7 +75,7 @@ func TestAvroConsumeClassCsv(t *testing.T) {
 	assert.Nil(t, err, "error producing file create message to topic")
 
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{"localhost:9092"},
+		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       classAvroTopic,
 		StartOffset: kafka.FirstOffset,
@@ -96,10 +94,10 @@ func TestAvroConsumeClassCsv(t *testing.T) {
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
-	ctx.Done()
 }
 
-func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
+func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
+	logger *zapLogger.ZapLogger) {
 	// set up env variables
 	classAvroTopic := "classAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -111,10 +109,6 @@ func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 	})
 
 	defer t.Cleanup(closer)
-	ctx := context.Background()
-	// Start consumer
-	l, _ := zap.NewDevelopment()
-	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
@@ -183,7 +177,7 @@ func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 
 	// Assert that the real file got ingested
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{"localhost:9092"},
+		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       classAvroTopic,
 		StartOffset: kafka.FirstOffset,
@@ -202,5 +196,30 @@ func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
-	ctx.Done()
+}
+
+func TestAllForClass(t *testing.T) {
+	tests := []struct {
+		scenario string
+		function func(*testing.T, context.Context, *zapLogger.ZapLogger)
+	}{
+		{
+			scenario: "Testing consumer for avro class",
+			function: testAvroConsumeClassCsv,
+		},
+		{
+			scenario: "Verify consuming an invalid followed by a valid CSV file",
+			function: testAvroConsumeInvalidAndValidClassCsv,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.scenario, func(t *testing.T) {
+			ctx := context.Background()
+
+			l, _ := zap.NewDevelopment()
+			logger := zapLogger.Wrap(l)
+			test.function(t, ctx, logger)
+		})
+	}
 }
