@@ -10,14 +10,14 @@ import (
 	zapLogger "github.com/KL-Engineering/file-reader/internal/log"
 	"github.com/KL-Engineering/file-reader/test/env"
 	util "github.com/KL-Engineering/file-reader/test/integration"
+	"go.uber.org/zap"
 
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
-func TestAvroConsumeOrganizationCsv(t *testing.T) {
+func testAvroConsumeOrganizationCsv(t *testing.T, ctx context.Context, logger *zapLogger.ZapLogger) {
 	// set up env variables
 	organizationAvroTopic := "orgAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -29,10 +29,8 @@ func TestAvroConsumeOrganizationCsv(t *testing.T) {
 	})
 
 	defer t.Cleanup(closer)
-	ctx := context.Background()
+
 	// Start consumer
-	l, _ := zap.NewDevelopment()
-	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
@@ -80,7 +78,7 @@ func TestAvroConsumeOrganizationCsv(t *testing.T) {
 	assert.Nil(t, err, "error producing file create message to topic")
 
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{"localhost:9092"},
+		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationAvroTopic,
 		StartOffset: kafka.FirstOffset,
@@ -99,10 +97,9 @@ func TestAvroConsumeOrganizationCsv(t *testing.T) {
 		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
 		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.Owner_user_id)
 	}
-	ctx.Done()
 }
 
-func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
+func testAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T, ctx context.Context, logger *zapLogger.ZapLogger) {
 	// set up env variables
 	organizationAvroTopic := "orgAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -114,10 +111,8 @@ func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
 	})
 
 	defer t.Cleanup(closer)
-	ctx := context.Background()
+
 	// Start consumer
-	l, _ := zap.NewDevelopment()
-	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
@@ -186,7 +181,7 @@ func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
 
 	// Assert that the real file got ingested
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{"localhost:9092"},
+		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
 		Topic:       organizationAvroTopic,
 		StartOffset: kafka.FirstOffset,
@@ -205,5 +200,31 @@ func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
 		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
 		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.Owner_user_id)
 	}
-	ctx.Done()
+
+}
+
+func TestAllForOrganization(t *testing.T) {
+	tests := []struct {
+		scenario string
+		function func(*testing.T, context.Context, *zapLogger.ZapLogger)
+	}{
+		{
+			scenario: "Testing consumer for avro organization",
+			function: testAvroConsumeOrganizationCsv,
+		},
+		{
+			scenario: "Verify consuming an invalid followed by a valid CSV file",
+			function: testAvroConsumeInvalidAndValidOrganizationCsv,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.scenario, func(t *testing.T) {
+			ctx := context.Background()
+
+			l, _ := zap.NewDevelopment()
+			logger := zapLogger.Wrap(l)
+			test.function(t, ctx, logger)
+		})
+	}
 }

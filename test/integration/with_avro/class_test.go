@@ -147,9 +147,7 @@ func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 	classGeneratorMap := map[string]func() string{
 		"uuid":            util.UuidFieldGenerator(),
 		"organization_id": util.UuidFieldGenerator(),
-		"id_list":         util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
-		"foo":             util.UuidFieldGenerator(),
-		"bar":             util.UuidFieldGenerator(),
+		"fake_id":         util.UuidFieldGenerator(),
 		"class_name":      util.NameFieldGenerator("class", numClasses),
 	}
 	file, classes := util.MakeCsv(numClasses, classGeneratorMap)
@@ -198,7 +196,7 @@ func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 	}
 }
 
-func TestAllForClass(t *testing.T) {
+func TestAllForAvroClass(t *testing.T) {
 	tests := []struct {
 		scenario string
 		function func(*testing.T, context.Context, *zapLogger.ZapLogger)
