@@ -76,18 +76,9 @@ func GenderGenerator() func() string {
 	}
 }
 
-func OptionalField(gen func() string) func() string {
-	// Simulate an optional field which only sometimes is included
-	// Takes a generator function and alternates between calling it and returning empty string
-	rand.Seed(time.Now().UnixNano())
-	exists := rand.Float32() > 0.5 // Randomise whether it starts true or false
+func EmptyFieldGenerator() func() string {
 	return func() string {
-		val := ""
-		if exists {
-			val = gen()
-		}
-		exists = !exists
-		return val
+		return ""
 	}
 }
 

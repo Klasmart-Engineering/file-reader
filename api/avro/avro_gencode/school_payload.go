@@ -27,15 +27,13 @@ type SchoolPayload struct {
 
 	Name string `json:"name"`
 
-	Program_ids []string `json:"program_ids"`
+	Program_ids *UnionNullArrayString `json:"program_ids"`
 }
 
-const SchoolPayloadAvroCRC64Fingerprint = "w\x96rjTǥQ"
+const SchoolPayloadAvroCRC64Fingerprint = "!b1j&|\xbe\x12"
 
 func NewSchoolPayload() SchoolPayload {
 	r := SchoolPayload{}
-	r.Program_ids = make([]string, 0)
-
 	return r
 }
 
@@ -76,7 +74,7 @@ func writeSchoolPayload(r SchoolPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = writeArrayString(r.Program_ids, w)
+	err = writeUnionNullArrayString(r.Program_ids, w)
 	if err != nil {
 		return err
 	}
@@ -88,7 +86,7 @@ func (r SchoolPayload) Serialize(w io.Writer) error {
 }
 
 func (r SchoolPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":{\"items\":\"string\",\"type\":\"array\"}}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
 }
 
 func (r SchoolPayload) SchemaName() string {
@@ -122,12 +120,9 @@ func (r *SchoolPayload) Get(i int) types.Field {
 		return w
 
 	case 3:
-		r.Program_ids = make([]string, 0)
+		r.Program_ids = NewUnionNullArrayString()
 
-		w := ArrayStringWrapper{Target: &r.Program_ids}
-
-		return w
-
+		return r.Program_ids
 	}
 	panic("Unknown field index")
 }
@@ -140,6 +135,9 @@ func (r *SchoolPayload) SetDefault(i int) {
 
 func (r *SchoolPayload) NullField(i int) {
 	switch i {
+	case 3:
+		r.Program_ids = nil
+		return
 	}
 	panic("Not a nullable field index")
 }

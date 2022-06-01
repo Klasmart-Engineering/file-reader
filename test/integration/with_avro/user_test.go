@@ -44,12 +44,12 @@ func TestAvroConsumeUserCsv(t *testing.T) {
 	// Make test csv file
 	numUsers := 5
 	userGeneratorMap := map[string]func() string{
-		"uuid":               util.OptionalField(util.UuidFieldGenerator()),
+		"uuid":               util.UuidFieldGenerator(),
 		"user_given_name":    util.HumanNameFieldGenerator(2, 10),
 		"user_family_name":   util.HumanNameFieldGenerator(2, 10),
-		"user_email":         util.OptionalField(fake.EmailAddress),
-		"user_phone_number":  util.OptionalField(fake.Phone),
-		"user_date_of_birth": util.OptionalField(util.DateGenerator(1950, 2022, "2006-01-02")),
+		"user_email":         fake.EmailAddress,
+		"user_phone_number":  fake.Phone,
+		"user_date_of_birth": util.DateGenerator(1950, 2022, "2006-01-02"),
 		"user_gender":        util.GenderGenerator(),
 	}
 	file, users := util.MakeCsv(numUsers, userGeneratorMap)
@@ -99,10 +99,9 @@ func TestAvroConsumeUserCsv(t *testing.T) {
 		assert.Equal(t, userInput["user_given_name"], userOutput.Payload.Given_name)
 		assert.Equal(t, userInput["user_family_name"], userOutput.Payload.Family_name)
 		assert.Equal(t, userInput["user_email"], userOutput.Payload.Email)
-		assert.Equal(t, userInput["user_phone_number"], userOutput.Payload.Phone_number)
 		assert.Equal(t, userInput["user_date_of_birth"], userOutput.Payload.Date_of_birth)
 		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender)
-
+		assert.Equal(t, userInput["user_phone_number"], userOutput.Payload.Phone_number.String)
 	}
 	ctx.Done()
 }

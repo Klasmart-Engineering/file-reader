@@ -49,12 +49,12 @@ func TestProtoConsumeUserCsv(t *testing.T) {
 	// Make test csv file
 	numUsers := 5
 	userGeneratorMap := map[string]func() string{
-		"uuid":               util.OptionalField(util.UuidFieldGenerator()),
+		"uuid":               util.UuidFieldGenerator(),
 		"user_given_name":    util.HumanNameFieldGenerator(2, 10),
 		"user_family_name":   util.HumanNameFieldGenerator(2, 10),
-		"user_email":         util.OptionalField(fake.EmailAddress),
-		"user_phone_number":  util.OptionalField(fake.Phone),
-		"user_date_of_birth": util.OptionalField(util.DateGenerator(1950, 2022, "2006-01-02")),
+		"user_email":         fake.EmailAddress,
+		"user_phone_number":  fake.Phone,
+		"user_date_of_birth": util.DateGenerator(1950, 2022, "2006-01-02"),
 		"user_gender":        util.GenderGenerator(),
 	}
 	file, users := util.MakeCsv(numUsers, userGeneratorMap)

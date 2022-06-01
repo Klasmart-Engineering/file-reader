@@ -49,7 +49,7 @@ func TestProtoConsumeSchoolCsv(t *testing.T) {
 		"uuid":            util.UuidFieldGenerator(),
 		"organization_id": util.UuidFieldGenerator(),
 		"school_name":     util.NameFieldGenerator("school", numSchools),
-		"program_ids":     util.OptionalField(util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10)),
+		"program_ids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
 		"fake_ids":        util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 1, 5),
 	}
 	file, schools := util.MakeCsv(numSchools, schoolGeneratorMap)

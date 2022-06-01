@@ -29,14 +29,14 @@ type UserPayload struct {
 
 	Email string `json:"email"`
 
-	Phone_number string `json:"phone_number"`
+	Phone_number *UnionNullString `json:"phone_number"`
 
 	Date_of_birth string `json:"date_of_birth"`
 
 	Gender string `json:"gender"`
 }
 
-const UserPayloadAvroCRC64Fingerprint = "\xb7\\\x0fZ\xdb\xfaW\xd9"
+const UserPayloadAvroCRC64Fingerprint = "\xa5L\x89EgO\xa48"
 
 func NewUserPayload() UserPayload {
 	r := UserPayload{}
@@ -84,7 +84,7 @@ func writeUserPayload(r UserPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = vm.WriteString(r.Phone_number, w)
+	err = writeUnionNullString(r.Phone_number, w)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (r UserPayload) Serialize(w io.Writer) error {
 }
 
 func (r UserPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\"},{\"name\":\"phone_number\",\"type\":\"string\"},{\"name\":\"date_of_birth\",\"type\":\"string\"},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\"},{\"name\":\"phone_number\",\"type\":[\"null\",\"string\"]},{\"name\":\"date_of_birth\",\"type\":\"string\"},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserPayload\",\"type\":\"record\"}"
 }
 
 func (r UserPayload) SchemaName() string {
@@ -143,10 +143,9 @@ func (r *UserPayload) Get(i int) types.Field {
 		return w
 
 	case 4:
-		w := types.String{Target: &r.Phone_number}
+		r.Phone_number = NewUnionNullString()
 
-		return w
-
+		return r.Phone_number
 	case 5:
 		w := types.String{Target: &r.Date_of_birth}
 
@@ -169,6 +168,9 @@ func (r *UserPayload) SetDefault(i int) {
 
 func (r *UserPayload) NullField(i int) {
 	switch i {
+	case 4:
+		r.Phone_number = nil
+		return
 	}
 	panic("Not a nullable field index")
 }

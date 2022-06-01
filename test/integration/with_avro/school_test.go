@@ -44,10 +44,10 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 	// Make test csv file
 	numSchools := 5
 	schoolGeneratorMap := map[string]func() string{
-		"uuid":            util.OptionalField(util.UuidFieldGenerator()),
+		"uuid":            util.UuidFieldGenerator(),
 		"organization_id": util.UuidFieldGenerator(),
 		"school_name":     util.NameFieldGenerator("school", numSchools),
-		"program_ids":     util.OptionalField(util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10)),
+		"program_ids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
 		"fake_ids":        util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 1, 5),
 	}
 	file, schools := util.MakeCsv(numSchools, schoolGeneratorMap)
@@ -97,7 +97,8 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name)
 		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.Organization_id)
 		program_ids := strings.Split(schoolInput["program_ids"], ";")
-		assert.Equal(t, program_ids, schoolOutput.Payload.Program_ids)
+		assert.Equal(t, program_ids, schoolOutput.Payload.Program_ids.ArrayString)
+
 	}
 	ctx.Done()
 }

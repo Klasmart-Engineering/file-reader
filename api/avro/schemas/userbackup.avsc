@@ -1,29 +1,40 @@
 {
-	"name": "School",
+	"name": "User",
 	"type": "record",
-	"namespace": "com.kidsloop.onboarding",
+	"namespace": "com.kidsloop.onboarding.user",
 	"fields": [{
 			"name": "payload",
 			"type": {
-				"name": "SchoolPayload",
+				"name": "UserPayload",
 				"type": "record",
 				"fields": [{
 						"name": "uuid",
 						"type": "string",
 						"logicalType": "uuid"
-					}, {
-						"name": "organization_id",
-						"type": "string",
-						"logicalType": "uuid"
-					}, {
-						"name": "name",
+					},
+					{
+						"name": "given_name",
 						"type": "string"
-					}, {
-						"name": "program_ids",
-						"type": ["null", {
-							"type": "array",
-							"items": "string"
-						}]
+					},
+					{
+						"name": "family_name",
+						"type": "string"
+					},
+					{
+						"name": "email",
+						"type": "string"
+					},
+					{
+						"name": "phone_number",
+						"type": "string"
+					},
+					{
+						"name": "date_of_birth",
+						"type": "string"
+					},
+					{
+						"name": "gender",
+						"type": "string"
 					}
 				]
 			}
@@ -31,7 +42,7 @@
 		{
 			"name": "metadata",
 			"type": {
-				"name": "SchoolMetadata",
+				"name": "UserMetadata",
 				"type": "record",
 				"fields": [{
 						"name": "origin_application",

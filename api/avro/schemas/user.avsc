@@ -26,7 +26,7 @@
 					},
 					{
 						"name": "phone_number",
-						"type": "string"
+						"type": ["null", "string"]
 					},
 					{
 						"name": "date_of_birth",

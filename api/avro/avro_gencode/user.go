@@ -26,7 +26,7 @@ type User struct {
 	Metadata UserMetadata `json:"metadata"`
 }
 
-const UserAvroCRC64Fingerprint = "\xf7=\x90x'\x1e!e"
+const UserAvroCRC64Fingerprint = "x\x16\x93RB\xef/\xc3"
 
 func NewUser() User {
 	r := User{}
@@ -78,7 +78,7 @@ func (r User) Serialize(w io.Writer) error {
 }
 
 func (r User) Schema() string {
-	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\"},{\"name\":\"phone_number\",\"type\":\"string\"},{\"name\":\"date_of_birth\",\"type\":\"string\"},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"UserPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"UserMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.user.User\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\"},{\"name\":\"phone_number\",\"type\":[\"null\",\"string\"]},{\"name\":\"date_of_birth\",\"type\":\"string\"},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"UserPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"UserMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.user.User\",\"type\":\"record\"}"
 }
 
 func (r User) SchemaName() string {
