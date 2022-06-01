@@ -94,6 +94,7 @@ func testAvroConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogge
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
+	ctx.Done()
 }
 
 func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
@@ -194,6 +195,7 @@ func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
+	ctx.Done()
 }
 
 func TestAllForAvroClass(t *testing.T) {

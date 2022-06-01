@@ -99,6 +99,7 @@ func testProtoConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogg
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.OrganizationUuid)
 
 	}
+	ctx.Done()
 }
 
 func testProtoConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
@@ -205,6 +206,7 @@ func testProtoConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.OrganizationUuid)
 
 	}
+	ctx.Done()
 }
 
 func TestAllForProtoClass(t *testing.T) {

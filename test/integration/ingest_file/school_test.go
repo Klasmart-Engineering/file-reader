@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"bytes"
-	"context"
 	"embed"
 	"encoding/csv"
 	"strings"
@@ -158,8 +157,6 @@ func TestSchoolFileProcessingServer(t *testing.T) {
 
 				// Testing for kafka messages
 
-				ctx := context.Background()
-
 				expectedValues, _ := getSchoolCsvToProtos("data/good/school.csv")
 				for _, expected := range expectedValues {
 					t.Log("expecting to read ", expected, " on topic ", schoolProtoTopic)
@@ -199,5 +196,6 @@ func TestSchoolFileProcessingServer(t *testing.T) {
 
 		})
 	}
+	ctx.Done()
 
 }

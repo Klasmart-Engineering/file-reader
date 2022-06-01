@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"bytes"
-	"context"
 	"embed"
 	"encoding/csv"
 	"time"
@@ -73,7 +72,7 @@ func getOrgCsvToProtos(filePath string) ([]*onboarding.Organization, error) {
 	}
 }
 
-func TestFileProcessingServer(t *testing.T) {
+func TestOrgFileProcessingServer(t *testing.T) {
 	var testCases = []struct {
 		name        string
 		req         []*filepb.InputFileRequest
@@ -152,9 +151,6 @@ func TestFileProcessingServer(t *testing.T) {
 				g.Expect(res.Success).To(gomega.BeTrue())
 
 				// Testing for kafka messages
-
-				ctx := context.Background()
-
 				expectedValues, _ := getOrgCsvToProtos("data/good/organization.csv")
 				for _, expected := range expectedValues {
 					t.Log("expecting to read ", expected, " on topic ", orgProtoTopic)
@@ -194,5 +190,5 @@ func TestFileProcessingServer(t *testing.T) {
 
 		})
 	}
-
+	ctx.Done()
 }

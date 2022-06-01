@@ -97,6 +97,7 @@ func testAvroConsumeOrganizationCsv(t *testing.T, ctx context.Context, logger *z
 		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
 		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.Owner_user_id)
 	}
+	ctx.Done()
 }
 
 func testAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T, ctx context.Context, logger *zapLogger.ZapLogger) {
@@ -200,6 +201,7 @@ func testAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T, ctx context.Con
 		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
 		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.Owner_user_id)
 	}
+	ctx.Done()
 
 }
 
