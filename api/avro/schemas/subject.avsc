@@ -9,7 +9,7 @@
 				"type": "record",
 				"fields": [{
 					"name": "uuid",
-					"type": "string",
+					"type": ["null", "string"],
 					"logicalType": "uuid"
 				}, {
 					"name": "organization_uuid",

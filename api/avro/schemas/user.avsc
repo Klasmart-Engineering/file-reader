@@ -22,7 +22,7 @@
 					},
 					{
 						"name": "email",
-						"type": "string"
+						"type": ["null", "string"]
 					},
 					{
 						"name": "phone_number",
@@ -30,7 +30,7 @@
 					},
 					{
 						"name": "date_of_birth",
-						"type": "string"
+						"type": ["null", "string"]
 					},
 					{
 						"name": "gender",

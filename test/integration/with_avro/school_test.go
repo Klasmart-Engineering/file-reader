@@ -93,7 +93,7 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 		assert.Equal(t, trackingId, schoolOutput.Metadata.Tracking_id)
 
 		schoolInput := schools[i]
-		assert.Equal(t, schoolInput["uuid"], schoolOutput.Payload.Uuid)
+		assert.Equal(t, schoolInput["uuid"], schoolOutput.Payload.Uuid.String)
 		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name)
 		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.Organization_id)
 		program_ids := strings.Split(schoolInput["program_ids"], ";")

@@ -98,8 +98,8 @@ func TestAvroConsumeUserCsv(t *testing.T) {
 		assert.Equal(t, userInput["uuid"], userOutput.Payload.Uuid)
 		assert.Equal(t, userInput["user_given_name"], userOutput.Payload.Given_name)
 		assert.Equal(t, userInput["user_family_name"], userOutput.Payload.Family_name)
-		assert.Equal(t, userInput["user_email"], userOutput.Payload.Email)
-		assert.Equal(t, userInput["user_date_of_birth"], userOutput.Payload.Date_of_birth)
+		assert.Equal(t, userInput["user_email"], userOutput.Payload.Email.String)
+		assert.Equal(t, userInput["user_date_of_birth"], userOutput.Payload.Date_of_birth.String)
 		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender)
 		assert.Equal(t, userInput["user_phone_number"], userOutput.Payload.Phone_number.String)
 	}

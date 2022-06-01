@@ -27,16 +27,16 @@ type UserPayload struct {
 
 	Family_name string `json:"family_name"`
 
-	Email string `json:"email"`
+	Email *UnionNullString `json:"email"`
 
 	Phone_number *UnionNullString `json:"phone_number"`
 
-	Date_of_birth string `json:"date_of_birth"`
+	Date_of_birth *UnionNullString `json:"date_of_birth"`
 
 	Gender string `json:"gender"`
 }
 
-const UserPayloadAvroCRC64Fingerprint = "\xa5L\x89EgO\xa48"
+const UserPayloadAvroCRC64Fingerprint = "\\\xbc~M5\xb0\xcf:"
 
 func NewUserPayload() UserPayload {
 	r := UserPayload{}
@@ -80,7 +80,7 @@ func writeUserPayload(r UserPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = vm.WriteString(r.Email, w)
+	err = writeUnionNullString(r.Email, w)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func writeUserPayload(r UserPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = vm.WriteString(r.Date_of_birth, w)
+	err = writeUnionNullString(r.Date_of_birth, w)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (r UserPayload) Serialize(w io.Writer) error {
 }
 
 func (r UserPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\"},{\"name\":\"phone_number\",\"type\":[\"null\",\"string\"]},{\"name\":\"date_of_birth\",\"type\":\"string\"},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"name\":\"email\",\"type\":[\"null\",\"string\"]},{\"name\":\"phone_number\",\"type\":[\"null\",\"string\"]},{\"name\":\"date_of_birth\",\"type\":[\"null\",\"string\"]},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserPayload\",\"type\":\"record\"}"
 }
 
 func (r UserPayload) SchemaName() string {
@@ -138,19 +138,17 @@ func (r *UserPayload) Get(i int) types.Field {
 		return w
 
 	case 3:
-		w := types.String{Target: &r.Email}
+		r.Email = NewUnionNullString()
 
-		return w
-
+		return r.Email
 	case 4:
 		r.Phone_number = NewUnionNullString()
 
 		return r.Phone_number
 	case 5:
-		w := types.String{Target: &r.Date_of_birth}
+		r.Date_of_birth = NewUnionNullString()
 
-		return w
-
+		return r.Date_of_birth
 	case 6:
 		w := types.String{Target: &r.Gender}
 
@@ -168,8 +166,14 @@ func (r *UserPayload) SetDefault(i int) {
 
 func (r *UserPayload) NullField(i int) {
 	switch i {
+	case 3:
+		r.Email = nil
+		return
 	case 4:
 		r.Phone_number = nil
+		return
+	case 5:
+		r.Date_of_birth = nil
 		return
 	}
 	panic("Not a nullable field index")

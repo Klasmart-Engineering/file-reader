@@ -139,10 +139,11 @@ func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndex
 		Tracking_id:        tracking_id,
 	}
 	pl := avrogen.SchoolPayload{
-		Uuid:            row[headerIndexes[UUID]],
 		Organization_id: row[headerIndexes[ORGANIZATION_UUID]],
 		Name:            row[headerIndexes[SCHOOL_NAME]],
-		//Program_ids:     avrogen.NewUnionNullArrayString(),
+	}
+	if row[headerIndexes[UUID]] != "" {
+		pl.Uuid = makeAvroOptionalString(row[headerIndexes[UUID]])
 	}
 	if row[headerIndexes[PROGRAM_IDS]] != "" {
 		pl.Program_ids = makeAvroOptionalArrayString(row[headerIndexes[PROGRAM_IDS]])
@@ -160,15 +161,19 @@ func RowToUserAvro(row []string, tracking_id string, schemaId int, headerIndexes
 		Tracking_id:        tracking_id,
 	}
 	pl := avrogen.UserPayload{
-		Uuid:          row[headerIndexes[UUID]],
-		Given_name:    row[headerIndexes[GIVEN_NAME]],
-		Family_name:   row[headerIndexes[FAMILY_NAME]],
-		Email:         row[headerIndexes[EMAIL]],
-		Date_of_birth: row[headerIndexes[DATE_OF_BIRTH]],
-		Gender:        row[headerIndexes[GENDER]],
+		Uuid:        row[headerIndexes[UUID]],
+		Given_name:  row[headerIndexes[GIVEN_NAME]],
+		Family_name: row[headerIndexes[FAMILY_NAME]],
+		Gender:      row[headerIndexes[GENDER]],
 	}
 	if row[headerIndexes[PHONE_NUMBER]] != "" {
 		pl.Phone_number = makeAvroOptionalString(row[headerIndexes[PHONE_NUMBER]])
+	}
+	if row[headerIndexes[EMAIL]] != "" {
+		pl.Email = makeAvroOptionalString(row[headerIndexes[EMAIL]])
+	}
+	if row[headerIndexes[DATE_OF_BIRTH]] != "" {
+		pl.Date_of_birth = makeAvroOptionalString(row[headerIndexes[DATE_OF_BIRTH]])
 	}
 
 	codec := avrogen.User{Payload: pl, Metadata: md}

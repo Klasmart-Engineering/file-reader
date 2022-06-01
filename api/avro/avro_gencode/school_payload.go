@@ -21,7 +21,7 @@ import (
 var _ = fmt.Printf
 
 type SchoolPayload struct {
-	Uuid string `json:"uuid"`
+	Uuid *UnionNullString `json:"uuid"`
 
 	Organization_id string `json:"organization_id"`
 
@@ -30,7 +30,7 @@ type SchoolPayload struct {
 	Program_ids *UnionNullArrayString `json:"program_ids"`
 }
 
-const SchoolPayloadAvroCRC64Fingerprint = "!b1j&|\xbe\x12"
+const SchoolPayloadAvroCRC64Fingerprint = "u8x8V\xb4\xd5V"
 
 func NewSchoolPayload() SchoolPayload {
 	r := SchoolPayload{}
@@ -62,7 +62,7 @@ func DeserializeSchoolPayloadFromSchema(r io.Reader, schema string) (SchoolPaylo
 
 func writeSchoolPayload(r SchoolPayload, w io.Writer) error {
 	var err error
-	err = vm.WriteString(r.Uuid, w)
+	err = writeUnionNullString(r.Uuid, w)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (r SchoolPayload) Serialize(w io.Writer) error {
 }
 
 func (r SchoolPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
 }
 
 func (r SchoolPayload) SchemaName() string {
@@ -105,10 +105,9 @@ func (_ SchoolPayload) SetUnionElem(v int64) { panic("Unsupported operation") }
 func (r *SchoolPayload) Get(i int) types.Field {
 	switch i {
 	case 0:
-		w := types.String{Target: &r.Uuid}
+		r.Uuid = NewUnionNullString()
 
-		return w
-
+		return r.Uuid
 	case 1:
 		w := types.String{Target: &r.Organization_id}
 
@@ -135,6 +134,9 @@ func (r *SchoolPayload) SetDefault(i int) {
 
 func (r *SchoolPayload) NullField(i int) {
 	switch i {
+	case 0:
+		r.Uuid = nil
+		return
 	case 3:
 		r.Program_ids = nil
 		return
