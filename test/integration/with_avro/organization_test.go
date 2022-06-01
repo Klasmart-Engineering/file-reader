@@ -203,7 +203,7 @@ func testAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T, ctx context.Con
 
 }
 
-func TestAllForOrganization(t *testing.T) {
+func TestAllForAvroOrganization(t *testing.T) {
 	tests := []struct {
 		scenario string
 		function func(*testing.T, context.Context, *zapLogger.ZapLogger)
