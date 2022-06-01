@@ -108,7 +108,7 @@ message Class {
 
 message Class_payload {
     optional string uuid = 1;
-    optional string organization_uuid = 2;
+    string organization_uuid = 2;
     string name = 3;
 }
 

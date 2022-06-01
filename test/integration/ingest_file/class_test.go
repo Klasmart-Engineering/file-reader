@@ -64,7 +64,7 @@ func getClassCsvToProtos(filePath string) ([]*onboarding.Class, error) {
 		pl := onboarding.ClassPayload{
 			Uuid:             &row[headerIndexMap["uuid"]],
 			Name:             row[headerIndexMap["class_name"]],
-			OrganizationUuid: &row[headerIndexMap["organization_id"]],
+			OrganizationUuid: row[headerIndexMap["organization_id"]],
 		}
 
 		res = append(res, &onboarding.Class{Payload: &pl, Metadata: &md})
@@ -182,7 +182,7 @@ func TestClassFileProcessingServer(t *testing.T) {
 						g.Expect(expected.Metadata.OriginApplication).To(gomega.Equal(class.Metadata.OriginApplication))
 						g.Expect(util.DerefString(expected.Payload.Uuid)).To(gomega.Equal(util.DerefString(class.Payload.Uuid)))
 						g.Expect(expected.Payload.Name).To(gomega.Equal(class.Payload.Name))
-						g.Expect(util.DerefString(expected.Payload.OrganizationUuid)).To(gomega.Equal(util.DerefString(class.Payload.OrganizationUuid)))
+						g.Expect(expected.Payload.OrganizationUuid).To(gomega.Equal(class.Payload.OrganizationUuid))
 
 					} else {
 						t.Logf("Error consuming the message: %v (%v)\n", err, msg)

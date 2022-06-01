@@ -99,7 +99,7 @@ func TestProtoConsumeClassCsv(t *testing.T) {
 		classInput := classes[i]
 		assert.Equal(t, classInput["uuid"], util.DerefString(classOutput.Payload.Uuid))
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
-		assert.Equal(t, classInput["organization_id"], util.DerefString(classOutput.Payload.OrganizationUuid))
+		assert.Equal(t, classInput["organization_id"], classOutput.Payload.OrganizationUuid)
 
 	}
 	ctx.Done()

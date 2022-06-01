@@ -102,7 +102,7 @@ func RowToClassProto(row []string, tracking_id string, schemaId int, headerIndex
 	pl := onboarding.ClassPayload{
 		Uuid:             &row[headerIndexes[UUID]],
 		Name:             row[headerIndexes[CLASS_NAME]],
-		OrganizationUuid: &row[headerIndexes[ORGANIZATION_UUID]],
+		OrganizationUuid: row[headerIndexes[ORGANIZATION_UUID]],
 	}
 	codec := &onboarding.Class{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
