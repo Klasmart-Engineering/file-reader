@@ -3,6 +3,7 @@
  * SOURCES:
  *     organization.avsc
  *     school.avsc
+ *     class.avsc
  *     s3filecreated.avsc
  */
 package avro

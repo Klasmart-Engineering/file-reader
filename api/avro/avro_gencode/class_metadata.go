@@ -20,7 +20,7 @@ import (
 
 var _ = fmt.Printf
 
-type S3FileCreatedMetadata struct {
+type ClassMetadata struct {
 	Origin_application string `json:"origin_application"`
 
 	Region string `json:"region"`
@@ -28,15 +28,15 @@ type S3FileCreatedMetadata struct {
 	Tracking_id string `json:"tracking_id"`
 }
 
-const S3FileCreatedMetadataAvroCRC64Fingerprint = "\an\x84p1\xdd\xd5\""
+const ClassMetadataAvroCRC64Fingerprint = "E\xc0-M?\xdeK\x05"
 
-func NewS3FileCreatedMetadata() S3FileCreatedMetadata {
-	r := S3FileCreatedMetadata{}
+func NewClassMetadata() ClassMetadata {
+	r := ClassMetadata{}
 	return r
 }
 
-func DeserializeS3FileCreatedMetadata(r io.Reader) (S3FileCreatedMetadata, error) {
-	t := NewS3FileCreatedMetadata()
+func DeserializeClassMetadata(r io.Reader) (ClassMetadata, error) {
+	t := NewClassMetadata()
 	deser, err := compiler.CompileSchemaBytes([]byte(t.Schema()), []byte(t.Schema()))
 	if err != nil {
 		return t, err
@@ -46,8 +46,8 @@ func DeserializeS3FileCreatedMetadata(r io.Reader) (S3FileCreatedMetadata, error
 	return t, err
 }
 
-func DeserializeS3FileCreatedMetadataFromSchema(r io.Reader, schema string) (S3FileCreatedMetadata, error) {
-	t := NewS3FileCreatedMetadata()
+func DeserializeClassMetadataFromSchema(r io.Reader, schema string) (ClassMetadata, error) {
+	t := NewClassMetadata()
 
 	deser, err := compiler.CompileSchemaBytes([]byte(schema), []byte(t.Schema()))
 	if err != nil {
@@ -58,7 +58,7 @@ func DeserializeS3FileCreatedMetadataFromSchema(r io.Reader, schema string) (S3F
 	return t, err
 }
 
-func writeS3FileCreatedMetadata(r S3FileCreatedMetadata, w io.Writer) error {
+func writeClassMetadata(r ClassMetadata, w io.Writer) error {
 	var err error
 	err = vm.WriteString(r.Origin_application, w)
 	if err != nil {
@@ -75,28 +75,28 @@ func writeS3FileCreatedMetadata(r S3FileCreatedMetadata, w io.Writer) error {
 	return err
 }
 
-func (r S3FileCreatedMetadata) Serialize(w io.Writer) error {
-	return writeS3FileCreatedMetadata(r, w)
+func (r ClassMetadata) Serialize(w io.Writer) error {
+	return writeClassMetadata(r, w)
 }
 
-func (r S3FileCreatedMetadata) Schema() string {
-	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.S3FileCreatedMetadata\",\"type\":\"record\"}"
+func (r ClassMetadata) Schema() string {
+	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.ClassMetadata\",\"type\":\"record\"}"
 }
 
-func (r S3FileCreatedMetadata) SchemaName() string {
-	return "com.kidsloop.onboarding.S3FileCreatedMetadata"
+func (r ClassMetadata) SchemaName() string {
+	return "com.kidsloop.onboarding.ClassMetadata"
 }
 
-func (_ S3FileCreatedMetadata) SetBoolean(v bool)    { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) SetInt(v int32)       { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) SetLong(v int64)      { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) SetFloat(v float32)   { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) SetDouble(v float64)  { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) SetBytes(v []byte)    { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) SetString(v string)   { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) SetUnionElem(v int64) { panic("Unsupported operation") }
+func (_ ClassMetadata) SetBoolean(v bool)    { panic("Unsupported operation") }
+func (_ ClassMetadata) SetInt(v int32)       { panic("Unsupported operation") }
+func (_ ClassMetadata) SetLong(v int64)      { panic("Unsupported operation") }
+func (_ ClassMetadata) SetFloat(v float32)   { panic("Unsupported operation") }
+func (_ ClassMetadata) SetDouble(v float64)  { panic("Unsupported operation") }
+func (_ ClassMetadata) SetBytes(v []byte)    { panic("Unsupported operation") }
+func (_ ClassMetadata) SetString(v string)   { panic("Unsupported operation") }
+func (_ ClassMetadata) SetUnionElem(v int64) { panic("Unsupported operation") }
 
-func (r *S3FileCreatedMetadata) Get(i int) types.Field {
+func (r *ClassMetadata) Get(i int) types.Field {
 	switch i {
 	case 0:
 		w := types.String{Target: &r.Origin_application}
@@ -117,28 +117,28 @@ func (r *S3FileCreatedMetadata) Get(i int) types.Field {
 	panic("Unknown field index")
 }
 
-func (r *S3FileCreatedMetadata) SetDefault(i int) {
+func (r *ClassMetadata) SetDefault(i int) {
 	switch i {
 	}
 	panic("Unknown field index")
 }
 
-func (r *S3FileCreatedMetadata) NullField(i int) {
+func (r *ClassMetadata) NullField(i int) {
 	switch i {
 	}
 	panic("Not a nullable field index")
 }
 
-func (_ S3FileCreatedMetadata) AppendMap(key string) types.Field { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) AppendArray() types.Field         { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) HintSize(int)                     { panic("Unsupported operation") }
-func (_ S3FileCreatedMetadata) Finalize()                        {}
+func (_ ClassMetadata) AppendMap(key string) types.Field { panic("Unsupported operation") }
+func (_ ClassMetadata) AppendArray() types.Field         { panic("Unsupported operation") }
+func (_ ClassMetadata) HintSize(int)                     { panic("Unsupported operation") }
+func (_ ClassMetadata) Finalize()                        {}
 
-func (_ S3FileCreatedMetadata) AvroCRC64Fingerprint() []byte {
-	return []byte(S3FileCreatedMetadataAvroCRC64Fingerprint)
+func (_ ClassMetadata) AvroCRC64Fingerprint() []byte {
+	return []byte(ClassMetadataAvroCRC64Fingerprint)
 }
 
-func (r S3FileCreatedMetadata) MarshalJSON() ([]byte, error) {
+func (r ClassMetadata) MarshalJSON() ([]byte, error) {
 	var err error
 	output := make(map[string]json.RawMessage)
 	output["origin_application"], err = json.Marshal(r.Origin_application)
@@ -156,7 +156,7 @@ func (r S3FileCreatedMetadata) MarshalJSON() ([]byte, error) {
 	return json.Marshal(output)
 }
 
-func (r *S3FileCreatedMetadata) UnmarshalJSON(data []byte) error {
+func (r *ClassMetadata) UnmarshalJSON(data []byte) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return err

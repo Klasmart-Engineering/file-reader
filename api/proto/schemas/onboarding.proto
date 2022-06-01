@@ -2,23 +2,16 @@ syntax = "proto3";
 
 option go_package = "./onboarding"; 
 
-message StringValue {
-    // The string value.
-    string value = 1;
-}
-message Int32Value {
-    // The int32 value.
-    int32 value = 1;
-}
+
 message Organization {
     Organization_payload payload = 1;
     Metadata metadata = 2;
 }
 
 message Organization_payload {
-    StringValue uuid = 1;
-    StringValue name = 2;
-    StringValue owner_user_id = 3;
+    string uuid = 1;
+    string name = 2;
+    string owner_user_id = 3;
 }
 
 message Subject {
@@ -27,9 +20,9 @@ message Subject {
 }
 
 message Subject_payload {
-    StringValue uuid = 1;
-    StringValue organization_uuid = 2;
-    StringValue name = 3;
+    optional string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
 }
 
 message Category {
@@ -38,10 +31,10 @@ message Category {
 }
 
 message Category_payload {
-    StringValue uuid = 1;
-    StringValue organization_uuid = 2;
-    StringValue name = 3;
-    repeated StringValue subcategory_uuids = 4;
+    optional string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+    repeated string subcategory_uuids = 4;
 }
 
 message Subcategory {
@@ -50,9 +43,9 @@ message Subcategory {
 }
 
 message Subcategory_payload {
-    StringValue uuid = 1;
-    StringValue organization_uuid = 2;
-    StringValue name = 3;
+    optional string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
 }
 
 message Agerange {
@@ -61,12 +54,12 @@ message Agerange {
 }
 
 message Agerange_payload {
-    StringValue uuid = 1;
-    StringValue organization_uuid = 2;
-    StringValue name = 3;
-    Int32Value low_value = 4;
-    Int32Value high_value = 5;
-    StringValue unit = 6;
+    optional string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+    int32 low_value = 4;
+    int32 high_value = 5;
+    string unit = 6;
 }
 
 message Role {
@@ -75,10 +68,10 @@ message Role {
 }
 
 message Role_payload {
-    StringValue uuid = 1;
-    StringValue organization_uuid = 2;
-    StringValue name = 3;
-    repeated StringValue permission_ids = 4;
+    optional string uuid = 1;
+    string organization_uuid = 2;
+    string name = 3;
+    repeated string permission_ids = 4;
 }
 
 message School {
@@ -87,10 +80,10 @@ message School {
 }
 
 message School_payload {
-    StringValue uuid = 1;
-    StringValue organization_id = 2;
-    StringValue name = 3;
-    repeated StringValue program_ids = 4;
+    optional string uuid = 1;
+    string organization_id = 2;
+    string name = 3;
+    repeated string program_ids = 4;
 }
 
 message User {
@@ -99,13 +92,13 @@ message User {
 }
 
 message User_payload {
-    StringValue uuid = 1;
-    StringValue organization_uuid = 2;
-    StringValue given_name = 3;
-    StringValue family_name = 4;
-    StringValue email = 5;
-    StringValue phone_number = 6;
-    StringValue date_of_birth = 7;
+    string uuid = 1;
+    string organization_uuid = 2;
+    optional string given_name = 3;
+    optional string family_name = 4;
+    optional string email = 5;
+    optional string phone_number = 6;
+    optional string date_of_birth = 7;
 }
 
 message Class {
@@ -114,9 +107,9 @@ message Class {
 }
 
 message Class_payload {
-    StringValue uuid = 1;
-    StringValue organization_uuid = 2;
-    StringValue name = 3;
+    optional string uuid = 1;
+    optional string organization_uuid = 2;
+    string name = 3;
 }
 
 enum Gender {
@@ -124,8 +117,9 @@ enum Gender {
   FEMALE = 1;
 }
 
+
 message Metadata {
-    StringValue origin_application = 1;
-    StringValue region = 2;
-    StringValue tracking_id = 3;
+    string origin_application = 1;
+    string region = 2;
+    string tracking_id = 3;
 }

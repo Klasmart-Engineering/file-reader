@@ -35,75 +35,68 @@ import (
 )
 
 //go:embed data/good
-var testGoodDataDir embed.FS
+var orgGoodDataDir embed.FS
 
-var testCases = []struct {
-	name        string
-	req         []*filepb.InputFileRequest
-	expectedRes filepb.InputFileResponse
-}{
-	{
-		name: "req ok",
-		req: []*filepb.InputFileRequest{
-
-			{
-				Type:      filepb.Type_ORGANIZATION,
-				InputFile: &filepb.InputFile{FileId: "file_id1", Path: "data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
-			},
-		},
-		expectedRes: filepb.InputFileResponse{Success: true, Errors: nil},
-	},
-}
-
-func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization, error) {
+func getOrgCsvToProtos(filePath string) ([]*onboarding.Organization, error) {
 	var res []*onboarding.Organization
 	var content []byte
-	switch entity {
-	case "ORGANIZATION":
-		content, _ = testGoodDataDir.ReadFile(filePath)
+	content, _ = orgGoodDataDir.ReadFile(filePath)
 
-		// Keep store of header order
-		reader := csv.NewReader(bytes.NewBuffer(content))
-		headers, _ := reader.Read()
-		headerIndexMap := map[string]int{}
-		for i, header := range headers {
-			headerIndexMap[header] = i
-		}
-		for {
-			row, err := reader.Read()
-			if err != nil {
-				if err == io.EOF {
-					return res, nil
-				}
-			}
-
-			md := onboarding.Metadata{
-				OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
-				Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
-				TrackingId:        &onboarding.StringValue{Value: uuid.NewString()},
-			}
-
-			pl := onboarding.OrganizationPayload{
-				Uuid:        &onboarding.StringValue{Value: row[headerIndexMap["uuid"]]},
-				Name:        &onboarding.StringValue{Value: row[headerIndexMap["organization_name"]]},
-				OwnerUserId: &onboarding.StringValue{Value: row[headerIndexMap["owner_user_id"]]},
-			}
-
-			res = append(res, &onboarding.Organization{Payload: &pl, Metadata: &md})
-		}
-
+	// Keep store of header order
+	reader := csv.NewReader(bytes.NewBuffer(content))
+	headers, _ := reader.Read()
+	headerIndexMap := map[string]int{}
+	for i, header := range headers {
+		headerIndexMap[header] = i
 	}
-	return res, nil
+	for {
+		row, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				return res, nil
+			}
+		}
+
+		md := onboarding.Metadata{
+			OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+			Region:            os.Getenv("METADATA_REGION"),
+			TrackingId:        uuid.NewString(),
+		}
+
+		pl := onboarding.OrganizationPayload{
+			Uuid:        row[headerIndexMap["uuid"]],
+			Name:        row[headerIndexMap["organization_name"]],
+			OwnerUserId: row[headerIndexMap["owner_user_id"]],
+		}
+
+		res = append(res, &onboarding.Organization{Payload: &pl, Metadata: &md})
+	}
 }
 
 func TestFileProcessingServer(t *testing.T) {
+	var testCases = []struct {
+		name        string
+		req         []*filepb.InputFileRequest
+		expectedRes filepb.InputFileResponse
+	}{
+		{
+			name: "req ok",
+			req: []*filepb.InputFileRequest{
+
+				{
+					Type:      filepb.Type_ORGANIZATION,
+					InputFile: &filepb.InputFile{FileId: "file_id1", Path: "data/good/organization.csv", InputFileType: filepb.InputFileType_CSV},
+				},
+			},
+			expectedRes: filepb.InputFileResponse{Success: true, Errors: nil},
+		},
+	}
 	// set up env variables
 	closer := env.EnvSetter(map[string]string{
 		"BROKERS":                  "localhost:9092",
 		"GRPC_SERVER":              "localhost",
 		"GRPC_SERVER_PORT":         "6000",
 		"ORGANIZATION_PROTO_TOPIC": uuid.NewString(),
-		"SCHOOL_PROTO_TOPIC":       uuid.NewString(),
 		"SCHEMA_TYPE":              "PROTO",
 	})
 
@@ -162,7 +155,7 @@ func TestFileProcessingServer(t *testing.T) {
 
 				ctx := context.Background()
 
-				expectedValues, _ := getCSVToProtos("ORGANIZATION", "data/good/organization.csv")
+				expectedValues, _ := getOrgCsvToProtos("data/good/organization.csv")
 				for _, expected := range expectedValues {
 					t.Log("expecting to read ", expected, " on topic ", orgProtoTopic)
 					msg, err := r.ReadMessage(ctx)
@@ -180,16 +173,16 @@ func TestFileProcessingServer(t *testing.T) {
 					}
 
 					if err == nil {
-						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId.Value}
+						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId}
 						err := validation.UUIDValidate(validateTrackingId)
 						if err != nil {
 							t.Fatalf("%s", err)
 						}
-						g.Expect(expected.Metadata.Region.Value).To(gomega.Equal(org.Metadata.Region.Value))
-						g.Expect(expected.Metadata.OriginApplication.Value).To(gomega.Equal(org.Metadata.OriginApplication.Value))
-						g.Expect(expected.Payload.Uuid.Value).To(gomega.Equal(org.Payload.Uuid.Value))
-						g.Expect(expected.Payload.Name.Value).To(gomega.Equal(org.Payload.Name.Value))
-						g.Expect(expected.Payload.OwnerUserId.Value).To(gomega.Equal(org.Payload.OwnerUserId.Value))
+						g.Expect(expected.Metadata.Region).To(gomega.Equal(org.Metadata.Region))
+						g.Expect(expected.Metadata.OriginApplication).To(gomega.Equal(org.Metadata.OriginApplication))
+						g.Expect(expected.Payload.Uuid).To(gomega.Equal(org.Payload.Uuid))
+						g.Expect(expected.Payload.Name).To(gomega.Equal(org.Payload.Name))
+						g.Expect(expected.Payload.OwnerUserId).To(gomega.Equal(org.Payload.OwnerUserId))
 
 					} else {
 						t.Logf("Error consuming the message: %v (%v)\n", err, msg)

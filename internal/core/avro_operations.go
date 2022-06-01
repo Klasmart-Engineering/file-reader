@@ -40,12 +40,14 @@ const (
 	OWNER_USER_ID     = "owner_user_id"
 	ORGANIZATION_UUID = "organization_id"
 	SCHOOL_NAME       = "school_name"
+	CLASS_NAME        = "class_name"
 	PROGRAM_IDS       = "program_ids"
 )
 
 var (
 	OrganizationHeaders = []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID}
 	SchoolHeaders       = []string{UUID, ORGANIZATION_UUID, SCHOOL_NAME, PROGRAM_IDS}
+	ClassHeaders        = []string{UUID, ORGANIZATION_UUID, CLASS_NAME}
 )
 
 func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
@@ -61,6 +63,7 @@ func GetSchoolSchemaId(schemaRegistryClient *SchemaRegistry, schoolTopic string)
 func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_AVRO_TOPIC")
+	classTopic := instrument.MustGetEnv("CLASS_AVRO_TOPIC")
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
@@ -76,6 +79,13 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SchemaID:     GetSchoolSchemaId(schemaRegistryClient, schoolTopic),
 				SerializeRow: RowToSchoolAvro,
 				Headers:      SchoolHeaders,
+			},
+			"CLASS": {
+				Topic:        classTopic,
+				Key:          "",
+				SchemaID:     GetSchoolSchemaId(schemaRegistryClient, classTopic),
+				SerializeRow: RowToClassAvro,
+				Headers:      ClassHeaders,
 			},
 		},
 	}
@@ -112,5 +122,21 @@ func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndex
 		Program_ids:     programIds,
 	}
 	codec := avrogen.School{Payload: pl, Metadata: md}
+	return serializeAvroRecord(codec, schemaId), nil
+}
+
+func RowToClassAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	// Takes a slice of columns representing a class and encodes to avro bytes
+	md := avrogen.ClassMetadata{
+		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:             os.Getenv("METADATA_REGION"),
+		Tracking_id:        tracking_id,
+	}
+	pl := avrogen.ClassPayload{
+		Uuid:              row[headerIndexes[UUID]],
+		Name:              row[headerIndexes[CLASS_NAME]],
+		Organization_uuid: row[headerIndexes[ORGANIZATION_UUID]],
+	}
+	codec := avrogen.Class{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }

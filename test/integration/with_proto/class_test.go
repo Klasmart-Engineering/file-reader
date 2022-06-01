@@ -2,30 +2,27 @@ package integration_test
 
 import (
 	"context"
+	"testing"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
 	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
 	"github.com/KL-Engineering/file-reader/internal/core"
 	zapLogger "github.com/KL-Engineering/file-reader/internal/log"
-	util "github.com/KL-Engineering/file-reader/test/integration"
-
 	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 	"github.com/KL-Engineering/file-reader/test/env"
-
-	"testing"
-
+	util "github.com/KL-Engineering/file-reader/test/integration"
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
-func TestProtoConsumeOrganizationCsv(t *testing.T) {
+func TestProtoConsumeClassCsv(t *testing.T) {
 	// set up env variables
-	organizationProtoTopic := "orgProtoTopic" + uuid.NewString()
+	classProtoTopic := "classProtoTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"ORGANIZATION_PROTO_TOPIC":         organizationProtoTopic,
+		"CLASS_PROTO_TOPIC":                classProtoTopic,
 		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
 		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
 		"SCHEMA_TYPE":                      "PROTO",
@@ -41,22 +38,18 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "organization"
-	operationType := "organization"
-	s3key := "organization" + uuid.NewString() + ".csv"
+	bucket := "class"
+	operationType := "class"
+	s3key := "class" + uuid.NewString() + ".csv"
 
 	// Make test csv file
-	numOrgs := 5
-	orgGeneratorMap := map[string]func() string{
-		"uuid":              util.UuidFieldGenerator(),
-		"owner_user_id":     util.UuidFieldGenerator(),
-		"id_list":           util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
-		"foo":               util.UuidFieldGenerator(),
-		"bar":               util.UuidFieldGenerator(),
-		"organization_name": util.NameFieldGenerator("org", numOrgs),
+	numClasses := 5
+	classGeneratorMap := map[string]func() string{
+		"uuid":            util.UuidFieldGenerator(),
+		"organization_id": util.UuidFieldGenerator(),
+		"class_name":      util.NameFieldGenerator("class", numClasses),
 	}
-
-	file, orgs := util.MakeCsv(numOrgs, orgGeneratorMap)
+	file, classes := util.MakeCsv(numClasses, classGeneratorMap)
 
 	// Upload csv to S3
 	err := util.UploadFileToS3(bucket, s3key, awsRegion, file)
@@ -83,31 +76,31 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 	)
 	assert.Nil(t, err, "error producing file create message to topic")
 
-	// Consume from output topic and make assertions
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       organizationProtoTopic,
+		Topic:       classProtoTopic,
 		StartOffset: kafka.FirstOffset,
 	})
 
 	serde := protobuf.NewProtoSerDe()
-	orgOutput := &onboarding.Organization{}
+	classOutput := &onboarding.Class{}
 
-	for i := 0; i < numOrgs; i++ {
+	for i := 0; i < numClasses; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
 
-		_, err = serde.Deserialize(msg.Value, orgOutput)
+		_, err = serde.Deserialize(msg.Value, classOutput)
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId, orgOutput.Metadata.TrackingId)
+		assert.Equal(t, trackingId, classOutput.Metadata.TrackingId)
 
-		orgInput := orgs[i]
-		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid)
-		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
-		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.OwnerUserId)
+		classInput := classes[i]
+		assert.Equal(t, classInput["uuid"], util.DerefString(classOutput.Payload.Uuid))
+		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
+		assert.Equal(t, classInput["organization_id"], util.DerefString(classOutput.Payload.OrganizationUuid))
+
 	}
 	ctx.Done()
 }
