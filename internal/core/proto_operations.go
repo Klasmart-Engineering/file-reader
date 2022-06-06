@@ -10,14 +10,6 @@ import (
 	protobuf "github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 )
 
-func CreateRepeatedString(vals []string) []string {
-	protoStrings := []string{}
-	for _, val := range vals {
-		protoStrings = append(protoStrings, val)
-	}
-	return protoStrings
-}
-
 func InitProtoOperations() Operations {
 	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_PROTO_TOPIC")
@@ -71,7 +63,6 @@ func RowToOrganizationProto(row []string, tracking_id string, schemaId int, head
 
 func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	programIds := strings.Split(row[headerIndexes[PROGRAM_IDS]], ";")
-	repeatedProgramIds := CreateRepeatedString(programIds)
 	md := onboarding.Metadata{
 		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:            os.Getenv("METADATA_REGION"),
@@ -81,7 +72,7 @@ func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerInde
 		Uuid:           &row[headerIndexes[UUID]],
 		OrganizationId: row[headerIndexes[ORGANIZATION_UUID]],
 		Name:           row[headerIndexes[SCHOOL_NAME]],
-		ProgramIds:     repeatedProgramIds,
+		ProgramIds:     programIds,
 	}
 	codec := &onboarding.School{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
