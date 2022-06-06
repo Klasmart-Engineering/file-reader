@@ -26,7 +26,7 @@ type Class struct {
 	Metadata ClassMetadata `json:"metadata"`
 }
 
-const ClassAvroCRC64Fingerprint = "1\xaa\x12\x15\xf2M'f"
+const ClassAvroCRC64Fingerprint = "n.\xfe\x0f.\xbf\xe6\x18"
 
 func NewClass() Class {
 	r := Class{}
@@ -78,7 +78,7 @@ func (r Class) Serialize(w io.Writer) error {
 }
 
 func (r Class) Schema() string {
-	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"}],\"name\":\"ClassPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"ClassMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.Class\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"default\":null,\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"}],\"name\":\"ClassPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"ClassMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.Class\",\"type\":\"record\"}"
 }
 
 func (r Class) SchemaName() string {

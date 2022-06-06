@@ -21,17 +21,18 @@ import (
 var _ = fmt.Printf
 
 type ClassPayload struct {
-	Uuid string `json:"uuid"`
+	Uuid *UnionNullString `json:"uuid"`
 
 	Organization_uuid string `json:"organization_uuid"`
 
 	Name string `json:"name"`
 }
 
-const ClassPayloadAvroCRC64Fingerprint = "\xf8\x16\xfbY~>\x8a\x9b"
+const ClassPayloadAvroCRC64Fingerprint = "\xf3\xf2\xa0Cz\x16\x03\xa7"
 
 func NewClassPayload() ClassPayload {
 	r := ClassPayload{}
+	r.Uuid = nil
 	return r
 }
 
@@ -60,7 +61,7 @@ func DeserializeClassPayloadFromSchema(r io.Reader, schema string) (ClassPayload
 
 func writeClassPayload(r ClassPayload, w io.Writer) error {
 	var err error
-	err = vm.WriteString(r.Uuid, w)
+	err = writeUnionNullString(r.Uuid, w)
 	if err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func (r ClassPayload) Serialize(w io.Writer) error {
 }
 
 func (r ClassPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.ClassPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"default\":null,\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.ClassPayload\",\"type\":\"record\"}"
 }
 
 func (r ClassPayload) SchemaName() string {
@@ -99,10 +100,9 @@ func (_ ClassPayload) SetUnionElem(v int64) { panic("Unsupported operation") }
 func (r *ClassPayload) Get(i int) types.Field {
 	switch i {
 	case 0:
-		w := types.String{Target: &r.Uuid}
+		r.Uuid = NewUnionNullString()
 
-		return w
-
+		return r.Uuid
 	case 1:
 		w := types.String{Target: &r.Organization_uuid}
 
@@ -119,12 +119,18 @@ func (r *ClassPayload) Get(i int) types.Field {
 
 func (r *ClassPayload) SetDefault(i int) {
 	switch i {
+	case 0:
+		r.Uuid = nil
+		return
 	}
 	panic("Unknown field index")
 }
 
 func (r *ClassPayload) NullField(i int) {
 	switch i {
+	case 0:
+		r.Uuid = nil
+		return
 	}
 	panic("Not a nullable field index")
 }
@@ -175,7 +181,9 @@ func (r *ClassPayload) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for uuid")
+		r.Uuid = NewUnionNullString()
+
+		r.Uuid = nil
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["organization_uuid"]; ok {

@@ -90,7 +90,7 @@ func testAvroConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogge
 		assert.Equal(t, trackingId, classOutput.Metadata.Tracking_id)
 
 		classInput := classes[i]
-		assert.Equal(t, classInput["uuid"], classOutput.Payload.Uuid)
+		assert.Equal(t, classInput["uuid"], classOutput.Payload.Uuid.String)
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
@@ -191,7 +191,7 @@ func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 		assert.Equal(t, trackingId2, classOutput.Metadata.Tracking_id)
 
 		classInput := classes[i]
-		assert.Equal(t, classInput["uuid"], classOutput.Payload.Uuid)
+		assert.Equal(t, classInput["uuid"], classOutput.Payload.Uuid.String)
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}

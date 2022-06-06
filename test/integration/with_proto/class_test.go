@@ -147,7 +147,7 @@ func testProtoConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 	)
 	assert.Nil(t, err, "error producing file create message to topic")
 
-	// Then try to consume a real organization file
+	// Then try to consume a real class file
 	s3key2 := "organization" + uuid.NewString() + ".csv"
 	numClasses := 5
 	classGeneratorMap := map[string]func() string{

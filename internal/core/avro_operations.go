@@ -16,6 +16,20 @@ type avroCodec interface {
 	Serialize(io.Writer) error
 }
 
+func makeAvroOptionalString(value string) *avrogen.UnionNullString {
+	return &avrogen.UnionNullString{
+		String:    value,
+		UnionType: avrogen.UnionNullStringTypeEnumString,
+	}
+}
+
+func makeAvroOptionalArrayString(value string) *avrogen.UnionNullArrayString {
+	return &avrogen.UnionNullArrayString{
+		ArrayString: strings.Split(value, ";"),
+		UnionType:   avrogen.UnionNullArrayStringTypeEnumArrayString,
+	}
+}
+
 func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
 	// Get bytes for the schemaId
 	schemaIDBytes := make([]byte, 4)
@@ -60,6 +74,11 @@ func GetSchoolSchemaId(schemaRegistryClient *SchemaRegistry, schoolTopic string)
 	return schemaRegistryClient.GetSchemaId(schemaBody, schoolTopic)
 }
 
+func GetClassSchemaId(schemaRegistryClient *SchemaRegistry, classTopic string) int {
+	schemaBody := avrogen.Class.Schema(avrogen.NewClass())
+	return schemaRegistryClient.GetSchemaId(schemaBody, classTopic)
+}
+
 func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_AVRO_TOPIC")
@@ -83,7 +102,7 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 			"CLASS": {
 				Topic:        classTopic,
 				Key:          "",
-				SchemaID:     GetSchoolSchemaId(schemaRegistryClient, classTopic),
+				SchemaID:     GetClassSchemaId(schemaRegistryClient, classTopic),
 				SerializeRow: RowToClassAvro,
 				Headers:      ClassHeaders,
 			},
@@ -108,19 +127,23 @@ func RowToOrganizationAvro(row []string, tracking_id string, schemaId int, heade
 }
 
 func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
-	// Takes a slice of columns representing an organization and encodes to avro bytes
-	programIds := strings.Split(row[headerIndexes[PROGRAM_IDS]], ";")
+	// Takes a slice of columns representing a school and encodes to avro bytes
 	md := avrogen.SchoolMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:             os.Getenv("METADATA_REGION"),
 		Tracking_id:        tracking_id,
 	}
 	pl := avrogen.SchoolPayload{
-		Uuid:            row[headerIndexes[UUID]],
 		Organization_id: row[headerIndexes[ORGANIZATION_UUID]],
 		Name:            row[headerIndexes[SCHOOL_NAME]],
-		Program_ids:     programIds,
 	}
+	if row[headerIndexes[UUID]] != "" {
+		pl.Uuid = makeAvroOptionalString(row[headerIndexes[UUID]])
+	}
+	if row[headerIndexes[PROGRAM_IDS]] != "" {
+		pl.Program_ids = makeAvroOptionalArrayString(row[headerIndexes[PROGRAM_IDS]])
+	}
+
 	codec := avrogen.School{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }
@@ -132,10 +155,13 @@ func RowToClassAvro(row []string, tracking_id string, schemaId int, headerIndexe
 		Region:             os.Getenv("METADATA_REGION"),
 		Tracking_id:        tracking_id,
 	}
+
 	pl := avrogen.ClassPayload{
-		Uuid:              row[headerIndexes[UUID]],
 		Name:              row[headerIndexes[CLASS_NAME]],
 		Organization_uuid: row[headerIndexes[ORGANIZATION_UUID]],
+	}
+	if row[headerIndexes[UUID]] != "" {
+		pl.Uuid = makeAvroOptionalString(row[headerIndexes[UUID]])
 	}
 	codec := avrogen.Class{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil

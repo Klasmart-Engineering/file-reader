@@ -99,6 +99,7 @@ func RowToClassProto(row []string, tracking_id string, schemaId int, headerIndex
 		Region:            os.Getenv("METADATA_REGION"),
 		TrackingId:        tracking_id,
 	}
+
 	pl := onboarding.ClassPayload{
 		Uuid:             &row[headerIndexes[UUID]],
 		Name:             row[headerIndexes[CLASS_NAME]],
