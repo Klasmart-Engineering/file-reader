@@ -49,8 +49,8 @@ func RepeatedFieldGenerator(gen func() string, min int, max int) func() string {
 }
 
 func HumanNameFieldGenerator(min int, max int) func() string {
-	// Supply min and max bounds for how long names can be, makes random "name" of that length (ToDo: What characters to include?)
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ") // Do we need to include foreign characters? Is there a package for this?
+	// Supply min and max bounds for how long names can be, makes random "name" of that length
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ漢字नागरीж ")
 	rand.Seed(time.Now().UnixNano())
 	return RandomStringGenerator(letters, min, max)
 }

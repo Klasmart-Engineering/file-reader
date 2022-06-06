@@ -21,7 +21,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestProtoConsumeUserCsv(t *testing.T) {
+func testProtoConsumeUserCsv(t *testing.T, numUsers int, userGeneratorMap map[string]func() string) {
 	// set up env variables
 	userProtoTopic := "userProtoTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -47,16 +47,6 @@ func TestProtoConsumeUserCsv(t *testing.T) {
 	s3key := "user" + uuid.NewString() + ".csv"
 
 	// Make test csv file
-	numUsers := 5
-	userGeneratorMap := map[string]func() string{
-		"uuid":               util.UuidFieldGenerator(),
-		"user_given_name":    util.HumanNameFieldGenerator(2, 10),
-		"user_family_name":   util.HumanNameFieldGenerator(2, 10),
-		"user_email":         fake.EmailAddress,
-		"user_phone_number":  fake.Phone,
-		"user_date_of_birth": util.DateGenerator(1950, 2022, "2006-01-02"),
-		"user_gender":        util.GenderGenerator(),
-	}
 	file, users := util.MakeCsv(numUsers, userGeneratorMap)
 
 	// Upload csv to S3
@@ -115,4 +105,45 @@ func TestProtoConsumeUserCsv(t *testing.T) {
 		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender)
 	}
 	ctx.Done()
+}
+
+func TestProtoConsumeUserCsvScenarios(t *testing.T) {
+	type TestCases struct {
+		description      string
+		numUsers         int
+		userGeneratorMap map[string]func() string
+	}
+
+	for _, scenario := range []TestCases{
+		{
+			description: "should ingest users when all optional fields are supplied",
+			numUsers:    5,
+			userGeneratorMap: map[string]func() string{
+				"uuid":               util.UuidFieldGenerator(),
+				"user_given_name":    util.HumanNameFieldGenerator(2, 10),
+				"user_family_name":   util.HumanNameFieldGenerator(2, 10),
+				"user_email":         fake.EmailAddress,
+				"user_phone_number":  fake.Phone,
+				"user_date_of_birth": util.DateGenerator(1950, 2022, "2006-01-02"),
+				"user_gender":        util.GenderGenerator(),
+			},
+		},
+		{
+			description: "should ingest users when all optional fields are null",
+			numUsers:    5,
+			userGeneratorMap: map[string]func() string{
+				"uuid":               util.UuidFieldGenerator(),
+				"user_given_name":    util.HumanNameFieldGenerator(2, 10),
+				"user_family_name":   util.HumanNameFieldGenerator(2, 10),
+				"user_email":         util.EmptyFieldGenerator(),
+				"user_phone_number":  util.EmptyFieldGenerator(),
+				"user_date_of_birth": util.EmptyFieldGenerator(),
+				"user_gender":        util.GenderGenerator(),
+			},
+		},
+	} {
+		t.Run(scenario.description, func(t *testing.T) {
+			testProtoConsumeUserCsv(t, scenario.numUsers, scenario.userGeneratorMap)
+		})
+	}
 }
