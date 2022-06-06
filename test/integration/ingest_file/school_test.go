@@ -10,7 +10,6 @@ import (
 	filepb "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
 	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
 	"github.com/KL-Engineering/file-reader/internal/config"
-	"github.com/KL-Engineering/file-reader/internal/core"
 	"github.com/KL-Engineering/file-reader/internal/instrument"
 	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 	clientPb "github.com/KL-Engineering/file-reader/test/client"
@@ -56,7 +55,6 @@ func getSchoolCsvToProtos(filePath string) ([]*onboarding.School, error) {
 			}
 		}
 		programIds := strings.Split(row[headerIndexMap["program_ids"]], ";")
-		repeatedProgramIds := core.CreateRepeatedString(programIds)
 
 		md := onboarding.Metadata{
 			OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
@@ -68,7 +66,7 @@ func getSchoolCsvToProtos(filePath string) ([]*onboarding.School, error) {
 			Uuid:           &row[headerIndexMap["uuid"]],
 			Name:           row[headerIndexMap["school_name"]],
 			OrganizationId: row[headerIndexMap["organization_id"]],
-			ProgramIds:     repeatedProgramIds,
+			ProgramIds:     programIds,
 		}
 
 		res = append(res, &onboarding.School{Payload: &pl, Metadata: &md})
