@@ -40,6 +40,9 @@ const UserPayloadAvroCRC64Fingerprint = "\\\xbc~M5\xb0\xcf:"
 
 func NewUserPayload() UserPayload {
 	r := UserPayload{}
+	r.Email = nil
+	r.Phone_number = nil
+	r.Date_of_birth = nil
 	return r
 }
 
@@ -104,7 +107,7 @@ func (r UserPayload) Serialize(w io.Writer) error {
 }
 
 func (r UserPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"name\":\"email\",\"type\":[\"null\",\"string\"]},{\"name\":\"phone_number\",\"type\":[\"null\",\"string\"]},{\"name\":\"date_of_birth\",\"type\":[\"null\",\"string\"]},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"default\":null,\"name\":\"email\",\"type\":[\"null\",\"string\"]},{\"default\":null,\"name\":\"phone_number\",\"type\":[\"null\",\"string\"]},{\"default\":null,\"name\":\"date_of_birth\",\"type\":[\"null\",\"string\"]},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserPayload\",\"type\":\"record\"}"
 }
 
 func (r UserPayload) SchemaName() string {
@@ -160,6 +163,15 @@ func (r *UserPayload) Get(i int) types.Field {
 
 func (r *UserPayload) SetDefault(i int) {
 	switch i {
+	case 3:
+		r.Email = nil
+		return
+	case 4:
+		r.Phone_number = nil
+		return
+	case 5:
+		r.Date_of_birth = nil
+		return
 	}
 	panic("Unknown field index")
 }
@@ -283,7 +295,9 @@ func (r *UserPayload) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for email")
+		r.Email = NewUnionNullString()
+
+		r.Email = nil
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["phone_number"]; ok {
@@ -297,7 +311,9 @@ func (r *UserPayload) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for phone_number")
+		r.Phone_number = NewUnionNullString()
+
+		r.Phone_number = nil
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["date_of_birth"]; ok {
@@ -311,7 +327,9 @@ func (r *UserPayload) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for date_of_birth")
+		r.Date_of_birth = NewUnionNullString()
+
+		r.Date_of_birth = nil
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["gender"]; ok {

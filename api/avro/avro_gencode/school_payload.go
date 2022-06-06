@@ -34,6 +34,8 @@ const SchoolPayloadAvroCRC64Fingerprint = "u8x8V\xb4\xd5V"
 
 func NewSchoolPayload() SchoolPayload {
 	r := SchoolPayload{}
+	r.Uuid = nil
+	r.Program_ids = nil
 	return r
 }
 
@@ -86,7 +88,7 @@ func (r SchoolPayload) Serialize(w io.Writer) error {
 }
 
 func (r SchoolPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"default\":null,\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"default\":null,\"name\":\"program_ids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
 }
 
 func (r SchoolPayload) SchemaName() string {
@@ -128,6 +130,12 @@ func (r *SchoolPayload) Get(i int) types.Field {
 
 func (r *SchoolPayload) SetDefault(i int) {
 	switch i {
+	case 0:
+		r.Uuid = nil
+		return
+	case 3:
+		r.Program_ids = nil
+		return
 	}
 	panic("Unknown field index")
 }
@@ -194,7 +202,9 @@ func (r *SchoolPayload) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for uuid")
+		r.Uuid = NewUnionNullString()
+
+		r.Uuid = nil
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["organization_id"]; ok {
@@ -236,7 +246,9 @@ func (r *SchoolPayload) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for program_ids")
+		r.Program_ids = NewUnionNullArrayString()
+
+		r.Program_ids = nil
 	}
 	return nil
 }

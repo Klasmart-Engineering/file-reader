@@ -22,15 +22,18 @@
 					},
 					{
 						"name": "email",
-						"type": ["null", "string"]
+						"type": ["null", "string"],
+						"default": null
 					},
 					{
 						"name": "phone_number",
-						"type": ["null", "string"]
+						"type": ["null", "string"],
+						"default": null
 					},
 					{
 						"name": "date_of_birth",
-						"type": ["null", "string"]
+						"type": ["null", "string"],
+						"default": null
 					},
 					{
 						"name": "gender",

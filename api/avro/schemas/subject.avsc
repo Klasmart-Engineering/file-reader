@@ -10,7 +10,8 @@
 				"fields": [{
 					"name": "uuid",
 					"type": ["null", "string"],
-					"logicalType": "uuid"
+					"logicalType": "uuid",
+					"default": null
 				}, {
 					"name": "organization_uuid",
 					"type": "string",
