@@ -132,3 +132,11 @@ func ProduceFileCreateMessage(ctx context.Context, s3FileCreationTopic string, b
 	}
 	return nil
 }
+
+func DerefString(s *string) string {
+	if s != nil {
+		return *s
+	}
+
+	return ""
+}

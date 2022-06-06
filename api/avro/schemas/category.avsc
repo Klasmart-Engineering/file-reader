@@ -8,8 +8,8 @@
 				"name": "CategoryPayload",
 				"type": "record",
 				"fields": [{
+						"name": "uuid",
 						"type": ["null", "string"],
-						"type": "string",
 						"logicalType": "uuid"
 					}, {
 						"name": "organization_uuid",

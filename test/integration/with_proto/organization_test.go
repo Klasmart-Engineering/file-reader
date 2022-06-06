@@ -102,12 +102,12 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId, orgOutput.Metadata.TrackingId.Value)
+		assert.Equal(t, trackingId, orgOutput.Metadata.TrackingId)
 
 		orgInput := orgs[i]
-		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid.Value)
-		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name.Value)
-		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.OwnerUserId.Value)
+		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid)
+		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
+		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.OwnerUserId)
 	}
 	ctx.Done()
 }

@@ -78,15 +78,15 @@ func getCSVToProtos(entity string, filePath string) ([]*onboarding.Organization,
 			}
 
 			md := onboarding.Metadata{
-				OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
-				Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
-				TrackingId:        &onboarding.StringValue{Value: uuid.NewString()},
+				OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+				Region:            os.Getenv("METADATA_REGION"),
+				TrackingId:        uuid.NewString(),
 			}
 
 			pl := onboarding.OrganizationPayload{
-				Uuid:        &onboarding.StringValue{Value: row[headerIndexMap["uuid"]]},
-				Name:        &onboarding.StringValue{Value: row[headerIndexMap["organization_name"]]},
-				OwnerUserId: &onboarding.StringValue{Value: row[headerIndexMap["owner_user_id"]]},
+				Uuid:        row[headerIndexMap["uuid"]],
+				Name:        row[headerIndexMap["organization_name"]],
+				OwnerUserId: row[headerIndexMap["owner_user_id"]],
 			}
 
 			res = append(res, &onboarding.Organization{Payload: &pl, Metadata: &md})
@@ -180,16 +180,16 @@ func TestFileProcessingServer(t *testing.T) {
 					}
 
 					if err == nil {
-						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId.Value}
+						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId}
 						err := validation.UUIDValidate(validateTrackingId)
 						if err != nil {
 							t.Fatalf("%s", err)
 						}
-						g.Expect(expected.Metadata.Region.Value).To(gomega.Equal(org.Metadata.Region.Value))
-						g.Expect(expected.Metadata.OriginApplication.Value).To(gomega.Equal(org.Metadata.OriginApplication.Value))
-						g.Expect(expected.Payload.Uuid.Value).To(gomega.Equal(org.Payload.Uuid.Value))
-						g.Expect(expected.Payload.Name.Value).To(gomega.Equal(org.Payload.Name.Value))
-						g.Expect(expected.Payload.OwnerUserId.Value).To(gomega.Equal(org.Payload.OwnerUserId.Value))
+						g.Expect(expected.Metadata.Region).To(gomega.Equal(org.Metadata.Region))
+						g.Expect(expected.Metadata.OriginApplication).To(gomega.Equal(org.Metadata.OriginApplication))
+						g.Expect(expected.Payload.Uuid).To(gomega.Equal(org.Payload.Uuid))
+						g.Expect(expected.Payload.Name).To(gomega.Equal(org.Payload.Name))
+						g.Expect(expected.Payload.OwnerUserId).To(gomega.Equal(org.Payload.OwnerUserId))
 
 					} else {
 						t.Logf("Error consuming the message: %v (%v)\n", err, msg)

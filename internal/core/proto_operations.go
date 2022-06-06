@@ -10,10 +10,10 @@ import (
 	protobuf "github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 )
 
-func createRepeatedString(vals []string) []*onboarding.StringValue {
-	protoStrings := []*onboarding.StringValue{}
+func CreateRepeatedString(vals []string) []string {
+	protoStrings := []string{}
 	for _, val := range vals {
-		protoStrings = append(protoStrings, &onboarding.StringValue{Value: val})
+		protoStrings = append(protoStrings, val)
 	}
 	return protoStrings
 }
@@ -51,14 +51,14 @@ func InitProtoOperations() Operations {
 
 func RowToOrganizationProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	md := onboarding.Metadata{
-		OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
-		Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
-		TrackingId:        &onboarding.StringValue{Value: tracking_id},
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingId:        tracking_id,
 	}
 	pl := onboarding.OrganizationPayload{
-		Uuid:        &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
-		Name:        &onboarding.StringValue{Value: row[headerIndexes[ORGANIZATION_NAME]]},
-		OwnerUserId: &onboarding.StringValue{Value: row[headerIndexes[OWNER_USER_ID]]},
+		Uuid:        row[headerIndexes[UUID]],
+		Name:        row[headerIndexes[ORGANIZATION_NAME]],
+		OwnerUserId: row[headerIndexes[OWNER_USER_ID]],
 	}
 	codec := &onboarding.Organization{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
@@ -71,16 +71,16 @@ func RowToOrganizationProto(row []string, tracking_id string, schemaId int, head
 
 func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	programIds := strings.Split(row[headerIndexes[PROGRAM_IDS]], ";")
-	repeatedProgramIds := createRepeatedString(programIds)
+	repeatedProgramIds := CreateRepeatedString(programIds)
 	md := onboarding.Metadata{
-		OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
-		Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
-		TrackingId:        &onboarding.StringValue{Value: tracking_id},
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingId:        tracking_id,
 	}
 	pl := onboarding.SchoolPayload{
-		Uuid:           &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
-		OrganizationId: &onboarding.StringValue{Value: row[headerIndexes[ORGANIZATION_UUID]]},
-		Name:           &onboarding.StringValue{Value: row[headerIndexes[SCHOOL_NAME]]},
+		Uuid:           &row[headerIndexes[UUID]],
+		OrganizationId: row[headerIndexes[ORGANIZATION_UUID]],
+		Name:           row[headerIndexes[SCHOOL_NAME]],
 		ProgramIds:     repeatedProgramIds,
 	}
 	codec := &onboarding.School{Payload: &pl, Metadata: &md}
@@ -94,18 +94,18 @@ func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerInde
 
 func RowToUserProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	md := onboarding.Metadata{
-		OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
-		Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
-		TrackingId:        &onboarding.StringValue{Value: tracking_id},
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingId:        tracking_id,
 	}
 	pl := onboarding.UserPayload{
-		Uuid:        &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
-		GivenName:   &onboarding.StringValue{Value: row[headerIndexes[GIVEN_NAME]]},
-		FamilyName:  &onboarding.StringValue{Value: row[headerIndexes[FAMILY_NAME]]},
-		Email:       &onboarding.StringValue{Value: row[headerIndexes[EMAIL]]},
-		PhoneNumber: &onboarding.StringValue{Value: row[headerIndexes[PHONE_NUMBER]]},
-		DateOfBirth: &onboarding.StringValue{Value: row[headerIndexes[DATE_OF_BIRTH]]},
-		Gender:      &onboarding.StringValue{Value: row[headerIndexes[GENDER]]},
+		Uuid:        row[headerIndexes[UUID]],
+		GivenName:   row[headerIndexes[GIVEN_NAME]],
+		FamilyName:  row[headerIndexes[FAMILY_NAME]],
+		Email:       &row[headerIndexes[EMAIL]],
+		PhoneNumber: &row[headerIndexes[PHONE_NUMBER]],
+		DateOfBirth: &row[headerIndexes[DATE_OF_BIRTH]],
+		Gender:      row[headerIndexes[GENDER]],
 	}
 	codec := &onboarding.User{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()

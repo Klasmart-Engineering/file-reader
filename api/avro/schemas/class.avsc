@@ -8,10 +8,10 @@
 				"name": "ClassPayload",
 				"type": "record",
 				"fields": [{
-					"type": ["null", "string"],
-					"type": "string",
-					"logicalType": "uuid"
-				}, {
+						"name": "uuid",
+						"type": ["null", "string"],
+						"logicalType": "uuid"
+					}, {
 					"name": "organization_uuid",
 					"type": "string",
 					"logicalType": "uuid"

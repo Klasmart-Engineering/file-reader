@@ -103,16 +103,16 @@ func TestProtoConsumeUserCsv(t *testing.T) {
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId, userOutput.Metadata.TrackingId.Value)
+		assert.Equal(t, trackingId, userOutput.Metadata.TrackingId)
 
 		userInput := users[i]
-		assert.Equal(t, userInput["uuid"], userOutput.Payload.Uuid.Value)
-		assert.Equal(t, userInput["user_given_name"], userOutput.Payload.GivenName.Value)
-		assert.Equal(t, userInput["user_family_name"], userOutput.Payload.FamilyName.Value)
-		assert.Equal(t, userInput["user_email"], userOutput.Payload.Email.Value)
-		assert.Equal(t, userInput["user_phone_number"], userOutput.Payload.PhoneNumber.Value)
-		assert.Equal(t, userInput["user_date_of_birth"], userOutput.Payload.DateOfBirth.Value)
-		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender.Value)
+		assert.Equal(t, userInput["uuid"], userOutput.Payload.Uuid)
+		assert.Equal(t, userInput["user_given_name"], userOutput.Payload.GivenName)
+		assert.Equal(t, userInput["user_family_name"], userOutput.Payload.FamilyName)
+		assert.Equal(t, userInput["user_email"], util.DerefString(userOutput.Payload.Email))
+		assert.Equal(t, userInput["user_phone_number"], util.DerefString(userOutput.Payload.PhoneNumber))
+		assert.Equal(t, userInput["user_date_of_birth"], util.DerefString(userOutput.Payload.DateOfBirth))
+		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender)
 	}
 	ctx.Done()
 }
