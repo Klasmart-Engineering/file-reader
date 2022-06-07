@@ -87,7 +87,7 @@ func testAvrosConsumeClassCsv(t *testing.T, numClasses int, classGeneratorMap ma
 		assert.Equal(t, trackingId, classOutput.Metadata.Tracking_id)
 
 		classInput := classes[i]
-		assert.Equal(t, classInput["uuid"], util.DerefUnion(classOutput.Payload.Uuid))
+		assert.Equal(t, classInput["uuid"], util.DerefAvroNullString(classOutput.Payload.Uuid))
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
