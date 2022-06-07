@@ -10,17 +10,11 @@ import (
 	protobuf "github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 )
 
-func createRepeatedString(vals []string) []*onboarding.StringValue {
-	protoStrings := []*onboarding.StringValue{}
-	for _, val := range vals {
-		protoStrings = append(protoStrings, &onboarding.StringValue{Value: val})
-	}
-	return protoStrings
-}
-
 func InitProtoOperations() Operations {
 	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_PROTO_TOPIC")
+	classTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
+
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
@@ -37,20 +31,27 @@ func InitProtoOperations() Operations {
 				SerializeRow: RowToSchoolProto,
 				Headers:      SchoolHeaders,
 			},
+			"CLASS": {
+				Topic:        classTopic,
+				Key:          "",
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(classTopic),
+				SerializeRow: RowToClassProto,
+				Headers:      ClassHeaders,
+			},
 		},
 	}
 }
 
 func RowToOrganizationProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	md := onboarding.Metadata{
-		OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
-		Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
-		TrackingId:        &onboarding.StringValue{Value: tracking_id},
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingId:        tracking_id,
 	}
 	pl := onboarding.OrganizationPayload{
-		Uuid:        &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
-		Name:        &onboarding.StringValue{Value: row[headerIndexes[ORGANIZATION_NAME]]},
-		OwnerUserId: &onboarding.StringValue{Value: row[headerIndexes[OWNER_USER_ID]]},
+		Uuid:        row[headerIndexes[UUID]],
+		Name:        row[headerIndexes[ORGANIZATION_NAME]],
+		OwnerUserId: row[headerIndexes[OWNER_USER_ID]],
 	}
 	codec := &onboarding.Organization{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
@@ -63,19 +64,39 @@ func RowToOrganizationProto(row []string, tracking_id string, schemaId int, head
 
 func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	programIds := strings.Split(row[headerIndexes[PROGRAM_IDS]], ";")
-	repeatedProgramIds := createRepeatedString(programIds)
 	md := onboarding.Metadata{
-		OriginApplication: &onboarding.StringValue{Value: os.Getenv("METADATA_ORIGIN_APPLICATION")},
-		Region:            &onboarding.StringValue{Value: os.Getenv("METADATA_REGION")},
-		TrackingId:        &onboarding.StringValue{Value: tracking_id},
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingId:        tracking_id,
 	}
 	pl := onboarding.SchoolPayload{
-		Uuid:           &onboarding.StringValue{Value: row[headerIndexes[UUID]]},
-		OrganizationId: &onboarding.StringValue{Value: row[headerIndexes[ORGANIZATION_UUID]]},
-		Name:           &onboarding.StringValue{Value: row[headerIndexes[SCHOOL_NAME]]},
-		ProgramIds:     repeatedProgramIds,
+		Uuid:           &row[headerIndexes[UUID]],
+		OrganizationId: row[headerIndexes[ORGANIZATION_UUID]],
+		Name:           row[headerIndexes[SCHOOL_NAME]],
+		ProgramIds:     programIds,
 	}
 	codec := &onboarding.School{Payload: &pl, Metadata: &md}
+	serde := protobuf.NewProtoSerDe()
+	valueBytes, err := serde.Serialize(schemaId, codec)
+	if err != nil {
+		return nil, err
+	}
+	return valueBytes, nil
+}
+
+func RowToClassProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	md := onboarding.Metadata{
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingId:        tracking_id,
+	}
+
+	pl := onboarding.ClassPayload{
+		Uuid:             &row[headerIndexes[UUID]],
+		Name:             row[headerIndexes[CLASS_NAME]],
+		OrganizationUuid: row[headerIndexes[ORGANIZATION_UUID]],
+	}
+	codec := &onboarding.Class{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
 	valueBytes, err := serde.Serialize(schemaId, codec)
 	if err != nil {

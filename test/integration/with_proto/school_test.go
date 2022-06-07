@@ -97,16 +97,16 @@ func TestProtoConsumeSchoolCsv(t *testing.T) {
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId, schoolOutput.Metadata.TrackingId.Value)
+		assert.Equal(t, trackingId, schoolOutput.Metadata.TrackingId)
 
 		schoolInput := schools[i]
-		assert.Equal(t, schoolInput["uuid"], schoolOutput.Payload.Uuid.Value)
-		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name.Value)
-		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.OrganizationId.Value)
+		assert.Equal(t, schoolInput["uuid"], util.DerefString(schoolOutput.Payload.Uuid))
+		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name)
+		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.OrganizationId)
 		program_ids := strings.Split(schoolInput["program_ids"], ";")
 		output_program_ids := []string{}
 		for _, program_id := range schoolOutput.Payload.ProgramIds {
-			output_program_ids = append(output_program_ids, program_id.Value)
+			output_program_ids = append(output_program_ids, program_id)
 		}
 		assert.Equal(t, program_ids, output_program_ids)
 	}

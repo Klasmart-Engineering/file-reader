@@ -10,19 +10,19 @@ import (
 	zapLogger "github.com/KL-Engineering/file-reader/internal/log"
 	"github.com/KL-Engineering/file-reader/test/env"
 	util "github.com/KL-Engineering/file-reader/test/integration"
-	"go.uber.org/zap"
 
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
-func TestAvroConsumeOrganizationCsv(t *testing.T) {
+func testAvrosConsumeClassCsv(t *testing.T, numClasses int, classGeneratorMap map[string]func() string) {
 	// set up env variables
-	organizationAvroTopic := "orgAvroTopic" + uuid.NewString()
+	classAvroTopic := "classAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"ORGANIZATION_AVRO_TOPIC":          organizationAvroTopic,
+		"CLASS_AVRO_TOPIC":                 classAvroTopic,
 		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
 		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
 		"SCHEMA_TYPE":                      "AVRO",
@@ -38,25 +38,15 @@ func TestAvroConsumeOrganizationCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "organization"
-	s3key := "organization" + uuid.NewString() + ".csv"
-	operationType := "organization"
+	bucket := "class"
+	s3key := "class" + uuid.NewString() + ".csv"
+	operationType := "class"
 
 	// Make test csv file
-	numOrgs := 5
-	orgGeneratorMap := map[string]func() string{
-		"uuid":              util.UuidFieldGenerator(),
-		"owner_user_id":     util.UuidFieldGenerator(),
-		"id_list":           util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
-		"foo":               util.UuidFieldGenerator(),
-		"bar":               util.UuidFieldGenerator(),
-		"organization_name": util.NameFieldGenerator("org", numOrgs),
-	}
+	file, classes := util.MakeCsv(numClasses, classGeneratorMap)
 
-	file, orgs := util.MakeCsv(numOrgs, orgGeneratorMap)
-
-	// Upload csv to S3
 	err := util.UploadFileToS3(bucket, s3key, awsRegion, file)
+
 	assert.Nil(t, err, "error uploading file to s3")
 
 	// Put file create message on topic
@@ -80,55 +70,90 @@ func TestAvroConsumeOrganizationCsv(t *testing.T) {
 	)
 	assert.Nil(t, err, "error producing file create message to topic")
 
+	// Assert that the real file got ingested
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       organizationAvroTopic,
+		Topic:       classAvroTopic,
 		StartOffset: kafka.FirstOffset,
 	})
-	for i := 0; i < numOrgs; i++ {
+	for i := 0; i < numClasses; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
-		orgOutput, err := avro.DeserializeOrganization(bytes.NewReader(msg.Value[5:]))
-		assert.Nil(t, err, "error deserialising message to org")
-		t.Log(orgOutput)
+		classOutput, err := avro.DeserializeClass(bytes.NewReader(msg.Value[5:]))
+		assert.Nil(t, err, "error deserialising message to class")
+		t.Log(classOutput)
 
-		assert.Equal(t, trackingId, orgOutput.Metadata.Tracking_id)
+		assert.Equal(t, trackingId, classOutput.Metadata.Tracking_id)
 
-		orgInput := orgs[i]
-		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid)
-		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
-		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.Owner_user_id)
+		classInput := classes[i]
+		assert.Equal(t, classInput["uuid"], util.DerefAvroNullString(classOutput.Payload.Uuid))
+		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
+		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
 	ctx.Done()
-}
 
-func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
+}
+func TestAvroConsumeClassCsvScenarios(t *testing.T) {
+
+	// test cases
+	testCases := []struct {
+		name              string
+		numClasses        int
+		classGeneratorMap map[string]func() string
+	}{
+		{
+			name:       "Should ingest classes when all optional fields are supplied",
+			numClasses: 5,
+			classGeneratorMap: map[string]func() string{
+				"uuid":            util.UuidFieldGenerator(),
+				"organization_id": util.UuidFieldGenerator(),
+				"class_name":      util.NameFieldGenerator("class", 5),
+			},
+		},
+		{
+			name:       "Should ingest classes when all optional fields are null",
+			numClasses: 5,
+			classGeneratorMap: map[string]func() string{
+				"uuid":            util.EmptyFieldGenerator(),
+				"organization_id": util.UuidFieldGenerator(),
+				"class_name":      util.NameFieldGenerator("class", 5),
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			testAvrosConsumeClassCsv(t, tc.numClasses, tc.classGeneratorMap)
+		})
+	}
+
+}
+func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 	// set up env variables
-	organizationAvroTopic := "orgAvroTopic" + uuid.NewString()
+	classAvroTopic := "classAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"ORGANIZATION_AVRO_TOPIC":          organizationAvroTopic,
+		"CLASS_AVRO_TOPIC":                 classAvroTopic,
 		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
 		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
 		"SCHEMA_TYPE":                      "AVRO",
 	})
 
 	defer t.Cleanup(closer)
-
 	ctx := context.Background()
 	// Start consumer
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
+
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "organization"
-	operationType := "organization"
+	bucket := "class"
+	operationType := "class"
 
 	// First try to consume an empty file
-	s3key1 := "bad_organization" + uuid.NewString() + ".csv"
+	s3key1 := "bad_class" + uuid.NewString() + ".csv"
 	emptyFile := util.MakeEmptyFile()
 	err := util.UploadFileToS3(bucket, s3key1, awsRegion, emptyFile)
 	assert.Nil(t, err, "error uploading file to s3")
@@ -152,18 +177,16 @@ func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
 	)
 	assert.Nil(t, err, "error producing file create message to topic")
 
-	// Then try to consume a real organization file
+	// Then try to consume a real class file
 	s3key2 := "organization" + uuid.NewString() + ".csv"
-	numOrgs := 5
-	orgGeneratorMap := map[string]func() string{
-		"uuid":              util.UuidFieldGenerator(),
-		"owner_user_id":     util.UuidFieldGenerator(),
-		"id_list":           util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
-		"foo":               util.UuidFieldGenerator(),
-		"bar":               util.UuidFieldGenerator(),
-		"organization_name": util.NameFieldGenerator("org", numOrgs),
+	numClasses := 5
+	classGeneratorMap := map[string]func() string{
+		"uuid":            util.UuidFieldGenerator(),
+		"organization_id": util.UuidFieldGenerator(),
+		"fake_id":         util.UuidFieldGenerator(),
+		"class_name":      util.NameFieldGenerator("class", numClasses),
 	}
-	file, orgs := util.MakeCsv(numOrgs, orgGeneratorMap)
+	file, classes := util.MakeCsv(numClasses, classGeneratorMap)
 	err = util.UploadFileToS3(bucket, s3key2, awsRegion, file)
 	assert.Nil(t, err, "error uploading file to s3")
 	trackingId2 := uuid.NewString()
@@ -190,23 +213,22 @@ func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       organizationAvroTopic,
+		Topic:       classAvroTopic,
 		StartOffset: kafka.FirstOffset,
 	})
-	for i := 0; i < numOrgs; i++ {
+	for i := 0; i < numClasses; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
-		orgOutput, err := avro.DeserializeOrganization(bytes.NewReader(msg.Value[5:]))
-		assert.Nil(t, err, "error deserialising message to org")
-		t.Log(orgOutput)
+		classOutput, err := avro.DeserializeClass(bytes.NewReader(msg.Value[5:]))
+		assert.Nil(t, err, "error deserialising message to class")
+		t.Log(classOutput)
 
-		assert.Equal(t, trackingId2, orgOutput.Metadata.Tracking_id)
+		assert.Equal(t, trackingId2, classOutput.Metadata.Tracking_id)
 
-		orgInput := orgs[i]
-		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid)
-		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
-		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.Owner_user_id)
+		classInput := classes[i]
+		assert.Equal(t, classInput["uuid"], classOutput.Payload.Uuid.String)
+		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
+		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
 	ctx.Done()
-
 }

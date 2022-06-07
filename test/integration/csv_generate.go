@@ -22,6 +22,11 @@ func UuidFieldGenerator() func() string {
 	return uuid.NewString
 }
 
+func EmptyFieldGenerator() func() string {
+	return func() string {
+		return ""
+	}
+}
 func RepeatedFieldGenerator(gen func() string, min int, max int) func() string {
 	// Supply a field generator function and min and max number of times to repeat it.
 	// Returns a generator which generates a ; delimited string of those fields

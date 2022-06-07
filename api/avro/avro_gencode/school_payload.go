@@ -3,6 +3,7 @@
  * SOURCES:
  *     organization.avsc
  *     school.avsc
+ *     class.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -20,21 +21,20 @@ import (
 var _ = fmt.Printf
 
 type SchoolPayload struct {
-	Uuid string `json:"uuid"`
+	Uuid *UnionNullString `json:"uuid"`
 
 	Organization_id string `json:"organization_id"`
 
 	Name string `json:"name"`
 
-	Program_ids []string `json:"program_ids"`
+	Program_ids *UnionNullArrayString `json:"program_ids"`
 }
 
-const SchoolPayloadAvroCRC64Fingerprint = "w\x96rjTǥQ"
+const SchoolPayloadAvroCRC64Fingerprint = "u8x8V\xb4\xd5V"
 
 func NewSchoolPayload() SchoolPayload {
 	r := SchoolPayload{}
-	r.Program_ids = make([]string, 0)
-
+	r.Uuid = nil
 	return r
 }
 
@@ -63,7 +63,7 @@ func DeserializeSchoolPayloadFromSchema(r io.Reader, schema string) (SchoolPaylo
 
 func writeSchoolPayload(r SchoolPayload, w io.Writer) error {
 	var err error
-	err = vm.WriteString(r.Uuid, w)
+	err = writeUnionNullString(r.Uuid, w)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func writeSchoolPayload(r SchoolPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = writeArrayString(r.Program_ids, w)
+	err = writeUnionNullArrayString(r.Program_ids, w)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (r SchoolPayload) Serialize(w io.Writer) error {
 }
 
 func (r SchoolPayload) Schema() string {
-	return "{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":{\"items\":\"string\",\"logicalType\":\"uuid\",\"type\":\"array\"}}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"default\":null,\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
 }
 
 func (r SchoolPayload) SchemaName() string {
@@ -106,10 +106,9 @@ func (_ SchoolPayload) SetUnionElem(v int64) { panic("Unsupported operation") }
 func (r *SchoolPayload) Get(i int) types.Field {
 	switch i {
 	case 0:
-		w := types.String{Target: &r.Uuid}
+		r.Uuid = NewUnionNullString()
 
-		return w
-
+		return r.Uuid
 	case 1:
 		w := types.String{Target: &r.Organization_id}
 
@@ -121,24 +120,30 @@ func (r *SchoolPayload) Get(i int) types.Field {
 		return w
 
 	case 3:
-		r.Program_ids = make([]string, 0)
+		r.Program_ids = NewUnionNullArrayString()
 
-		w := ArrayStringWrapper{Target: &r.Program_ids}
-
-		return w
-
+		return r.Program_ids
 	}
 	panic("Unknown field index")
 }
 
 func (r *SchoolPayload) SetDefault(i int) {
 	switch i {
+	case 0:
+		r.Uuid = nil
+		return
 	}
 	panic("Unknown field index")
 }
 
 func (r *SchoolPayload) NullField(i int) {
 	switch i {
+	case 0:
+		r.Uuid = nil
+		return
+	case 3:
+		r.Program_ids = nil
+		return
 	}
 	panic("Not a nullable field index")
 }
@@ -193,7 +198,9 @@ func (r *SchoolPayload) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for uuid")
+		r.Uuid = NewUnionNullString()
+
+		r.Uuid = nil
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["organization_id"]; ok {
