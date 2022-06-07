@@ -34,7 +34,6 @@ func testAvroConsumeUserCsv(t *testing.T, numUsers int, userGeneratorMap map[str
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
-
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
 	bucket := "user"
@@ -89,21 +88,9 @@ func testAvroConsumeUserCsv(t *testing.T, numUsers int, userGeneratorMap map[str
 		assert.Equal(t, userInput["user_given_name"], userOutput.Payload.Given_name)
 		assert.Equal(t, userInput["user_family_name"], userOutput.Payload.Family_name)
 		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender)
-		if userInput["user_email"] == "" {
-			assert.Nil(t, userOutput.Payload.Email)
-		} else {
-			assert.Equal(t, userInput["user_email"], userOutput.Payload.Email.String)
-		}
-		if userInput["user_date_of_birth"] == "" {
-			assert.Nil(t, userOutput.Payload.Date_of_birth)
-		} else {
-			assert.Equal(t, userInput["user_date_of_birth"], userOutput.Payload.Date_of_birth.String)
-		}
-		if userInput["user_phone_number"] == "" {
-			assert.Nil(t, userOutput.Payload.Phone_number)
-		} else {
-			assert.Equal(t, userInput["user_phone_number"], userOutput.Payload.Phone_number.String)
-		}
+		assert.Equal(t, userInput["user_email"], util.DerefAvroNullString(userOutput.Payload.Email))
+		assert.Equal(t, userInput["user_date_of_birth"], util.DerefAvroNullString(userOutput.Payload.Date_of_birth))
+		assert.Equal(t, userInput["user_phone_number"], util.DerefAvroNullString(userOutput.Payload.Phone_number))
 	}
 	ctx.Done()
 }
@@ -125,7 +112,6 @@ func TestAvroConsumeInvalidAndValidUserCsv(t *testing.T) {
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
-
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
 	bucket := "user"
@@ -213,9 +199,9 @@ func TestAvroConsumeInvalidAndValidUserCsv(t *testing.T) {
 		assert.Equal(t, userInput["user_given_name"], userOutput.Payload.Given_name)
 		assert.Equal(t, userInput["user_family_name"], userOutput.Payload.Family_name)
 		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender)
-		assert.Equal(t, userInput["user_email"], userOutput.Payload.Email.String)
-		assert.Equal(t, userInput["user_date_of_birth"], userOutput.Payload.Date_of_birth.String)
-		assert.Equal(t, userInput["user_phone_number"], userOutput.Payload.Phone_number.String)
+		assert.Equal(t, userInput["user_email"], util.DerefAvroNullString(userOutput.Payload.Email))
+		assert.Equal(t, userInput["user_date_of_birth"], util.DerefAvroNullString(userOutput.Payload.Date_of_birth))
+		assert.Equal(t, userInput["user_phone_number"], util.DerefAvroNullString(userOutput.Payload.Phone_number))
 	}
 	ctx.Done()
 }

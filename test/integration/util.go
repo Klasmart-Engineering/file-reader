@@ -140,3 +140,11 @@ func DerefString(s *string) string {
 
 	return ""
 }
+
+func DerefAvroNullString(s *avro.UnionNullString) string {
+	if s != nil {
+		return s.String
+	}
+
+	return ""
+}
