@@ -14,6 +14,8 @@ func InitProtoOperations() Operations {
 	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_PROTO_TOPIC")
 	userTopic := instrument.MustGetEnv("USER_PROTO_TOPIC")
+	classTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
+
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
@@ -36,6 +38,13 @@ func InitProtoOperations() Operations {
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(userTopic),
 				SerializeRow: RowToUserProto,
 				Headers:      UserHeaders,
+			},
+			"CLASS": {
+				Topic:        classTopic,
+				Key:          "",
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(classTopic),
+				SerializeRow: RowToClassProto,
+				Headers:      ClassHeaders,
 			},
 		},
 	}
@@ -89,16 +98,32 @@ func RowToUserProto(row []string, tracking_id string, schemaId int, headerIndexe
 		Region:            os.Getenv("METADATA_REGION"),
 		TrackingId:        tracking_id,
 	}
-	pl := onboarding.UserPayload{
-		Uuid:        row[headerIndexes[UUID]],
-		GivenName:   row[headerIndexes[GIVEN_NAME]],
-		FamilyName:  row[headerIndexes[FAMILY_NAME]],
-		Email:       &row[headerIndexes[EMAIL]],
-		PhoneNumber: &row[headerIndexes[PHONE_NUMBER]],
-		DateOfBirth: &row[headerIndexes[DATE_OF_BIRTH]],
-		Gender:      row[headerIndexes[GENDER]],
+	pl := onboarding.ClassPayload{
+		Uuid:             &row[headerIndexes[UUID]],
+		Name:             row[headerIndexes[CLASS_NAME]],
+		OrganizationUuid: row[headerIndexes[ORGANIZATION_UUID]],
 	}
-	codec := &onboarding.User{Payload: &pl, Metadata: &md}
+	codec := &onboarding.Class{Payload: &pl, Metadata: &md}
+	serde := protobuf.NewProtoSerDe()
+	valueBytes, err := serde.Serialize(schemaId, codec)
+	if err != nil {
+		return nil, err
+	}
+	return valueBytes, nil
+}
+
+func RowToClassProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	md := onboarding.Metadata{
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingId:        tracking_id,
+	}
+	pl := onboarding.ClassPayload{
+		Uuid:             &row[headerIndexes[UUID]],
+		Name:             row[headerIndexes[CLASS_NAME]],
+		OrganizationUuid: row[headerIndexes[ORGANIZATION_UUID]],
+	}
+	codec := &onboarding.Class{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
 	valueBytes, err := serde.Serialize(schemaId, codec)
 	if err != nil {

@@ -34,6 +34,11 @@ func UuidFieldGenerator() func() string {
 	return uuid.NewString
 }
 
+func EmptyFieldGenerator() func() string {
+	return func() string {
+		return ""
+	}
+}
 func RepeatedFieldGenerator(gen func() string, min int, max int) func() string {
 	// Supply a field generator function and min and max number of times to repeat it.
 	// Returns a generator which generates a ; delimited string of those fields
@@ -73,12 +78,6 @@ func GenderGenerator() func() string {
 	genders := []string{"male", "female"} // Or M, f, other? Needs review.
 	return func() string {
 		return genders[rand.Intn(len(genders))]
-	}
-}
-
-func EmptyFieldGenerator() func() string {
-	return func() string {
-		return ""
 	}
 }
 

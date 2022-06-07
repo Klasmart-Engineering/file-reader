@@ -93,13 +93,12 @@ message User {
 
 message User_payload {
     string uuid = 1;
-    string organization_uuid = 2;
-    string given_name = 3;
-    string family_name = 4;
-    optional string email = 5;
-    optional string phone_number = 6;
-    optional string date_of_birth = 7;
-    string gender = 8;
+    string given_name = 2;
+    string family_name = 3;
+    optional string email = 4;
+    optional string phone_number = 5;
+    optional string date_of_birth = 6;
+    string gender = 7;
 }
 
 message Class {
@@ -112,12 +111,6 @@ message Class_payload {
     string organization_uuid = 2;
     string name = 3;
 }
-
-enum Gender {
-  MALE = 0;
-  FEMALE = 1;
-}
-
 
 message Metadata {
     string origin_application = 1;
