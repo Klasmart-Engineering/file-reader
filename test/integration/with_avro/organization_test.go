@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testAvroConsumeOrganizationCsv(t *testing.T, ctx context.Context, logger *zapLogger.ZapLogger) {
+func TestAvroConsumeOrganizationCsv(t *testing.T) {
 	// set up env variables
 	organizationAvroTopic := "orgAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -30,7 +30,10 @@ func testAvroConsumeOrganizationCsv(t *testing.T, ctx context.Context, logger *z
 
 	defer t.Cleanup(closer)
 
+	ctx := context.Background()
 	// Start consumer
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
@@ -100,7 +103,7 @@ func testAvroConsumeOrganizationCsv(t *testing.T, ctx context.Context, logger *z
 	ctx.Done()
 }
 
-func testAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T, ctx context.Context, logger *zapLogger.ZapLogger) {
+func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
 	// set up env variables
 	organizationAvroTopic := "orgAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -113,7 +116,10 @@ func testAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T, ctx context.Con
 
 	defer t.Cleanup(closer)
 
+	ctx := context.Background()
 	// Start consumer
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
@@ -203,30 +209,4 @@ func testAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T, ctx context.Con
 	}
 	ctx.Done()
 
-}
-
-func TestAllForAvroOrganization(t *testing.T) {
-	tests := []struct {
-		scenario string
-		function func(*testing.T, context.Context, *zapLogger.ZapLogger)
-	}{
-		{
-			scenario: "Testing consumer for avro organization",
-			function: testAvroConsumeOrganizationCsv,
-		},
-		{
-			scenario: "Verify consuming an invalid followed by a valid CSV file",
-			function: testAvroConsumeInvalidAndValidOrganizationCsv,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.scenario, func(t *testing.T) {
-			ctx := context.Background()
-
-			l, _ := zap.NewDevelopment()
-			logger := zapLogger.Wrap(l)
-			test.function(t, ctx, logger)
-		})
-	}
 }

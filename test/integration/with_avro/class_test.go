@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func testAvroConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogger.ZapLogger) {
+func testAvrosConsumeClassCsv(t *testing.T, numClasses int, classGeneratorMap map[string]func() string) {
 	// set up env variables
 	classAvroTopic := "classAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -30,7 +30,10 @@ func testAvroConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogge
 
 	defer t.Cleanup(closer)
 
+	ctx := context.Background()
 	// Start consumer
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
@@ -40,17 +43,10 @@ func testAvroConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogge
 	operationType := "class"
 
 	// Make test csv file
-	numClasses := 5
-	classGeneratorMap := map[string]func() string{
-		"uuid":            util.UuidFieldGenerator(),
-		"organization_id": util.UuidFieldGenerator(),
-		"class_name":      util.NameFieldGenerator("class", numClasses),
-	}
-
 	file, classes := util.MakeCsv(numClasses, classGeneratorMap)
 
-	// Upload csv to S3
 	err := util.UploadFileToS3(bucket, s3key, awsRegion, file)
+
 	assert.Nil(t, err, "error uploading file to s3")
 
 	// Put file create message on topic
@@ -74,6 +70,7 @@ func testAvroConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogge
 	)
 	assert.Nil(t, err, "error producing file create message to topic")
 
+	// Assert that the real file got ingested
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
@@ -90,15 +87,48 @@ func testAvroConsumeClassCsv(t *testing.T, ctx context.Context, logger *zapLogge
 		assert.Equal(t, trackingId, classOutput.Metadata.Tracking_id)
 
 		classInput := classes[i]
-		assert.Equal(t, classInput["uuid"], classOutput.Payload.Uuid.String)
+		assert.Equal(t, classInput["uuid"], util.DerefUnion(classOutput.Payload.Uuid))
 		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
 	ctx.Done()
-}
 
-func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
-	logger *zapLogger.ZapLogger) {
+}
+func TestAvroConsumeClassCsvScenarios(t *testing.T) {
+
+	// test cases
+	testCases := []struct {
+		name              string
+		numClasses        int
+		classGeneratorMap map[string]func() string
+	}{
+		{
+			name:       "Should ingest classes when all optional fields are supplied",
+			numClasses: 5,
+			classGeneratorMap: map[string]func() string{
+				"uuid":            util.UuidFieldGenerator(),
+				"organization_id": util.UuidFieldGenerator(),
+				"class_name":      util.NameFieldGenerator("class", 5),
+			},
+		},
+		{
+			name:       "Should ingest classes when all optional fields are null",
+			numClasses: 5,
+			classGeneratorMap: map[string]func() string{
+				"uuid":            util.EmptyFieldGenerator(),
+				"organization_id": util.UuidFieldGenerator(),
+				"class_name":      util.NameFieldGenerator("class", 5),
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			testAvrosConsumeClassCsv(t, tc.numClasses, tc.classGeneratorMap)
+		})
+	}
+
+}
+func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 	// set up env variables
 	classAvroTopic := "classAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -110,6 +140,11 @@ func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 	})
 
 	defer t.Cleanup(closer)
+	ctx := context.Background()
+	// Start consumer
+	l, _ := zap.NewDevelopment()
+	logger := zapLogger.Wrap(l)
+
 	core.StartFileCreateConsumer(ctx, logger)
 
 	brokerAddrs := []string{"localhost:9092"}
@@ -142,7 +177,7 @@ func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 	)
 	assert.Nil(t, err, "error producing file create message to topic")
 
-	// Then try to consume a real organization file
+	// Then try to consume a real class file
 	s3key2 := "organization" + uuid.NewString() + ".csv"
 	numClasses := 5
 	classGeneratorMap := map[string]func() string{
@@ -196,30 +231,4 @@ func testAvroConsumeInvalidAndValidClassCsv(t *testing.T, ctx context.Context,
 		assert.Equal(t, classInput["organization_id"], classOutput.Payload.Organization_uuid)
 	}
 	ctx.Done()
-}
-
-func TestAllForAvroClass(t *testing.T) {
-	tests := []struct {
-		scenario string
-		function func(*testing.T, context.Context, *zapLogger.ZapLogger)
-	}{
-		{
-			scenario: "Testing consumer for avro class",
-			function: testAvroConsumeClassCsv,
-		},
-		{
-			scenario: "Verify consuming an invalid followed by a valid CSV file",
-			function: testAvroConsumeInvalidAndValidClassCsv,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.scenario, func(t *testing.T) {
-			ctx := context.Background()
-
-			l, _ := zap.NewDevelopment()
-			logger := zapLogger.Wrap(l)
-			test.function(t, ctx, logger)
-		})
-	}
 }

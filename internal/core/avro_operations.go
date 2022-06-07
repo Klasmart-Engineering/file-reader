@@ -17,17 +17,26 @@ type avroCodec interface {
 }
 
 func makeAvroOptionalString(value string) *avrogen.UnionNullString {
-	return &avrogen.UnionNullString{
-		String:    value,
-		UnionType: avrogen.UnionNullStringTypeEnumString,
+	if value != "" {
+		return &avrogen.UnionNullString{
+			String:    value,
+			UnionType: avrogen.UnionNullStringTypeEnumString,
+		}
 	}
+	return nil
+
 }
 
 func makeAvroOptionalArrayString(value string) *avrogen.UnionNullArrayString {
-	return &avrogen.UnionNullArrayString{
-		ArrayString: strings.Split(value, ";"),
-		UnionType:   avrogen.UnionNullArrayStringTypeEnumArrayString,
+	if value != "" {
+
+		return &avrogen.UnionNullArrayString{
+			ArrayString: strings.Split(value, ";"),
+			UnionType:   avrogen.UnionNullArrayStringTypeEnumArrayString,
+		}
 	}
+	return nil
+
 }
 
 func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
@@ -134,14 +143,10 @@ func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndex
 		Tracking_id:        tracking_id,
 	}
 	pl := avrogen.SchoolPayload{
+		Uuid:            makeAvroOptionalString(row[headerIndexes[UUID]]),
 		Organization_id: row[headerIndexes[ORGANIZATION_UUID]],
 		Name:            row[headerIndexes[SCHOOL_NAME]],
-	}
-	if row[headerIndexes[UUID]] != "" {
-		pl.Uuid = makeAvroOptionalString(row[headerIndexes[UUID]])
-	}
-	if row[headerIndexes[PROGRAM_IDS]] != "" {
-		pl.Program_ids = makeAvroOptionalArrayString(row[headerIndexes[PROGRAM_IDS]])
+		Program_ids:     makeAvroOptionalArrayString(row[headerIndexes[PROGRAM_IDS]]),
 	}
 
 	codec := avrogen.School{Payload: pl, Metadata: md}
@@ -157,12 +162,11 @@ func RowToClassAvro(row []string, tracking_id string, schemaId int, headerIndexe
 	}
 
 	pl := avrogen.ClassPayload{
+		Uuid:              makeAvroOptionalString(row[headerIndexes[UUID]]),
 		Name:              row[headerIndexes[CLASS_NAME]],
 		Organization_uuid: row[headerIndexes[ORGANIZATION_UUID]],
 	}
-	if row[headerIndexes[UUID]] != "" {
-		pl.Uuid = makeAvroOptionalString(row[headerIndexes[UUID]])
-	}
+
 	codec := avrogen.Class{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }
