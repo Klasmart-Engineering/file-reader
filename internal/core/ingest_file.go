@@ -14,9 +14,9 @@ import (
 )
 
 type IngestFileConfig struct {
-	KafkaWriter kafka.Writer
-	TrackingId  string
-	Logger      *zaplogger.ZapLogger
+	KafkaWriter  kafka.Writer
+	TrackingUuid string
+	Logger       *zaplogger.ZapLogger
 }
 type Operation struct {
 	Topic        string
@@ -52,7 +52,7 @@ func (op Operation) IngestFile(ctx context.Context, fileRows chan []string, head
 	logger := config.Logger
 	for row := range fileRows {
 		// Serialise row using schema
-		recordValue, err := op.SerializeRow(row, config.TrackingId, op.SchemaID, headerIndexes)
+		recordValue, err := op.SerializeRow(row, config.TrackingUuid, op.SchemaID, headerIndexes)
 		if err != nil {
 			logger.Error(ctx, "Error serialising record to bytes", err)
 			continue

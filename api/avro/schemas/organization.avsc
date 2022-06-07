@@ -17,7 +17,7 @@
 						"logicalType": "uuid"
 					},
 					{
-						"name": "owner_user_id",
+						"name": "owner_user_uuid",
 						"type": "string",
 						"logicalType": "uuid"
 					}
@@ -38,7 +38,7 @@
 						"type": "string"
 					},
 					{
-						"name": "tracking_id",
+						"name": "tracking_uuid",
 						"type": "string",
 						"logicalType": "uuid"
 					}

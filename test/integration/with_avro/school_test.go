@@ -44,11 +44,11 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 	// Make test csv file
 	numSchools := 5
 	schoolGeneratorMap := map[string]func() string{
-		"uuid":            util.UuidFieldGenerator(),
-		"organization_id": util.UuidFieldGenerator(),
-		"school_name":     util.NameFieldGenerator("school", numSchools),
-		"program_ids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
-		"fake_ids":        util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 1, 5),
+		"uuid":              util.UuidFieldGenerator(),
+		"organization_uuid": util.UuidFieldGenerator(),
+		"name":              util.NameFieldGenerator("school", numSchools),
+		"program_uuids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
+		"fake_uuids":        util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 1, 5),
 	}
 	file, schools := util.MakeCsv(numSchools, schoolGeneratorMap)
 
@@ -57,7 +57,7 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 	assert.Nil(t, err, "error uploading file to s3")
 
 	// Put file create message on topic
-	trackingId := uuid.NewString()
+	trackingUuid := uuid.NewString()
 	s3FileCreated := avro.S3FileCreated{
 		Payload: avro.S3FileCreatedPayload{
 			Key:            s3key,
@@ -67,7 +67,7 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId},
+		Metadata: avro.S3FileCreatedMetadata{Tracking_uuid: trackingUuid},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -90,14 +90,14 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 		assert.Nil(t, err, "error deserialising message to school")
 		t.Log(schoolOutput)
 
-		assert.Equal(t, trackingId, schoolOutput.Metadata.Tracking_id)
+		assert.Equal(t, trackingUuid, schoolOutput.Metadata.Tracking_uuid)
 
 		schoolInput := schools[i]
 		assert.Equal(t, schoolInput["uuid"], schoolOutput.Payload.Uuid.String)
-		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name)
-		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.Organization_id)
-		program_ids := strings.Split(schoolInput["program_ids"], ";")
-		assert.Equal(t, program_ids, schoolOutput.Payload.Program_ids.ArrayString)
+		assert.Equal(t, schoolInput["name"], schoolOutput.Payload.Name)
+		assert.Equal(t, schoolInput["organization_uuid"], schoolOutput.Payload.Organization_uuid)
+		program_ids := strings.Split(schoolInput["program_uuids"], ";")
+		assert.Equal(t, program_ids, schoolOutput.Payload.Program_uuids.ArrayString)
 	}
 	ctx.Done()
 }

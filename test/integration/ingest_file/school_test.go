@@ -54,19 +54,19 @@ func getSchoolCsvToProtos(filePath string) ([]*onboarding.School, error) {
 				return res, nil
 			}
 		}
-		programIds := strings.Split(row[headerIndexMap["program_ids"]], ";")
+		programUuids := strings.Split(row[headerIndexMap["program_uuids"]], ";")
 
 		md := onboarding.Metadata{
 			OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 			Region:            os.Getenv("METADATA_REGION"),
-			TrackingId:        uuid.NewString(),
+			TrackingUuid:      uuid.NewString(),
 		}
 
 		pl := onboarding.SchoolPayload{
-			Uuid:           &row[headerIndexMap["uuid"]],
-			Name:           row[headerIndexMap["school_name"]],
-			OrganizationId: row[headerIndexMap["organization_id"]],
-			ProgramIds:     programIds,
+			Uuid:             &row[headerIndexMap["uuid"]],
+			Name:             row[headerIndexMap["name"]],
+			OrganizationUuid: row[headerIndexMap["organization_uuid"]],
+			ProgramUuids:     programUuids,
 		}
 
 		res = append(res, &onboarding.School{Payload: &pl, Metadata: &md})
@@ -173,8 +173,8 @@ func TestSchoolFileProcessingServer(t *testing.T) {
 					}
 
 					if err == nil {
-						validateTrackingId := validation.ValidateTrackingId{Uuid: school.Metadata.TrackingId}
-						err := validation.UUIDValidate(validateTrackingId)
+						validateTrackingUuid := validation.ValidateTrackingId{Uuid: school.Metadata.TrackingUuid}
+						err := validation.UUIDValidate(validateTrackingUuid)
 						if err != nil {
 							t.Fatalf("%s", err)
 						}
@@ -182,7 +182,7 @@ func TestSchoolFileProcessingServer(t *testing.T) {
 						g.Expect(expected.Metadata.OriginApplication).To(gomega.Equal(school.Metadata.OriginApplication))
 						g.Expect(util.DerefString(expected.Payload.Uuid)).To(gomega.Equal(util.DerefString(school.Payload.Uuid)))
 						g.Expect(expected.Payload.Name).To(gomega.Equal(school.Payload.Name))
-						g.Expect(expected.Payload.OrganizationId).To(gomega.Equal(school.Payload.OrganizationId))
+						g.Expect(expected.Payload.OrganizationUuid).To(gomega.Equal(school.Payload.OrganizationUuid))
 
 					} else {
 						t.Logf("Error consuming the message: %v (%v)\n", err, msg)

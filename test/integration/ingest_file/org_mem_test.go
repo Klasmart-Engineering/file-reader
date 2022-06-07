@@ -4,15 +4,18 @@ import (
 	"bytes"
 	"embed"
 	"encoding/csv"
+	"fmt"
+	"strings"
 	"time"
 
 	filepb "github.com/KL-Engineering/file-reader/api/proto/proto_gencode/input_file"
 	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
 	"github.com/KL-Engineering/file-reader/internal/config"
 	"github.com/KL-Engineering/file-reader/internal/instrument"
-	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 	clientPb "github.com/KL-Engineering/file-reader/test/client"
 	util "github.com/KL-Engineering/file-reader/test/integration"
+
+	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 
 	"io"
 
@@ -22,6 +25,7 @@ import (
 	"github.com/KL-Engineering/file-reader/internal/log"
 	"github.com/KL-Engineering/file-reader/internal/validation"
 	"github.com/KL-Engineering/file-reader/test/env"
+
 	"go.uber.org/zap"
 
 	"github.com/google/uuid"
@@ -32,12 +36,12 @@ import (
 )
 
 //go:embed data/good
-var classGoodDataDir embed.FS
+var orgMemGoodDataDir embed.FS
 
-func getClassCsvToProtos(filePath string) ([]*onboarding.Class, error) {
-	var res []*onboarding.Class
+func getOrgMemCsvToProtos(filePath string) ([]*onboarding.OrganizationMembership, error) {
+	var res []*onboarding.OrganizationMembership
 	var content []byte
-	content, _ = classGoodDataDir.ReadFile(filePath)
+	content, _ = orgMemGoodDataDir.ReadFile(filePath)
 
 	// Keep store of header order
 	reader := csv.NewReader(bytes.NewBuffer(content))
@@ -54,24 +58,24 @@ func getClassCsvToProtos(filePath string) ([]*onboarding.Class, error) {
 			}
 		}
 
+		orgRoleUuids := strings.Split(row[headerIndexMap["organization_role_uuids"]], ";")
 		md := onboarding.Metadata{
 			OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 			Region:            os.Getenv("METADATA_REGION"),
 			TrackingUuid:      uuid.NewString(),
 		}
 
-		pl := onboarding.ClassPayload{
-			Uuid:             &row[headerIndexMap["uuid"]],
-			Name:             row[headerIndexMap["name"]],
-			OrganizationUuid: row[headerIndexMap["organization_uuid"]],
+		pl := onboarding.OrganizationMembershipPayload{
+			OrganizationUuid:      row[headerIndexMap["organization_uuid"]],
+			UserUuid:              row[headerIndexMap["user_uuid"]],
+			OrganizationRoleUuids: orgRoleUuids,
 		}
 
-		res = append(res, &onboarding.Class{Payload: &pl, Metadata: &md})
+		res = append(res, &onboarding.OrganizationMembership{Payload: &pl, Metadata: &md})
 	}
-
 }
 
-func TestClassFileProcessingServer(t *testing.T) {
+func TestOrgMemFileProcessingServer(t *testing.T) {
 	var testCases = []struct {
 		name        string
 		req         []*filepb.InputFileRequest
@@ -82,21 +86,20 @@ func TestClassFileProcessingServer(t *testing.T) {
 			req: []*filepb.InputFileRequest{
 
 				{
-					Type:      filepb.Type_CLASS,
-					InputFile: &filepb.InputFile{FileId: "file_id1", Path: "data/good/class.csv", InputFileType: filepb.InputFileType_CSV},
+					Type:      filepb.Type_ORGANIZATION,
+					InputFile: &filepb.InputFile{FileId: "file_id1", Path: "data/good/org_mem.csv", InputFileType: filepb.InputFileType_CSV},
 				},
 			},
 			expectedRes: filepb.InputFileResponse{Success: true, Errors: nil},
 		},
 	}
-
 	// set up env variables
 	closer := env.EnvSetter(map[string]string{
-		"BROKERS":           "localhost:9092",
-		"GRPC_SERVER":       "localhost",
-		"GRPC_SERVER_PORT":  "6000",
-		"CLASS_PROTO_TOPIC": uuid.NewString(),
-		"SCHEMA_TYPE":       "PROTO",
+		"BROKERS":                             "localhost:9092",
+		"GRPC_SERVER":                         "localhost",
+		"GRPC_SERVER_PORT":                    "6000",
+		"ORGANIZATION_MEMBERSHIP_PROTO_TOPIC": uuid.NewString(),
+		"SCHEMA_TYPE":                         "PROTO",
 	})
 
 	defer t.Cleanup(closer) // In Go 1.14+
@@ -125,16 +128,16 @@ func TestClassFileProcessingServer(t *testing.T) {
 	ctx, client := util.StartGrpc(logger, cfg, addr)
 
 	csvFh := clientPb.NewInputFileHandlers(logger)
-	classProtoTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
+	orgMemProtoTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_PROTO_TOPIC")
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: instrument.GetBrokers(),
-		Topic:   classProtoTopic,
+		Topic:   orgMemProtoTopic,
 	})
 
 	// Testing for kafka messages
 	serde := protobuf.NewProtoSerDe()
-	class := &onboarding.Class{}
+	orgMem := &onboarding.OrganizationMembership{}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -151,10 +154,10 @@ func TestClassFileProcessingServer(t *testing.T) {
 				g.Expect(res.Success).To(gomega.BeTrue())
 
 				// Testing for kafka messages
-
-				expectedValues, _ := getClassCsvToProtos("data/good/class.csv")
+				expectedValues, _ := getOrgMemCsvToProtos("data/good/org_mem.csv")
+				fmt.Println("expectedValues = ", expectedValues)
 				for _, expected := range expectedValues {
-					t.Log("expecting to read ", expected, " on topic ", classProtoTopic)
+					t.Log("expecting to read ", expected, " on topic ", orgMemProtoTopic)
 					msg, err := r.ReadMessage(ctx)
 					t.Log("read message", msg, err)
 					if err != nil {
@@ -162,7 +165,7 @@ func TestClassFileProcessingServer(t *testing.T) {
 						break
 					}
 
-					_, err = serde.Deserialize(msg.Value, class)
+					_, err = serde.Deserialize(msg.Value, orgMem)
 
 					if err != nil {
 						t.Logf("Error deserializing message: %v\n", err)
@@ -170,16 +173,16 @@ func TestClassFileProcessingServer(t *testing.T) {
 					}
 
 					if err == nil {
-						validateTrackingUuid := validation.ValidateTrackingId{Uuid: class.Metadata.TrackingUuid}
+						validateTrackingUuid := validation.ValidateTrackingId{Uuid: orgMem.Metadata.TrackingUuid}
 						err := validation.UUIDValidate(validateTrackingUuid)
 						if err != nil {
 							t.Fatalf("%s", err)
 						}
-						g.Expect(expected.Metadata.Region).To(gomega.Equal(class.Metadata.Region))
-						g.Expect(expected.Metadata.OriginApplication).To(gomega.Equal(class.Metadata.OriginApplication))
-						g.Expect(util.DerefString(expected.Payload.Uuid)).To(gomega.Equal(util.DerefString(class.Payload.Uuid)))
-						g.Expect(expected.Payload.Name).To(gomega.Equal(class.Payload.Name))
-						g.Expect(expected.Payload.OrganizationUuid).To(gomega.Equal(class.Payload.OrganizationUuid))
+						g.Expect(expected.Metadata.Region).To(gomega.Equal(orgMem.Metadata.Region))
+						g.Expect(expected.Metadata.OriginApplication).To(gomega.Equal(orgMem.Metadata.OriginApplication))
+						g.Expect(expected.Payload.OrganizationUuid).To(gomega.Equal(orgMem.Payload.OrganizationUuid))
+						g.Expect(expected.Payload.UserUuid).To(gomega.Equal(orgMem.Payload.UserUuid))
+						g.Expect(expected.Payload.OrganizationRoleUuids).To(gomega.Equal(orgMem.Payload.OrganizationRoleUuids))
 
 					} else {
 						t.Logf("Error consuming the message: %v (%v)\n", err, msg)
@@ -192,5 +195,4 @@ func TestClassFileProcessingServer(t *testing.T) {
 		})
 	}
 	ctx.Done()
-
 }

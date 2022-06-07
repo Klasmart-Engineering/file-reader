@@ -4,6 +4,7 @@
  *     organization.avsc
  *     school.avsc
  *     class.avsc
+ *     organization_membership.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -23,14 +24,14 @@ var _ = fmt.Printf
 type SchoolPayload struct {
 	Uuid *UnionNullString `json:"uuid"`
 
-	Organization_id string `json:"organization_id"`
+	Organization_uuid string `json:"organization_uuid"`
 
 	Name string `json:"name"`
 
-	Program_ids *UnionNullArrayString `json:"program_ids"`
+	Program_uuids *UnionNullArrayString `json:"program_uuids"`
 }
 
-const SchoolPayloadAvroCRC64Fingerprint = "u8x8V\xb4\xd5V"
+const SchoolPayloadAvroCRC64Fingerprint = "\xad\x87Nq\xd6Ph\xb0"
 
 func NewSchoolPayload() SchoolPayload {
 	r := SchoolPayload{}
@@ -67,7 +68,7 @@ func writeSchoolPayload(r SchoolPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = vm.WriteString(r.Organization_id, w)
+	err = vm.WriteString(r.Organization_uuid, w)
 	if err != nil {
 		return err
 	}
@@ -75,7 +76,7 @@ func writeSchoolPayload(r SchoolPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = writeUnionNullArrayString(r.Program_ids, w)
+	err = writeUnionNullArrayString(r.Program_uuids, w)
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func (r SchoolPayload) Serialize(w io.Writer) error {
 }
 
 func (r SchoolPayload) Schema() string {
-	return "{\"fields\":[{\"default\":null,\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_ids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"default\":null,\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_uuids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
 }
 
 func (r SchoolPayload) SchemaName() string {
@@ -110,7 +111,7 @@ func (r *SchoolPayload) Get(i int) types.Field {
 
 		return r.Uuid
 	case 1:
-		w := types.String{Target: &r.Organization_id}
+		w := types.String{Target: &r.Organization_uuid}
 
 		return w
 
@@ -120,9 +121,9 @@ func (r *SchoolPayload) Get(i int) types.Field {
 		return w
 
 	case 3:
-		r.Program_ids = NewUnionNullArrayString()
+		r.Program_uuids = NewUnionNullArrayString()
 
-		return r.Program_ids
+		return r.Program_uuids
 	}
 	panic("Unknown field index")
 }
@@ -142,7 +143,7 @@ func (r *SchoolPayload) NullField(i int) {
 		r.Uuid = nil
 		return
 	case 3:
-		r.Program_ids = nil
+		r.Program_uuids = nil
 		return
 	}
 	panic("Not a nullable field index")
@@ -164,7 +165,7 @@ func (r SchoolPayload) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	output["organization_id"], err = json.Marshal(r.Organization_id)
+	output["organization_uuid"], err = json.Marshal(r.Organization_uuid)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +173,7 @@ func (r SchoolPayload) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	output["program_ids"], err = json.Marshal(r.Program_ids)
+	output["program_uuids"], err = json.Marshal(r.Program_uuids)
 	if err != nil {
 		return nil, err
 	}
@@ -203,18 +204,18 @@ func (r *SchoolPayload) UnmarshalJSON(data []byte) error {
 		r.Uuid = nil
 	}
 	val = func() json.RawMessage {
-		if v, ok := fields["organization_id"]; ok {
+		if v, ok := fields["organization_uuid"]; ok {
 			return v
 		}
 		return nil
 	}()
 
 	if val != nil {
-		if err := json.Unmarshal([]byte(val), &r.Organization_id); err != nil {
+		if err := json.Unmarshal([]byte(val), &r.Organization_uuid); err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for organization_id")
+		return fmt.Errorf("no value specified for organization_uuid")
 	}
 	val = func() json.RawMessage {
 		if v, ok := fields["name"]; ok {
@@ -231,18 +232,18 @@ func (r *SchoolPayload) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("no value specified for name")
 	}
 	val = func() json.RawMessage {
-		if v, ok := fields["program_ids"]; ok {
+		if v, ok := fields["program_uuids"]; ok {
 			return v
 		}
 		return nil
 	}()
 
 	if val != nil {
-		if err := json.Unmarshal([]byte(val), &r.Program_ids); err != nil {
+		if err := json.Unmarshal([]byte(val), &r.Program_uuids); err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for program_ids")
+		return fmt.Errorf("no value specified for program_uuids")
 	}
 	return nil
 }

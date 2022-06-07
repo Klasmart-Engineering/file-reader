@@ -4,6 +4,7 @@
  *     organization.avsc
  *     school.avsc
  *     class.avsc
+ *     organization_membership.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -26,7 +27,7 @@ type S3FileCreated struct {
 	Metadata S3FileCreatedMetadata `json:"metadata"`
 }
 
-const S3FileCreatedAvroCRC64Fingerprint = "Ӯt\xd1\x11\x97:o"
+const S3FileCreatedAvroCRC64Fingerprint = "\fq\xbcD\xaf\xc3m\xcd"
 
 func NewS3FileCreated() S3FileCreated {
 	r := S3FileCreated{}
@@ -78,7 +79,7 @@ func (r S3FileCreated) Serialize(w io.Writer) error {
 }
 
 func (r S3FileCreated) Schema() string {
-	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"aws_region\",\"type\":\"string\"},{\"name\":\"bucket_name\",\"type\":\"string\"},{\"name\":\"content_length\",\"type\":\"long\"},{\"name\":\"content_type\",\"type\":\"string\"},{\"name\":\"operation_type\",\"type\":\"string\"}],\"name\":\"S3FileCreatedPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"S3FileCreatedMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.S3FileCreated\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"aws_region\",\"type\":\"string\"},{\"name\":\"bucket_name\",\"type\":\"string\"},{\"name\":\"content_length\",\"type\":\"long\"},{\"name\":\"content_type\",\"type\":\"string\"},{\"name\":\"operation_type\",\"type\":\"string\"}],\"name\":\"S3FileCreatedPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"S3FileCreatedMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.S3FileCreated\",\"type\":\"record\"}"
 }
 
 func (r S3FileCreated) SchemaName() string {
