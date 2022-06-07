@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestAvroConsumeSchoolCsv(t *testing.T) {
+func testAvroConsumeSchoolCsv(t *testing.T, numSchools int, schoolGeneratorMap map[string]func() string) {
 	// set up env variables
 	schoolAvroTopic := "schoolAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
@@ -42,14 +42,6 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 	operationType := "school"
 
 	// Make test csv file
-	numSchools := 5
-	schoolGeneratorMap := map[string]func() string{
-		"uuid":            util.UuidFieldGenerator(),
-		"organization_id": util.UuidFieldGenerator(),
-		"school_name":     util.NameFieldGenerator("school", numSchools),
-		"program_ids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
-		"fake_ids":        util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 1, 5),
-	}
 	file, schools := util.MakeCsv(numSchools, schoolGeneratorMap)
 
 	// Upload csv to S3
@@ -93,12 +85,47 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 		assert.Equal(t, trackingId, schoolOutput.Metadata.Tracking_id)
 
 		schoolInput := schools[i]
-		assert.Equal(t, schoolInput["uuid"], schoolOutput.Payload.Uuid.String)
+		assert.Equal(t, schoolInput["uuid"], util.DerefAvroNullString(schoolOutput.Payload.Uuid))
 		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name)
 		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.Organization_id)
 		program_ids := strings.Split(schoolInput["program_ids"], ";")
-		assert.Equal(t, program_ids, schoolOutput.Payload.Program_ids.ArrayString)
+		assert.Equal(t, program_ids, util.DerefAvroNullArrayString(schoolOutput.Payload.Program_ids))
 
 	}
 	ctx.Done()
+}
+
+func TestAvroConsumeSchoolCsvScenarios(t *testing.T) {
+	type TestCases struct {
+		description        string
+		numSchools         int
+		schoolGeneratorMap map[string]func() string
+	}
+
+	for _, scenario := range []TestCases{
+		{
+			description: "should ingest schools when all optional fields are supplied",
+			numSchools:  5,
+			schoolGeneratorMap: map[string]func() string{
+				"uuid":            util.UuidFieldGenerator(),
+				"organization_id": util.UuidFieldGenerator(),
+				"school_name":     util.NameFieldGenerator("school", 5),
+				"program_ids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
+			},
+		},
+		{
+			description: "should ingest schools when all optional fields are null",
+			numSchools:  5,
+			schoolGeneratorMap: map[string]func() string{
+				"uuid":            util.EmptyFieldGenerator(),
+				"organization_id": util.UuidFieldGenerator(),
+				"school_name":     util.NameFieldGenerator("school", 5),
+				"program_ids":     util.EmptyFieldGenerator(),
+			},
+		},
+	} {
+		t.Run(scenario.description, func(t *testing.T) {
+			testAvroConsumeSchoolCsv(t, scenario.numSchools, scenario.schoolGeneratorMap)
+		})
+	}
 }

@@ -195,7 +195,6 @@ func TestAvroConsumeInvalidAndValidUserCsv(t *testing.T) {
 
 		userInput := users[i]
 		assert.Equal(t, userInput["uuid"], userOutput.Payload.Uuid)
-		assert.Equal(t, userInput["uuid"], userOutput.Payload.Uuid)
 		assert.Equal(t, userInput["user_given_name"], userOutput.Payload.Given_name)
 		assert.Equal(t, userInput["user_family_name"], userOutput.Payload.Family_name)
 		assert.Equal(t, userInput["user_gender"], userOutput.Payload.Gender)
