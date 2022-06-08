@@ -64,8 +64,8 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 
 	// Put file create message on topic
 	trackingId := uuid.NewString()
-	s3FileCreated := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	s3FileCreated := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -73,7 +73,7 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_id: trackingId},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
