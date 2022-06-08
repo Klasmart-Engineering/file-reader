@@ -20,7 +20,7 @@ import (
 
 var _ = fmt.Printf
 
-type S3FileCreatedPayload struct {
+type S3FileCreatedUpdatedPayload struct {
 	Key string `json:"key"`
 
 	Aws_region string `json:"aws_region"`
@@ -34,15 +34,15 @@ type S3FileCreatedPayload struct {
 	Operation_type string `json:"operation_type"`
 }
 
-const S3FileCreatedPayloadAvroCRC64Fingerprint = "\xcdZd\x03\xfb\xc1\xdf\x03"
+const S3FileCreatedUpdatedPayloadAvroCRC64Fingerprint = "\x92\xef\xba\xdf\x16\x16\xfb\x8d"
 
-func NewS3FileCreatedPayload() S3FileCreatedPayload {
-	r := S3FileCreatedPayload{}
+func NewS3FileCreatedUpdatedPayload() S3FileCreatedUpdatedPayload {
+	r := S3FileCreatedUpdatedPayload{}
 	return r
 }
 
-func DeserializeS3FileCreatedPayload(r io.Reader) (S3FileCreatedPayload, error) {
-	t := NewS3FileCreatedPayload()
+func DeserializeS3FileCreatedUpdatedPayload(r io.Reader) (S3FileCreatedUpdatedPayload, error) {
+	t := NewS3FileCreatedUpdatedPayload()
 	deser, err := compiler.CompileSchemaBytes([]byte(t.Schema()), []byte(t.Schema()))
 	if err != nil {
 		return t, err
@@ -52,8 +52,8 @@ func DeserializeS3FileCreatedPayload(r io.Reader) (S3FileCreatedPayload, error) 
 	return t, err
 }
 
-func DeserializeS3FileCreatedPayloadFromSchema(r io.Reader, schema string) (S3FileCreatedPayload, error) {
-	t := NewS3FileCreatedPayload()
+func DeserializeS3FileCreatedUpdatedPayloadFromSchema(r io.Reader, schema string) (S3FileCreatedUpdatedPayload, error) {
+	t := NewS3FileCreatedUpdatedPayload()
 
 	deser, err := compiler.CompileSchemaBytes([]byte(schema), []byte(t.Schema()))
 	if err != nil {
@@ -64,7 +64,7 @@ func DeserializeS3FileCreatedPayloadFromSchema(r io.Reader, schema string) (S3Fi
 	return t, err
 }
 
-func writeS3FileCreatedPayload(r S3FileCreatedPayload, w io.Writer) error {
+func writeS3FileCreatedUpdatedPayload(r S3FileCreatedUpdatedPayload, w io.Writer) error {
 	var err error
 	err = vm.WriteString(r.Key, w)
 	if err != nil {
@@ -93,28 +93,28 @@ func writeS3FileCreatedPayload(r S3FileCreatedPayload, w io.Writer) error {
 	return err
 }
 
-func (r S3FileCreatedPayload) Serialize(w io.Writer) error {
-	return writeS3FileCreatedPayload(r, w)
+func (r S3FileCreatedUpdatedPayload) Serialize(w io.Writer) error {
+	return writeS3FileCreatedUpdatedPayload(r, w)
 }
 
-func (r S3FileCreatedPayload) Schema() string {
-	return "{\"fields\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"aws_region\",\"type\":\"string\"},{\"name\":\"bucket_name\",\"type\":\"string\"},{\"name\":\"content_length\",\"type\":\"long\"},{\"name\":\"content_type\",\"type\":\"string\"},{\"name\":\"operation_type\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.S3FileCreatedPayload\",\"type\":\"record\"}"
+func (r S3FileCreatedUpdatedPayload) Schema() string {
+	return "{\"fields\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"aws_region\",\"type\":\"string\"},{\"name\":\"bucket_name\",\"type\":\"string\"},{\"name\":\"content_length\",\"type\":\"long\"},{\"name\":\"content_type\",\"type\":\"string\"},{\"name\":\"operation_type\",\"type\":\"string\"}],\"name\":\"com.kidsloop.S3FileCreatedUpdatedPayload\",\"type\":\"record\"}"
 }
 
-func (r S3FileCreatedPayload) SchemaName() string {
-	return "com.kidsloop.onboarding.S3FileCreatedPayload"
+func (r S3FileCreatedUpdatedPayload) SchemaName() string {
+	return "com.kidsloop.S3FileCreatedUpdatedPayload"
 }
 
-func (_ S3FileCreatedPayload) SetBoolean(v bool)    { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) SetInt(v int32)       { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) SetLong(v int64)      { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) SetFloat(v float32)   { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) SetDouble(v float64)  { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) SetBytes(v []byte)    { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) SetString(v string)   { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) SetUnionElem(v int64) { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) SetBoolean(v bool)    { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) SetInt(v int32)       { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) SetLong(v int64)      { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) SetFloat(v float32)   { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) SetDouble(v float64)  { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) SetBytes(v []byte)    { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) SetString(v string)   { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) SetUnionElem(v int64) { panic("Unsupported operation") }
 
-func (r *S3FileCreatedPayload) Get(i int) types.Field {
+func (r *S3FileCreatedUpdatedPayload) Get(i int) types.Field {
 	switch i {
 	case 0:
 		w := types.String{Target: &r.Key}
@@ -150,28 +150,30 @@ func (r *S3FileCreatedPayload) Get(i int) types.Field {
 	panic("Unknown field index")
 }
 
-func (r *S3FileCreatedPayload) SetDefault(i int) {
+func (r *S3FileCreatedUpdatedPayload) SetDefault(i int) {
 	switch i {
 	}
 	panic("Unknown field index")
 }
 
-func (r *S3FileCreatedPayload) NullField(i int) {
+func (r *S3FileCreatedUpdatedPayload) NullField(i int) {
 	switch i {
 	}
 	panic("Not a nullable field index")
 }
 
-func (_ S3FileCreatedPayload) AppendMap(key string) types.Field { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) AppendArray() types.Field         { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) HintSize(int)                     { panic("Unsupported operation") }
-func (_ S3FileCreatedPayload) Finalize()                        {}
+func (_ S3FileCreatedUpdatedPayload) AppendMap(key string) types.Field {
+	panic("Unsupported operation")
+}
+func (_ S3FileCreatedUpdatedPayload) AppendArray() types.Field { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) HintSize(int)             { panic("Unsupported operation") }
+func (_ S3FileCreatedUpdatedPayload) Finalize()                {}
 
-func (_ S3FileCreatedPayload) AvroCRC64Fingerprint() []byte {
-	return []byte(S3FileCreatedPayloadAvroCRC64Fingerprint)
+func (_ S3FileCreatedUpdatedPayload) AvroCRC64Fingerprint() []byte {
+	return []byte(S3FileCreatedUpdatedPayloadAvroCRC64Fingerprint)
 }
 
-func (r S3FileCreatedPayload) MarshalJSON() ([]byte, error) {
+func (r S3FileCreatedUpdatedPayload) MarshalJSON() ([]byte, error) {
 	var err error
 	output := make(map[string]json.RawMessage)
 	output["key"], err = json.Marshal(r.Key)
@@ -201,7 +203,7 @@ func (r S3FileCreatedPayload) MarshalJSON() ([]byte, error) {
 	return json.Marshal(output)
 }
 
-func (r *S3FileCreatedPayload) UnmarshalJSON(data []byte) error {
+func (r *S3FileCreatedUpdatedPayload) UnmarshalJSON(data []byte) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return err
