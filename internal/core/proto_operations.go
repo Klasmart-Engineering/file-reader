@@ -98,12 +98,16 @@ func RowToUserProto(row []string, tracking_id string, schemaId int, headerIndexe
 		Region:            os.Getenv("METADATA_REGION"),
 		TrackingId:        tracking_id,
 	}
-	pl := onboarding.ClassPayload{
-		Uuid:             &row[headerIndexes[UUID]],
-		Name:             row[headerIndexes[CLASS_NAME]],
-		OrganizationUuid: row[headerIndexes[ORGANIZATION_UUID]],
+	pl := onboarding.UserPayload{
+		Uuid:        row[headerIndexes[UUID]],
+		GivenName:   row[headerIndexes[GIVEN_NAME]],
+		FamilyName:  row[headerIndexes[FAMILY_NAME]],
+		Email:       &row[headerIndexes[EMAIL]],
+		PhoneNumber: &row[headerIndexes[PHONE_NUMBER]],
+		DateOfBirth: &row[headerIndexes[DATE_OF_BIRTH]],
+		Gender:      row[headerIndexes[GENDER]],
 	}
-	codec := &onboarding.Class{Payload: &pl, Metadata: &md}
+	codec := &onboarding.User{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
 	valueBytes, err := serde.Serialize(schemaId, codec)
 	if err != nil {

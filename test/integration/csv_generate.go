@@ -55,7 +55,7 @@ func RepeatedFieldGenerator(gen func() string, min int, max int) func() string {
 
 func HumanNameFieldGenerator(min int, max int) func() string {
 	// Supply min and max bounds for how long names can be, makes random "name" of that length
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ漢字नागरीж ")
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	rand.Seed(time.Now().UnixNano())
 	return RandomStringGenerator(letters, min, max)
 }

@@ -3,7 +3,6 @@ package integration_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
@@ -30,10 +29,11 @@ func testAvroConsumeUserCsv(t *testing.T, numUsers int, userGeneratorMap map[str
 	})
 
 	defer t.Cleanup(closer)
-	ctx := context.Background()
+
 	// Start consumer
 	l, _ := zap.NewDevelopment()
 	logger := zapLogger.Wrap(l)
+	ctx := context.Background()
 	core.StartFileCreateConsumer(ctx, logger)
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
@@ -99,7 +99,6 @@ func testAvroConsumeUserCsv(t *testing.T, numUsers int, userGeneratorMap map[str
 func TestAvroConsumeInvalidAndValidUserCsv(t *testing.T) {
 	// set up env variables
 	userAvroTopic := "userAvroTopic" + uuid.NewString()
-	fmt.Println("User topic:", userAvroTopic)
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
 		"USER_AVRO_TOPIC":                  userAvroTopic,

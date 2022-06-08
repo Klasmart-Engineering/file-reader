@@ -190,6 +190,7 @@ func RowToUserAvro(row []string, tracking_id string, schemaId int, headerIndexes
 	codec := avrogen.User{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }
+
 func RowToClassAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	// Takes a slice of columns representing a class and encodes to avro bytes
 	md := avrogen.ClassMetadata{
