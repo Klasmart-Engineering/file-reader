@@ -28,3 +28,24 @@ Put S3 file on localstack and put file create message on kafka topic to trigger 
 Can get avro messages from topic manually
 `kcat -b localhost:9092 -t organization  -s avro  -r http://localhost:8081`
 
+## Lambda
+
+You'll require the S3FileCreatedUpdated topic to be created
+```
+docker exec redpanda-1 rpk topic create S3FileCreatedUpdated --brokers=localhost:9092
+```
+
+### deploy lambda and listen to org bucket
+
+```
+docker-compose up -d && \
+sleep 1 && \
+docker exec redpanda-1 rpk topic create S3FileCreatedUpdated --brokers=localhost:9092 && \
+aws --endpoint-url http://localhost:4566 lambda create-function --function-name fileevent --handler main --runtime go1.x --role your-role --zip-file fileb://main.zip --environment 'Variables={KAFKA_BROKER=redpanda:29092,SCHEMA_REGISTRY=http://redpanda:8081,TOPIC_NAME=S3FileCreatedUpdated}' && \
+aws --endpoint-url=http://localhost:4566 s3api put-bucket-notification-configuration --bucket organization --notification-configuration file://scripts/local/s3-notif-config.json
+```
+
+### teardown of lambda
+```
+aws --endpoint-url http://localhost:4566 lambda delete-function --function-name fileevent
+``` 

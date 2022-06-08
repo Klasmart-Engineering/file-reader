@@ -10,7 +10,7 @@ services:
      - --node-id 0
      - --check=false
      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
-     - --advertise-kafka-addr PLAINTEXT://localhost:29092,OUTSIDE://localhost:9092
+     - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
      - --pandaproxy-addr 0.0.0.0:8082
      - --advertise-pandaproxy-addr redpanda:8082
      - --set redpanda.enable_transactions=true
@@ -30,9 +30,11 @@ services:
     container_name: localstack
     restart: always
     environment:
-        - SERVICES=s3
+        - SERVICES=s3,lambda
+        - LAMBDA_EXECUTOR=docker
+        - DEFAULT_REGION=eu-west-1
     ports:
         - 4566:4566
     volumes:
         - ./scripts:/docker-entrypoint-initaws.d
-    
+        - '/var/run/docker.sock:/var/run/docker.sock'
