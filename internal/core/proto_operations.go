@@ -14,6 +14,7 @@ func InitProtoOperations() Operations {
 	orgTopic := instrument.MustGetEnv("ORGANIZATION_PROTO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_PROTO_TOPIC")
 	classTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
+	orgMemTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_PROTO_TOPIC")
 
 	return Operations{
 		OperationMap: map[string]Operation{
@@ -38,20 +39,28 @@ func InitProtoOperations() Operations {
 				SerializeRow: RowToClassProto,
 				Headers:      ClassHeaders,
 			},
+
+			"ORGANIZATION_MEMBERSHIP": {
+				Topic:        orgMemTopic,
+				Key:          "",
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgMemTopic),
+				SerializeRow: RowToOrgMemAvro,
+				Headers:      OrgMemHeaders,
+			},
 		},
 	}
 }
 
-func RowToOrganizationProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+func RowToOrganizationProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	md := onboarding.Metadata{
 		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:            os.Getenv("METADATA_REGION"),
-		TrackingId:        tracking_id,
+		TrackingUuid:      tracking_uuid,
 	}
 	pl := onboarding.OrganizationPayload{
-		Uuid:        row[headerIndexes[UUID]],
-		Name:        row[headerIndexes[ORGANIZATION_NAME]],
-		OwnerUserId: row[headerIndexes[OWNER_USER_ID]],
+		Uuid:          row[headerIndexes[UUID]],
+		Name:          row[headerIndexes[NAME]],
+		OwnerUserUuid: row[headerIndexes[OWNER_USER_UUID]],
 	}
 	codec := &onboarding.Organization{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
@@ -62,18 +71,39 @@ func RowToOrganizationProto(row []string, tracking_id string, schemaId int, head
 	return valueBytes, nil
 }
 
-func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
-	programIds := strings.Split(row[headerIndexes[PROGRAM_IDS]], ";")
+func RowToOrganizationMembershipProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	orgRoleUuids := strings.Split(row[headerIndexes[ORGANIZATION_ROLE_UUIDS]], ";")
 	md := onboarding.Metadata{
 		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:            os.Getenv("METADATA_REGION"),
-		TrackingId:        tracking_id,
+		TrackingUuid:      tracking_uuid,
+	}
+	pl := onboarding.OrganizationMembershipPayload{
+		OrganizationUuid:      row[headerIndexes[ORGANIZATION_UUID]],
+		UserUuid:              row[headerIndexes[USER_UUID]],
+		OrganizationRoleUuids: orgRoleUuids,
+	}
+	codec := &onboarding.OrganizationMembership{Payload: &pl, Metadata: &md}
+	serde := protobuf.NewProtoSerDe()
+	valueBytes, err := serde.Serialize(schemaId, codec)
+	if err != nil {
+		return nil, err
+	}
+	return valueBytes, nil
+}
+
+func RowToSchoolProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	programUuids := strings.Split(row[headerIndexes[PROGRAM_UUIDS]], ";")
+	md := onboarding.Metadata{
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingUuid:      tracking_uuid,
 	}
 	pl := onboarding.SchoolPayload{
-		Uuid:           &row[headerIndexes[UUID]],
-		OrganizationId: row[headerIndexes[ORGANIZATION_UUID]],
-		Name:           row[headerIndexes[SCHOOL_NAME]],
-		ProgramIds:     programIds,
+		Uuid:             &row[headerIndexes[UUID]],
+		OrganizationUuid: row[headerIndexes[ORGANIZATION_UUID]],
+		Name:             row[headerIndexes[NAME]],
+		ProgramUuids:     programUuids,
 	}
 	codec := &onboarding.School{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
@@ -84,16 +114,16 @@ func RowToSchoolProto(row []string, tracking_id string, schemaId int, headerInde
 	return valueBytes, nil
 }
 
-func RowToClassProto(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+func RowToClassProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	md := onboarding.Metadata{
 		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:            os.Getenv("METADATA_REGION"),
-		TrackingId:        tracking_id,
+		TrackingUuid:      tracking_uuid,
 	}
 
 	pl := onboarding.ClassPayload{
 		Uuid:             &row[headerIndexes[UUID]],
-		Name:             row[headerIndexes[CLASS_NAME]],
+		Name:             row[headerIndexes[NAME]],
 		OrganizationUuid: row[headerIndexes[ORGANIZATION_UUID]],
 	}
 	codec := &onboarding.Class{Payload: &pl, Metadata: &md}

@@ -4,6 +4,7 @@
  *     organization.avsc
  *     school.avsc
  *     class.avsc
+ *     organization_membership.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -26,7 +27,7 @@ type Organization struct {
 	Metadata OrganizationMetadata `json:"metadata"`
 }
 
-const OrganizationAvroCRC64Fingerprint = "%\xdc1\x80\xc2/4\xae"
+const OrganizationAvroCRC64Fingerprint = " !\xac\x1ciנi"
 
 func NewOrganization() Organization {
 	r := Organization{}
@@ -78,7 +79,7 @@ func (r Organization) Serialize(w io.Writer) error {
 }
 
 func (r Organization) Schema() string {
-	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"owner_user_id\",\"type\":\"string\"}],\"name\":\"OrganizationPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"OrganizationMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.Organization\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"owner_user_uuid\",\"type\":\"string\"}],\"name\":\"OrganizationPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"OrganizationMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.Organization\",\"type\":\"record\"}"
 }
 
 func (r Organization) SchemaName() string {

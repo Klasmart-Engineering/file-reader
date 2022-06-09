@@ -3,30 +3,34 @@ package integration_test
 import (
 	"context"
 	"strings"
-	"testing"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
 	"github.com/KL-Engineering/file-reader/api/proto/proto_gencode/onboarding"
 	"github.com/KL-Engineering/file-reader/internal/core"
 	zapLogger "github.com/KL-Engineering/file-reader/internal/log"
+	util "github.com/KL-Engineering/file-reader/test/integration"
+
 	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf"
 	"github.com/KL-Engineering/file-reader/test/env"
-	util "github.com/KL-Engineering/file-reader/test/integration"
+
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
-func TestProtoConsumeSchoolCsv(t *testing.T) {
+func TestProtoConsumeOrgMemCsv(t *testing.T) {
+	t.Skip()
 	// set up env variables
-	schoolProtoTopic := "schoolProtoTopic" + uuid.NewString()
+	orgMemProtoTopic := "orgMemProtoTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"SCHOOL_PROTO_TOPIC":               schoolProtoTopic,
-		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
-		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
-		"SCHEMA_TYPE":                      "PROTO",
+		"ORGANIZATION_MEMBERSHIP_PROTO_TOPIC": orgMemProtoTopic,
+		"S3_FILE_CREATED_UPDATED_GROUP_ID":    "s3FileCreatedGroupId" + uuid.NewString(),
+		"S3_FILE_CREATED_UPDATED_TOPIC":       s3FileCreationTopic,
+		"SCHEMA_TYPE":                         "PROTO",
 	})
 
 	defer t.Cleanup(closer)
@@ -39,20 +43,19 @@ func TestProtoConsumeSchoolCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "school"
-	operationType := "school"
-	s3key := "school" + uuid.NewString() + ".csv"
+	bucket := "organization.membership"
+	operationType := "organization_membership"
+	s3key := "organization.membership" + uuid.NewString() + ".csv"
 
 	// Make test csv file
-	numSchools := 5
-	schoolGeneratorMap := map[string]func() string{
-		"uuid":              util.UuidFieldGenerator(),
-		"organization_uuid": util.UuidFieldGenerator(),
-		"name":              util.NameFieldGenerator("school", numSchools),
-		"program_uuids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
-		"fake_uuids":        util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 1, 5),
+	numOrgMems := 5
+	orgMemGeneratorMap := map[string]func() string{
+		"organization_uuid":       util.UuidFieldGenerator(),
+		"user_uuid":               util.UuidFieldGenerator(),
+		"organization_role_uuids": util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, numOrgMems),
 	}
-	file, schools := util.MakeCsv(numSchools, schoolGeneratorMap)
+
+	file, orgMems := util.MakeCsv(numOrgMems, orgMemGeneratorMap)
 
 	// Upload csv to S3
 	err := util.UploadFileToS3(bucket, s3key, awsRegion, file)
@@ -79,35 +82,33 @@ func TestProtoConsumeSchoolCsv(t *testing.T) {
 	)
 	assert.Nil(t, err, "error producing file create message to topic")
 
+	// Consume from output topic and make assertions
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{"localhost:9092"},
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       schoolProtoTopic,
+		Topic:       orgMemProtoTopic,
 		StartOffset: kafka.FirstOffset,
 	})
 
 	serde := protobuf.NewProtoSerDe()
-	schoolOutput := &onboarding.School{}
+	orgMemOutput := &onboarding.OrganizationMembership{}
 
-	for i := 0; i < numSchools; i++ {
+	for i := 0; i < numOrgMems; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
 
-		_, err = serde.Deserialize(msg.Value, schoolOutput)
+		_, err = serde.Deserialize(msg.Value, orgMemOutput)
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingUuid, schoolOutput.Metadata.TrackingUuid)
+		assert.Equal(t, trackingUuid, orgMemOutput.Metadata.TrackingUuid)
 
-		schoolInput := schools[i]
-		assert.Equal(t, schoolInput["uuid"], util.DerefString(schoolOutput.Payload.Uuid))
-		assert.Equal(t, schoolInput["name"], schoolOutput.Payload.Name)
-		assert.Equal(t, schoolInput["organization_uuid"], schoolOutput.Payload.OrganizationUuid)
-		program_uuids := strings.Split(schoolInput["program_uuids"], ";")
-		output_program_uuids := []string{}
-		output_program_uuids = append(output_program_uuids, program_uuids...)
+		orgMemInput := orgMems[i]
+		assert.Equal(t, orgMemInput["organization_uuid"], orgMemOutput.Payload.OrganizationUuid)
+		assert.Equal(t, orgMemInput["user_uuid"], orgMemOutput.Payload.UserUuid)
 
-		assert.Equal(t, program_uuids, output_program_uuids)
+		orgRoleUuids := strings.Split(orgMemInput["organization_role_uuids"], ";")
+		assert.Equal(t, orgRoleUuids, orgMemOutput.Payload.OrganizationRoleUuids)
 	}
 	ctx.Done()
 }

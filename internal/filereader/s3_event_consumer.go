@@ -1,16 +1,24 @@
-package core
+package filereader
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
+	"encoding/csv"
+	avro "file_reader/avro_gencode"
+	"file_reader/src"
+	"file_reader/src/instrument"
+	zaplogger "file_reader/src/log"
+	"io/ioutil"
+	"log"
 	"os"
 	"strings"
-
-	"github.com/KL-Engineering/file-reader/internal/instrument"
-	zaplogger "github.com/KL-Engineering/file-reader/internal/log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/riferrei/srclient"
 	"github.com/segmentio/kafka-go"
 )
@@ -27,7 +35,7 @@ func (ops Operations) GetOperation(opKey string) (Operation, bool) {
 type ConsumeToIngestConfig struct {
 	OutputBrokerAddrs []string
 	AwsSession        *session.Session
-	SchemaRegistry    *SchemaRegistry
+	SchemaRegistry    *src.SchemaRegistry
 	Operations        Operations
 	Logger            *zaplogger.ZapLogger
 }
@@ -48,53 +56,77 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 			logger.Debug(ctx, " received message: ", string(msg.Value))
 
 			// Deserialize file create message
-			s3FileCreated, err := deserializeS3Event(config.SchemaRegistry, msg.Value)
+			schemaIdBytes := msg.Value[1:5]
+			schemaId := int(binary.BigEndian.Uint32(schemaIdBytes))
+			schema, err := config.SchemaRegistry.GetSchema(schemaId)
+			if err != nil {
+				logger.Error(ctx, "could not retrieve schema with id ", schemaId, err.Error())
+				continue
+			}
+			r := bytes.NewReader(msg.Value[5:])
+			s3FileCreated, err := avro.DeserializeS3FileCreatedFromSchema(r, schema)
 			if err != nil {
 				logger.Error(ctx, "could not deserialize message ", err.Error())
 				continue
 			}
 
-			// Download S3 file
-			fileRows := make(chan []string)
-			err = DownloadFile(ctx, config.Logger, config.AwsSession, s3FileCreated, fileRows)
+			// Create and open file on /tmp/
+			f, err := ioutil.TempFile("", "file-reader-"+s3FileCreated.Payload.Key)
 			if err != nil {
-				logger.Error(ctx, "error downloading s3 File ", err.Error())
+				log.Fatal("Failed to make tmp file", err)
+			}
+			defer os.Remove(f.Name())
+
+			// Download from S3 to file
+			downloader := s3manager.NewDownloader(config.AwsSession)
+			numBytes, err := downloader.Download(f,
+				&s3.GetObjectInput{
+					Bucket: aws.String(s3FileCreated.Payload.Bucket_name),
+					Key:    aws.String(s3FileCreated.Payload.Key),
+				})
+			if err != nil {
+				logger.Error(ctx, err)
 				continue
+			}
+			logger.Infof(ctx, "Downloaded %s %d bytes", s3FileCreated.Payload.Key, numBytes)
+
+			// Close and reopen the same file for ingest (until thought of alternative)
+			f.Close()
+			f, _ = os.Open(f.Name())
+			defer f.Close()
+			// Compose the ingestFile() with different reader depending on file type
+			var reader Reader
+			switch s3FileCreated.Payload.Content_type {
+			default:
+				reader = csv.NewReader(f)
 			}
 
 			// Map to operation based on operation type
 			operation, exists := config.Operations.GetOperation(s3FileCreated.Payload.Operation_type)
-
 			if !exists {
 				logger.Error(ctx, "invalid operation_type on file create message ")
 				continue
 			}
-			// Parse file headers
-			headers := <-fileRows
-			headerIndexes, err := GetHeaderIndexes(operation.Headers, headers)
-			if err != nil {
-				logger.Error(ctx, "Error parsing file headers. ", err.Error())
-				continue
-			}
-
 			ingestFileConfig := IngestFileConfig{
+				Reader: reader,
 				KafkaWriter: kafka.Writer{
 					Addr:                   kafka.TCP(config.OutputBrokerAddrs...),
 					Topic:                  operation.Topic,
 					Logger:                 logger,
 					AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 				},
-				TrackingUuid: s3FileCreated.Metadata.Tracking_uuid,
-				Logger:       logger,
+				TrackingId: s3FileCreated.Metadata.tracking_uuid,
+				Logger:     logger,
 			}
 
-			operation.IngestFile(ctx, fileRows, headerIndexes, ingestFileConfig)
+			operation.IngestFile(ctx, ingestFileConfig)
+			f.Close()
 		}
 	}
 }
 
 func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
-	schemaRegistryClient := &SchemaRegistry{
+	schemaRegistryClient := &src.SchemaRegistry{
 		C:           srclient.CreateSchemaRegistryClient(os.Getenv("SCHEMA_CLIENT_ENDPOINT")),
 		IdSchemaMap: make(map[int]string),
 	}
@@ -110,6 +142,7 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 
 	brokerAddrs := strings.Split(os.Getenv("BROKERS"), ",")
 	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: os.Getenv("AWS_PROFILE"),
 		Config: aws.Config{
 			Credentials: credentials.NewStaticCredentials(
 				os.Getenv("AWS_ACCESS_KEY_ID"),
@@ -135,7 +168,7 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
 		GroupID:     os.Getenv("S3_FILE_CREATED_UPDATED_GROUP_ID"),
-		StartOffset: kafka.FirstOffset,
+		StartOffset: kafka.LastOffset,
 		Topic:       os.Getenv("S3_FILE_CREATED_UPDATED_TOPIC"),
 	})
 

@@ -11,7 +11,18 @@ message Organization {
 message Organization_payload {
     string uuid = 1;
     string name = 2;
-    string owner_user_id = 3;
+    string owner_user_uuid = 3;
+}
+
+message Organization_membership {
+    Organization_membership_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Organization_membership_payload {
+    string organization_uuid = 1;
+    string user_uuid = 2;
+    repeated string organization_role_uuids = 3;
 }
 
 message Subject {
@@ -71,7 +82,7 @@ message Role_payload {
     optional string uuid = 1;
     string organization_uuid = 2;
     string name = 3;
-    repeated string permission_ids = 4;
+    repeated string permission_uuids = 4;
 }
 
 message School {
@@ -81,9 +92,9 @@ message School {
 
 message School_payload {
     optional string uuid = 1;
-    string organization_id = 2;
+    string organization_uuid = 2;
     string name = 3;
-    repeated string program_ids = 4;
+    repeated string program_uuids = 4;
 }
 
 message User {
@@ -121,5 +132,5 @@ enum Gender {
 message Metadata {
     string origin_application = 1;
     string region = 2;
-    string tracking_id = 3;
+    string tracking_uuid = 3;
 }
