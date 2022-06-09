@@ -75,6 +75,7 @@ func getOrgMemCsvToProtos(filePath string) ([]*onboarding.OrganizationMembership
 }
 
 func TestOrgMemFileProcessingServer(t *testing.T) {
+	t.Skip()
 	var testCases = []struct {
 		name        string
 		req         []*filepb.InputFileRequest

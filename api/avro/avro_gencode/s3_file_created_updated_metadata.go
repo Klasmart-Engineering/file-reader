@@ -29,11 +29,7 @@ type S3FileCreatedUpdatedMetadata struct {
 	Tracking_uuid string `json:"tracking_uuid"`
 }
 
-<<<<<<< HEAD:api/avro/avro_gencode/s3_file_created_metadata.go
-const S3FileCreatedMetadataAvroCRC64Fingerprint = "\xab\xe3\x98\xc9X\x9a\x9b\xc4"
-=======
-const S3FileCreatedUpdatedMetadataAvroCRC64Fingerprint = "\xfc\x8e\x97\xc97\"hS"
->>>>>>> main:api/avro/avro_gencode/s3_file_created_updated_metadata.go
+const S3FileCreatedUpdatedMetadataAvroCRC64Fingerprint = "\x03\x88\xb9\xbaԮ\xad9"
 
 func NewS3FileCreatedUpdatedMetadata() S3FileCreatedUpdatedMetadata {
 	r := S3FileCreatedUpdatedMetadata{}
@@ -84,13 +80,8 @@ func (r S3FileCreatedUpdatedMetadata) Serialize(w io.Writer) error {
 	return writeS3FileCreatedUpdatedMetadata(r, w)
 }
 
-<<<<<<< HEAD:api/avro/avro_gencode/s3_file_created_metadata.go
-func (r S3FileCreatedMetadata) Schema() string {
-	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.S3FileCreatedMetadata\",\"type\":\"record\"}"
-=======
 func (r S3FileCreatedUpdatedMetadata) Schema() string {
-	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.S3FileCreatedUpdatedMetadata\",\"type\":\"record\"}"
->>>>>>> main:api/avro/avro_gencode/s3_file_created_updated_metadata.go
+	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"com.kidsloop.S3FileCreatedUpdatedMetadata\",\"type\":\"record\"}"
 }
 
 func (r S3FileCreatedUpdatedMetadata) SchemaName() string {

@@ -51,8 +51,8 @@ func testAvrosConsumeClassCsv(t *testing.T, numClasses int, classGeneratorMap ma
 
 	// Put file create message on topic
 	trackingUuid := uuid.NewString()
-	s3FileCreated := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	s3FileCreated := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -60,7 +60,7 @@ func testAvrosConsumeClassCsv(t *testing.T, numClasses int, classGeneratorMap ma
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_uuid: trackingUuid},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -158,8 +158,8 @@ func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 	err := util.UploadFileToS3(bucket, s3key1, awsRegion, emptyFile)
 	assert.Nil(t, err, "error uploading file to s3")
 	trackingUuid1 := uuid.NewString()
-	s3FileCreated1 := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	s3FileCreated1 := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key1,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -167,7 +167,7 @@ func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_uuid: trackingUuid1},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid1},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -190,8 +190,8 @@ func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 	err = util.UploadFileToS3(bucket, s3key2, awsRegion, file)
 	assert.Nil(t, err, "error uploading file to s3")
 	trackingUuid2 := uuid.NewString()
-	s3FileCreated2 := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	s3FileCreated2 := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key2,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -199,7 +199,7 @@ func TestAvroConsumeInvalidAndValidClassCsv(t *testing.T) {
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_uuid: trackingUuid2},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid2},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,

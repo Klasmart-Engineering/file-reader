@@ -75,7 +75,7 @@ func getSchoolCsvToProtos(filePath string) ([]*onboarding.School, error) {
 }
 
 func TestSchoolFileProcessingServer(t *testing.T) {
-	t.Skip()
+	//t.Skip()
 	var testCases = []struct {
 		name        string
 		req         []*filepb.InputFileRequest

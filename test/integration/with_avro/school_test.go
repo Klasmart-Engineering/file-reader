@@ -58,8 +58,8 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 
 	// Put file create message on topic
 	trackingUuid := uuid.NewString()
-	s3FileCreated := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	s3FileCreated := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -67,7 +67,7 @@ func TestAvroConsumeSchoolCsv(t *testing.T) {
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_uuid: trackingUuid},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
