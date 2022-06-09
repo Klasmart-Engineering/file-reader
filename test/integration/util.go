@@ -96,11 +96,11 @@ func UploadFileToS3(bucket string, s3key string, awsRegion string, file io.Reade
 	return nil
 }
 
-func ProduceFileCreateMessage(ctx context.Context, s3FileCreationTopic string, brokerAddrs []string, s3FileCreated avro.S3FileCreated) error {
+func ProduceFileCreateMessage(ctx context.Context, s3FileCreationTopic string, brokerAddrs []string, s3FileCreated avro.S3FileCreatedUpdated) error {
 	schemaRegistryClient := &core.SchemaRegistry{
 		C: srclient.CreateSchemaRegistryClient("http://localhost:8081"),
 	}
-	schemaBody := avro.S3FileCreated.Schema(avro.NewS3FileCreated())
+	schemaBody := avro.S3FileCreatedUpdated.Schema(avro.NewS3FileCreatedUpdated())
 	s3FileCreationSchemaId := schemaRegistryClient.GetSchemaId(schemaBody, s3FileCreationTopic)
 	schemaIDBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(schemaIDBytes, uint32(s3FileCreationSchemaId))
