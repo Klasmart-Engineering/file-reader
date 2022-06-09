@@ -45,7 +45,7 @@ func InitProtoOperations() Operations {
 				Key:          "",
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgMemTopic),
 				SerializeRow: RowToOrgMemAvro,
-				Headers:      ClassHeaders,
+				Headers:      OrgMemHeaders,
 			},
 		},
 	}

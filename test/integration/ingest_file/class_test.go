@@ -158,15 +158,15 @@ func TestClassFileProcessingServer(t *testing.T) {
 					msg, err := r.ReadMessage(ctx)
 					t.Log("read message", msg, err)
 					if err != nil {
-						t.Logf("Error deserializing message: %v\n", err)
-						break
+						t.Logf("Error reading message: %v\n", err)
+						t.FailNow()
 					}
 
 					_, err = serde.Deserialize(msg.Value, class)
 
 					if err != nil {
 						t.Logf("Error deserializing message: %v\n", err)
-						break
+						t.FailNow()
 					}
 
 					if err == nil {

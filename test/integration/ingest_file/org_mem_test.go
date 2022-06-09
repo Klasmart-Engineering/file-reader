@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"embed"
 	"encoding/csv"
-	"fmt"
 	"strings"
 	"time"
 
@@ -86,7 +85,7 @@ func TestOrgMemFileProcessingServer(t *testing.T) {
 			req: []*filepb.InputFileRequest{
 
 				{
-					Type:      filepb.Type_ORGANIZATION,
+					Type:      filepb.Type_ORGANIZATION_MEMBERSHIP,
 					InputFile: &filepb.InputFile{FileId: "file_id1", Path: "data/good/org_mem.csv", InputFileType: filepb.InputFileType_CSV},
 				},
 			},
@@ -155,21 +154,20 @@ func TestOrgMemFileProcessingServer(t *testing.T) {
 
 				// Testing for kafka messages
 				expectedValues, _ := getOrgMemCsvToProtos("data/good/org_mem.csv")
-				fmt.Println("expectedValues = ", expectedValues)
 				for _, expected := range expectedValues {
 					t.Log("expecting to read ", expected, " on topic ", orgMemProtoTopic)
 					msg, err := r.ReadMessage(ctx)
 					t.Log("read message", msg, err)
 					if err != nil {
-						t.Logf("Error deserializing message: %v\n", err)
-						break
+						t.Logf("Error reading message: %v\n", err)
+						t.FailNow()
 					}
 
 					_, err = serde.Deserialize(msg.Value, orgMem)
 
 					if err != nil {
 						t.Logf("Error deserializing message: %v\n", err)
-						break
+						t.FailNow()
 					}
 
 					if err == nil {

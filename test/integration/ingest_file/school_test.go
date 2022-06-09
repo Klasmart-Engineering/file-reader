@@ -161,7 +161,7 @@ func TestSchoolFileProcessingServer(t *testing.T) {
 					msg, err := r.ReadMessage(ctx)
 					t.Log("read message", msg, err)
 					if err != nil {
-						t.Logf("Error deserializing message: %v\n", err)
+						t.Logf("Error reading message: %v\n", err)
 						break
 					}
 

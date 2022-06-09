@@ -64,11 +64,11 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 
 			// Map to operation based on operation type
 			operation, exists := config.Operations.GetOperation(s3FileCreated.Payload.Operation_type)
+
 			if !exists {
 				logger.Error(ctx, "invalid operation_type on file create message ")
 				continue
 			}
-
 			// Parse file headers
 			headers := <-fileRows
 			headerIndexes, err := GetHeaderIndexes(operation.Headers, headers)
