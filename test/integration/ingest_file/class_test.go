@@ -136,15 +136,16 @@ func TestClassFileProcessingServer(t *testing.T) {
 	serde := protobuf.NewProtoSerDe()
 	class := &onboarding.Class{}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
 			g := gomega.NewWithT(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			// grpc call
-			res := csvFh.ProcessRequests(ctx, client, testCase.req)
-			switch testCase.name {
+			res := csvFh.ProcessRequests(ctx, client, tc.req)
+			switch tc.name {
 
 			case "req ok":
 				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")

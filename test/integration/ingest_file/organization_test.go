@@ -136,15 +136,16 @@ func TestOrgFileProcessingServer(t *testing.T) {
 	serde := protobuf.NewProtoSerDe()
 	org := &onboarding.Organization{}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
 			g := gomega.NewWithT(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			// grpc call
-			res := csvFh.ProcessRequests(ctx, client, testCase.req)
-			switch testCase.name {
+			res := csvFh.ProcessRequests(ctx, client, tc.req)
+			switch tc.name {
 
 			case "req ok":
 				g.Expect(res).NotTo(gomega.BeNil(), "Result should not be nil")
@@ -157,7 +158,7 @@ func TestOrgFileProcessingServer(t *testing.T) {
 					msg, err := r.ReadMessage(ctx)
 					t.Log("read message", msg, err)
 					if err != nil {
-						t.Logf("Error reading message: %v\n", err)
+						t.Logf("Error deserializing message: %v\n", err)
 						break
 					}
 
@@ -169,8 +170,8 @@ func TestOrgFileProcessingServer(t *testing.T) {
 					}
 
 					if err == nil {
-						validateTrackingUuid := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingUuid}
-						err := validation.UUIDValidate(validateTrackingUuid)
+						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingUuid}
+						err := validation.UUIDValidate(validateTrackingId)
 						if err != nil {
 							t.Fatalf("%s", err)
 						}
