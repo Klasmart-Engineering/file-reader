@@ -19,7 +19,6 @@ import (
 )
 
 func TestAvroConsumeOrgMemCsv(t *testing.T) {
-	t.Skip()
 	// set up env variables
 	orgMemAvroTopic := "orgMemAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()

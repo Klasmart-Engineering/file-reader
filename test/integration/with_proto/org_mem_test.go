@@ -22,7 +22,6 @@ import (
 )
 
 func TestProtoConsumeOrgMemCsv(t *testing.T) {
-	t.Skip()
 	// set up env variables
 	orgMemProtoTopic := "orgMemProtoTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
