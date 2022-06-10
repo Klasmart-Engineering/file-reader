@@ -3,6 +3,7 @@
  * SOURCES:
  *     organization.avsc
  *     school.avsc
+ *     user.avsc
  *     class.avsc
  *     organization_membership.avsc
  *     s3filecreated.avsc
@@ -36,6 +37,7 @@ const SchoolPayloadAvroCRC64Fingerprint = "\xad\x87Nq\xd6Ph\xb0"
 func NewSchoolPayload() SchoolPayload {
 	r := SchoolPayload{}
 	r.Uuid = nil
+	r.Program_uuids = nil
 	return r
 }
 
@@ -88,7 +90,7 @@ func (r SchoolPayload) Serialize(w io.Writer) error {
 }
 
 func (r SchoolPayload) Schema() string {
-	return "{\"fields\":[{\"default\":null,\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"program_uuids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"default\":null,\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":[\"null\",\"string\"]},{\"logicalType\":\"uuid\",\"name\":\"organization_uuid\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"default\":null,\"name\":\"program_uuids\",\"type\":[\"null\",{\"items\":\"string\",\"type\":\"array\"}]}],\"name\":\"com.kidsloop.onboarding.SchoolPayload\",\"type\":\"record\"}"
 }
 
 func (r SchoolPayload) SchemaName() string {
@@ -132,6 +134,9 @@ func (r *SchoolPayload) SetDefault(i int) {
 	switch i {
 	case 0:
 		r.Uuid = nil
+		return
+	case 3:
+		r.Program_uuids = nil
 		return
 	}
 	panic("Unknown field index")
@@ -243,7 +248,9 @@ func (r *SchoolPayload) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for program_uuids")
+		r.Program_uuids = NewUnionNullArrayString()
+
+		r.Program_uuids = nil
 	}
 	return nil
 }

@@ -22,7 +22,7 @@ import (
 
 var _ = fmt.Printf
 
-type OrganizationMembershipMetadata struct {
+type UserMetadata struct {
 	Origin_application string `json:"origin_application"`
 
 	Region string `json:"region"`
@@ -30,15 +30,15 @@ type OrganizationMembershipMetadata struct {
 	Tracking_uuid string `json:"tracking_uuid"`
 }
 
-const OrganizationMembershipMetadataAvroCRC64Fingerprint = "a\x1b\xb5\xa3n\x92\x1b\x0f"
+const UserMetadataAvroCRC64Fingerprint = "*mg\xce\xc9\xffX\xdb"
 
-func NewOrganizationMembershipMetadata() OrganizationMembershipMetadata {
-	r := OrganizationMembershipMetadata{}
+func NewUserMetadata() UserMetadata {
+	r := UserMetadata{}
 	return r
 }
 
-func DeserializeOrganizationMembershipMetadata(r io.Reader) (OrganizationMembershipMetadata, error) {
-	t := NewOrganizationMembershipMetadata()
+func DeserializeUserMetadata(r io.Reader) (UserMetadata, error) {
+	t := NewUserMetadata()
 	deser, err := compiler.CompileSchemaBytes([]byte(t.Schema()), []byte(t.Schema()))
 	if err != nil {
 		return t, err
@@ -48,8 +48,8 @@ func DeserializeOrganizationMembershipMetadata(r io.Reader) (OrganizationMembers
 	return t, err
 }
 
-func DeserializeOrganizationMembershipMetadataFromSchema(r io.Reader, schema string) (OrganizationMembershipMetadata, error) {
-	t := NewOrganizationMembershipMetadata()
+func DeserializeUserMetadataFromSchema(r io.Reader, schema string) (UserMetadata, error) {
+	t := NewUserMetadata()
 
 	deser, err := compiler.CompileSchemaBytes([]byte(schema), []byte(t.Schema()))
 	if err != nil {
@@ -60,7 +60,7 @@ func DeserializeOrganizationMembershipMetadataFromSchema(r io.Reader, schema str
 	return t, err
 }
 
-func writeOrganizationMembershipMetadata(r OrganizationMembershipMetadata, w io.Writer) error {
+func writeUserMetadata(r UserMetadata, w io.Writer) error {
 	var err error
 	err = vm.WriteString(r.Origin_application, w)
 	if err != nil {
@@ -77,28 +77,28 @@ func writeOrganizationMembershipMetadata(r OrganizationMembershipMetadata, w io.
 	return err
 }
 
-func (r OrganizationMembershipMetadata) Serialize(w io.Writer) error {
-	return writeOrganizationMembershipMetadata(r, w)
+func (r UserMetadata) Serialize(w io.Writer) error {
+	return writeUserMetadata(r, w)
 }
 
-func (r OrganizationMembershipMetadata) Schema() string {
-	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.OrganizationMembershipMetadata\",\"type\":\"record\"}"
+func (r UserMetadata) Schema() string {
+	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserMetadata\",\"type\":\"record\"}"
 }
 
-func (r OrganizationMembershipMetadata) SchemaName() string {
-	return "com.kidsloop.onboarding.OrganizationMembershipMetadata"
+func (r UserMetadata) SchemaName() string {
+	return "com.kidsloop.onboarding.user.UserMetadata"
 }
 
-func (_ OrganizationMembershipMetadata) SetBoolean(v bool)    { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) SetInt(v int32)       { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) SetLong(v int64)      { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) SetFloat(v float32)   { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) SetDouble(v float64)  { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) SetBytes(v []byte)    { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) SetString(v string)   { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) SetUnionElem(v int64) { panic("Unsupported operation") }
+func (_ UserMetadata) SetBoolean(v bool)    { panic("Unsupported operation") }
+func (_ UserMetadata) SetInt(v int32)       { panic("Unsupported operation") }
+func (_ UserMetadata) SetLong(v int64)      { panic("Unsupported operation") }
+func (_ UserMetadata) SetFloat(v float32)   { panic("Unsupported operation") }
+func (_ UserMetadata) SetDouble(v float64)  { panic("Unsupported operation") }
+func (_ UserMetadata) SetBytes(v []byte)    { panic("Unsupported operation") }
+func (_ UserMetadata) SetString(v string)   { panic("Unsupported operation") }
+func (_ UserMetadata) SetUnionElem(v int64) { panic("Unsupported operation") }
 
-func (r *OrganizationMembershipMetadata) Get(i int) types.Field {
+func (r *UserMetadata) Get(i int) types.Field {
 	switch i {
 	case 0:
 		w := types.String{Target: &r.Origin_application}
@@ -119,30 +119,28 @@ func (r *OrganizationMembershipMetadata) Get(i int) types.Field {
 	panic("Unknown field index")
 }
 
-func (r *OrganizationMembershipMetadata) SetDefault(i int) {
+func (r *UserMetadata) SetDefault(i int) {
 	switch i {
 	}
 	panic("Unknown field index")
 }
 
-func (r *OrganizationMembershipMetadata) NullField(i int) {
+func (r *UserMetadata) NullField(i int) {
 	switch i {
 	}
 	panic("Not a nullable field index")
 }
 
-func (_ OrganizationMembershipMetadata) AppendMap(key string) types.Field {
-	panic("Unsupported operation")
-}
-func (_ OrganizationMembershipMetadata) AppendArray() types.Field { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) HintSize(int)             { panic("Unsupported operation") }
-func (_ OrganizationMembershipMetadata) Finalize()                {}
+func (_ UserMetadata) AppendMap(key string) types.Field { panic("Unsupported operation") }
+func (_ UserMetadata) AppendArray() types.Field         { panic("Unsupported operation") }
+func (_ UserMetadata) HintSize(int)                     { panic("Unsupported operation") }
+func (_ UserMetadata) Finalize()                        {}
 
-func (_ OrganizationMembershipMetadata) AvroCRC64Fingerprint() []byte {
-	return []byte(OrganizationMembershipMetadataAvroCRC64Fingerprint)
+func (_ UserMetadata) AvroCRC64Fingerprint() []byte {
+	return []byte(UserMetadataAvroCRC64Fingerprint)
 }
 
-func (r OrganizationMembershipMetadata) MarshalJSON() ([]byte, error) {
+func (r UserMetadata) MarshalJSON() ([]byte, error) {
 	var err error
 	output := make(map[string]json.RawMessage)
 	output["origin_application"], err = json.Marshal(r.Origin_application)
@@ -160,7 +158,7 @@ func (r OrganizationMembershipMetadata) MarshalJSON() ([]byte, error) {
 	return json.Marshal(output)
 }
 
-func (r *OrganizationMembershipMetadata) UnmarshalJSON(data []byte) error {
+func (r *UserMetadata) UnmarshalJSON(data []byte) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return err

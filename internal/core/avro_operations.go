@@ -24,19 +24,16 @@ func makeAvroOptionalString(value string) *avrogen.UnionNullString {
 		}
 	}
 	return nil
-
 }
 
 func makeAvroOptionalArrayString(value string) *avrogen.UnionNullArrayString {
 	if value != "" {
-
 		return &avrogen.UnionNullArrayString{
 			ArrayString: strings.Split(value, ";"),
 			UnionType:   avrogen.UnionNullArrayStringTypeEnumArrayString,
 		}
 	}
 	return nil
-
 }
 
 func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
@@ -65,6 +62,12 @@ const (
 	ORGANIZATION_ROLE_UUIDS = "organization_role_uuids"
 	NAME                    = "name"
 	PROGRAM_UUIDS           = "program_uuids"
+	GIVEN_NAME              = "user_given_name"
+	FAMILY_NAME             = "user_family_name"
+	EMAIL                   = "user_email"
+	PHONE_NUMBER            = "user_phone_number"
+	DATE_OF_BIRTH           = "user_date_of_birth"
+	GENDER                  = "user_gender"
 )
 
 var (
@@ -72,6 +75,7 @@ var (
 	SchoolHeaders       = []string{UUID, ORGANIZATION_UUID, NAME, PROGRAM_UUIDS}
 	ClassHeaders        = []string{UUID, ORGANIZATION_UUID, NAME}
 	OrgMemHeaders       = []string{ORGANIZATION_UUID, USER_UUID, ORGANIZATION_ROLE_UUIDS}
+	UserHeaders         = []string{UUID, GIVEN_NAME, FAMILY_NAME, EMAIL, PHONE_NUMBER, DATE_OF_BIRTH, GENDER}
 )
 
 func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
@@ -82,6 +86,11 @@ func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationT
 func GetSchoolSchemaId(schemaRegistryClient *SchemaRegistry, schoolTopic string) int {
 	schemaBody := avrogen.School.Schema(avrogen.NewSchool())
 	return schemaRegistryClient.GetSchemaId(schemaBody, schoolTopic)
+}
+
+func GetUserSchemaId(schemaRegistryClient *SchemaRegistry, userTopic string) int {
+	schemaBody := avrogen.User.Schema(avrogen.NewUser())
+	return schemaRegistryClient.GetSchemaId(schemaBody, userTopic)
 }
 
 func GetClassSchemaId(schemaRegistryClient *SchemaRegistry, classTopic string) int {
@@ -97,6 +106,7 @@ func GetOrgMemSchemaId(schemaRegistryClient *SchemaRegistry, orgMemTopic string)
 func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_AVRO_TOPIC")
+	userTopic := instrument.MustGetEnv("USER_AVRO_TOPIC")
 	classTopic := instrument.MustGetEnv("CLASS_AVRO_TOPIC")
 	orgMemTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_AVRO_TOPIC")
 
@@ -115,6 +125,13 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SchemaID:     GetSchoolSchemaId(schemaRegistryClient, schoolTopic),
 				SerializeRow: RowToSchoolAvro,
 				Headers:      SchoolHeaders,
+			},
+			"USER": {
+				Topic:        userTopic,
+				Key:          "",
+				SchemaID:     GetUserSchemaId(schemaRegistryClient, userTopic),
+				SerializeRow: RowToUserAvro,
+				Headers:      UserHeaders,
 			},
 			"CLASS": {
 				Topic:        classTopic,
@@ -165,6 +182,27 @@ func RowToSchoolAvro(row []string, tracking_uuid string, schemaId int, headerInd
 	}
 
 	codec := avrogen.School{Payload: pl, Metadata: md}
+	return serializeAvroRecord(codec, schemaId), nil
+}
+
+func RowToUserAvro(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	// Takes a slice of columns representing a user and encodes to avro bytes
+	md := avrogen.UserMetadata{
+		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:             os.Getenv("METADATA_REGION"),
+		Tracking_uuid:      tracking_uuid,
+	}
+	pl := avrogen.UserPayload{
+		Uuid:          row[headerIndexes[UUID]],
+		Given_name:    row[headerIndexes[GIVEN_NAME]],
+		Family_name:   row[headerIndexes[FAMILY_NAME]],
+		Gender:        row[headerIndexes[GENDER]],
+		Phone_number:  makeAvroOptionalString(row[headerIndexes[PHONE_NUMBER]]),
+		Email:         makeAvroOptionalString(row[headerIndexes[EMAIL]]),
+		Date_of_birth: makeAvroOptionalString(row[headerIndexes[DATE_OF_BIRTH]]),
+	}
+
+	codec := avrogen.User{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }
 

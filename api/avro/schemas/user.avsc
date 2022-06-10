@@ -13,11 +13,6 @@
 						"logicalType": "uuid"
 					},
 					{
-						"name": "organization_uuid",
-						"type": "string",
-						"logicalType": "uuid"
-					},
-					{
 						"name": "given_name",
 						"type": "string"
 					},
@@ -27,27 +22,22 @@
 					},
 					{
 						"name": "email",
-						"type": "string"
+						"type": ["null", "string"],
+						"default": null
 					},
 					{
 						"name": "phone_number",
-						"type": "string"
+						"type": ["null", "string"],
+						"default": null
 					},
 					{
 						"name": "date_of_birth",
-						"type": "string"
+						"type": ["null", "string"],
+						"default": null
 					},
 					{
 						"name": "gender",
-						"type": {
-							"name": "GenderType",
-							"type": "enum",
-							"symbols": [
-								"MALE",
-								"FEMALE"
-							]
-						}
-
+						"type": "string"
 					}
 				]
 			}

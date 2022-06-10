@@ -9,6 +9,18 @@ import (
 	"github.com/google/uuid"
 )
 
+func RandomStringGenerator(allowedChars []rune, min int, max int) func() string {
+	// Return generator which makes random strings using supplied characters with length between boundaries min and max
+	return func() string {
+		length := rand.Intn(max-min) + min
+		randomString := make([]rune, length)
+		for i := range randomString {
+			randomString[i] = allowedChars[rand.Intn(len(allowedChars))]
+		}
+		return string(randomString)
+	}
+}
+
 func NameFieldGenerator(prefix string, n int) func() string {
 	// Return a generator which adds a random number up to n to the supplied prefix
 	rand.Seed(time.Now().UnixNano())
@@ -40,6 +52,35 @@ func RepeatedFieldGenerator(gen func() string, min int, max int) func() string {
 		return strings.Join(fields, ";")
 	}
 }
+
+func HumanNameFieldGenerator(min int, max int) func() string {
+	// Supply min and max bounds for how long names can be, makes random "name" of that length
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	rand.Seed(time.Now().UnixNano())
+	return RandomStringGenerator(letters, min, max)
+}
+
+func DateGenerator(minYear int, maxYear int, layout string) func() string {
+	// Makes a random date between the specified years.
+	// The layout string is an example date in the desired format (e.g 2006-01-02 or January 2, 2006)
+	rand.Seed(time.Now().UnixNano())
+	min := time.Date(minYear, 1, 0, 0, 0, 0, 0, time.UTC).Unix()
+	max := time.Date(maxYear, 1, 0, 0, 0, 0, 0, time.UTC).Unix()
+	delta := max - min
+	return func() string {
+		sec := rand.Int63n(delta) + min
+		return time.Unix(sec, 0).Format(layout)
+	}
+}
+
+func GenderGenerator() func() string {
+	rand.Seed(time.Now().UnixNano())
+	genders := []string{"male", "female"} // Or M, f, other? Needs review.
+	return func() string {
+		return genders[rand.Intn(len(genders))]
+	}
+}
+
 func getKeys(fieldGenMap map[string]func() string) []string {
 	keys := []string{}
 	for k, _ := range fieldGenMap {
