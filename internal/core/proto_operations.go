@@ -52,7 +52,7 @@ func InitProtoOperations() Operations {
 				Topic:        orgMemTopic,
 				Key:          "",
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgMemTopic),
-				SerializeRow: RowToOrgMemAvro,
+				SerializeRow: RowToOrgMemProto,
 				Headers:      OrgMemHeaders,
 			},
 		},
@@ -79,7 +79,7 @@ func RowToOrganizationProto(row []string, tracking_uuid string, schemaId int, he
 	return valueBytes, nil
 }
 
-func RowToOrganizationMembershipProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+func RowToOrgMemProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	orgRoleUuids := strings.Split(row[headerIndexes[ORGANIZATION_ROLE_UUIDS]], ";")
 	md := onboarding.Metadata{
 		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
