@@ -227,6 +227,19 @@ func TestAvroConsumeUserCsvScenarios(t *testing.T) {
 				"user_gender":        util.GenderGenerator(),
 			},
 		},
+		{
+			description: "should ingest users when all optional fields are null",
+			numUsers:    5,
+			userGeneratorMap: map[string]func() string{
+				"uuid":               util.UuidFieldGenerator(),
+				"user_given_name":    util.HumanNameFieldGenerator(2, 10),
+				"user_family_name":   util.HumanNameFieldGenerator(2, 10),
+				"user_email":         util.EmptyFieldGenerator(),
+				"user_phone_number":  util.EmptyFieldGenerator(),
+				"user_date_of_birth": util.EmptyFieldGenerator(),
+				"user_gender":        util.GenderGenerator(),
+			},
+		},
 	} {
 		t.Run(scenario.description, func(t *testing.T) {
 			testAvroConsumeUserCsv(t, scenario.numUsers, scenario.userGeneratorMap)
