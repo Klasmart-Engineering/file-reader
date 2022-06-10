@@ -5,6 +5,7 @@
  *     school.avsc
  *     user.avsc
  *     class.avsc
+ *     organization_membership.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -26,10 +27,10 @@ type UserMetadata struct {
 
 	Region string `json:"region"`
 
-	Tracking_id string `json:"tracking_id"`
+	Tracking_uuid string `json:"tracking_uuid"`
 }
 
-const UserMetadataAvroCRC64Fingerprint = "ǓWsi\xb3\xb8\x1e"
+const UserMetadataAvroCRC64Fingerprint = "*mg\xce\xc9\xffX\xdb"
 
 func NewUserMetadata() UserMetadata {
 	r := UserMetadata{}
@@ -69,7 +70,7 @@ func writeUserMetadata(r UserMetadata, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = vm.WriteString(r.Tracking_id, w)
+	err = vm.WriteString(r.Tracking_uuid, w)
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func (r UserMetadata) Serialize(w io.Writer) error {
 }
 
 func (r UserMetadata) Schema() string {
-	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserMetadata\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.user.UserMetadata\",\"type\":\"record\"}"
 }
 
 func (r UserMetadata) SchemaName() string {
@@ -110,7 +111,7 @@ func (r *UserMetadata) Get(i int) types.Field {
 		return w
 
 	case 2:
-		w := types.String{Target: &r.Tracking_id}
+		w := types.String{Target: &r.Tracking_uuid}
 
 		return w
 
@@ -150,7 +151,7 @@ func (r UserMetadata) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	output["tracking_id"], err = json.Marshal(r.Tracking_id)
+	output["tracking_uuid"], err = json.Marshal(r.Tracking_uuid)
 	if err != nil {
 		return nil, err
 	}
@@ -193,18 +194,18 @@ func (r *UserMetadata) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("no value specified for region")
 	}
 	val = func() json.RawMessage {
-		if v, ok := fields["tracking_id"]; ok {
+		if v, ok := fields["tracking_uuid"]; ok {
 			return v
 		}
 		return nil
 	}()
 
 	if val != nil {
-		if err := json.Unmarshal([]byte(val), &r.Tracking_id); err != nil {
+		if err := json.Unmarshal([]byte(val), &r.Tracking_uuid); err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for tracking_id")
+		return fmt.Errorf("no value specified for tracking_uuid")
 	}
 	return nil
 }

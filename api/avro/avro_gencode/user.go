@@ -5,6 +5,7 @@
  *     school.avsc
  *     user.avsc
  *     class.avsc
+ *     organization_membership.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -27,7 +28,7 @@ type User struct {
 	Metadata UserMetadata `json:"metadata"`
 }
 
-const UserAvroCRC64Fingerprint = "7\xbeɖ\x86\xebg_"
+const UserAvroCRC64Fingerprint = "\xd6\xfe\x19\x81\xcf\x00F\xe9"
 
 func NewUser() User {
 	r := User{}
@@ -79,7 +80,7 @@ func (r User) Serialize(w io.Writer) error {
 }
 
 func (r User) Schema() string {
-	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"default\":null,\"name\":\"email\",\"type\":[\"null\",\"string\"]},{\"default\":null,\"name\":\"phone_number\",\"type\":[\"null\",\"string\"]},{\"default\":null,\"name\":\"date_of_birth\",\"type\":[\"null\",\"string\"]},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"UserPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"UserMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.user.User\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"payload\",\"type\":{\"fields\":[{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"name\":\"given_name\",\"type\":\"string\"},{\"name\":\"family_name\",\"type\":\"string\"},{\"default\":null,\"name\":\"email\",\"type\":[\"null\",\"string\"]},{\"default\":null,\"name\":\"phone_number\",\"type\":[\"null\",\"string\"]},{\"default\":null,\"name\":\"date_of_birth\",\"type\":[\"null\",\"string\"]},{\"name\":\"gender\",\"type\":\"string\"}],\"name\":\"UserPayload\",\"type\":\"record\"}},{\"name\":\"metadata\",\"type\":{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"UserMetadata\",\"type\":\"record\"}}],\"name\":\"com.kidsloop.onboarding.user.User\",\"type\":\"record\"}"
 }
 
 func (r User) SchemaName() string {

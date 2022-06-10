@@ -5,6 +5,7 @@
  *     school.avsc
  *     user.avsc
  *     class.avsc
+ *     organization_membership.avsc
  *     s3filecreated.avsc
  */
 package avro

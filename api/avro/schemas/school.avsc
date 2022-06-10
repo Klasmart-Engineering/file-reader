@@ -13,14 +13,14 @@
 						"logicalType": "uuid",
 						"default": null
 					}, {
-						"name": "organization_id",
+						"name": "organization_uuid",
 						"type": "string",
 						"logicalType": "uuid"
 					}, {
 						"name": "name",
 						"type": "string"
 					}, {
-						"name": "program_ids",
+						"name": "program_uuids",
 						"type": ["null", {
 							"type": "array",
 							"items": "string"
@@ -44,7 +44,7 @@
 						"type": "string"
 					},
 					{
-						"name": "tracking_id",
+						"name": "tracking_uuid",
 						"type": "string",
 						"logicalType": "uuid"
 					}

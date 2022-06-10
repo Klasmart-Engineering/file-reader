@@ -18,7 +18,7 @@ type Reader interface {
 	Read() ([]string, error)
 }
 
-func DownloadFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *session.Session, s3FileCreated avro.S3FileCreated, fileRows chan []string) error {
+func DownloadFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *session.Session, s3FileCreated avro.S3FileCreatedUpdated, fileRows chan []string) error {
 	// Download file from S3 and pass rows into a channel of []string
 
 	// Create and open file on /tmp/
@@ -27,7 +27,6 @@ func DownloadFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *
 		log.Fatal("Failed to make tmp file", err)
 	}
 	defer os.Remove(f.Name())
-
 	// Download from S3 to file
 	downloader := s3manager.NewDownloader(awsSession)
 	numBytes, err := downloader.Download(f,

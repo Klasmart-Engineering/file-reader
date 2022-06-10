@@ -55,8 +55,8 @@ func testProtoConsumeUserCsv(t *testing.T, numUsers int, userGeneratorMap map[st
 
 	// Put file create message on topic
 	trackingId := uuid.NewString()
-	s3FileCreated := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	s3FileCreated := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -64,7 +64,7 @@ func testProtoConsumeUserCsv(t *testing.T, numUsers int, userGeneratorMap map[st
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingId},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -93,7 +93,7 @@ func testProtoConsumeUserCsv(t *testing.T, numUsers int, userGeneratorMap map[st
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId, userOutput.Metadata.TrackingId)
+		assert.Equal(t, trackingId, userOutput.Metadata.TrackingUuid)
 
 		userInput := users[i]
 		assert.Equal(t, userInput["uuid"], userOutput.Payload.Uuid)

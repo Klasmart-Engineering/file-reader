@@ -51,9 +51,9 @@ func testProtoConsumeClassCsv(t *testing.T, numClasses int, classGeneratorMap ma
 	assert.Nil(t, err, "error uploading file to s3")
 
 	// Put file create message on topic
-	trackingId := uuid.NewString()
-	s3FileCreated := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	trackingUuid := uuid.NewString()
+	s3FileCreated := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -61,7 +61,7 @@ func testProtoConsumeClassCsv(t *testing.T, numClasses int, classGeneratorMap ma
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -89,12 +89,12 @@ func testProtoConsumeClassCsv(t *testing.T, numClasses int, classGeneratorMap ma
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId, classOutput.Metadata.TrackingId)
+		assert.Equal(t, trackingUuid, classOutput.Metadata.TrackingUuid)
 
 		classInput := classes[i]
 		assert.Equal(t, classInput["uuid"], util.DerefString(classOutput.Payload.Uuid))
-		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
-		assert.Equal(t, classInput["organization_id"], classOutput.Payload.OrganizationUuid)
+		assert.Equal(t, classInput["name"], classOutput.Payload.Name)
+		assert.Equal(t, classInput["organization_uuid"], classOutput.Payload.OrganizationUuid)
 
 	}
 }
@@ -111,18 +111,18 @@ func TestAvroConsumeClassCsvScenarios(t *testing.T) {
 			name:       "Should ingest classes when all optional fields are supplied",
 			numClasses: 5,
 			classGeneratorMap: map[string]func() string{
-				"uuid":            util.UuidFieldGenerator(),
-				"organization_id": util.UuidFieldGenerator(),
-				"class_name":      util.NameFieldGenerator("class", 5),
+				"uuid":              util.UuidFieldGenerator(),
+				"organization_uuid": util.UuidFieldGenerator(),
+				"name":              util.NameFieldGenerator("class", 5),
 			},
 		},
 		{
 			name:       "Should ingest classes when all optional fields are null",
 			numClasses: 5,
 			classGeneratorMap: map[string]func() string{
-				"uuid":            util.EmptyFieldGenerator(),
-				"organization_id": util.UuidFieldGenerator(),
-				"class_name":      util.NameFieldGenerator("class", 5),
+				"uuid":              util.EmptyFieldGenerator(),
+				"organization_uuid": util.UuidFieldGenerator(),
+				"name":              util.NameFieldGenerator("class", 5),
 			},
 		},
 	}
@@ -161,9 +161,9 @@ func TestProtoConsumeInvalidAndValidClassCsv(t *testing.T) {
 	emptyFile := util.MakeEmptyFile()
 	err := util.UploadFileToS3(bucket, s3key1, awsRegion, emptyFile)
 	assert.Nil(t, err, "error uploading file to s3")
-	trackingId1 := uuid.NewString()
-	s3FileCreated1 := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	trackingUuid1 := uuid.NewString()
+	s3FileCreated1 := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key1,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -171,7 +171,7 @@ func TestProtoConsumeInvalidAndValidClassCsv(t *testing.T) {
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId1},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid1},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -185,17 +185,17 @@ func TestProtoConsumeInvalidAndValidClassCsv(t *testing.T) {
 	s3key2 := "organization" + uuid.NewString() + ".csv"
 	numClasses := 5
 	classGeneratorMap := map[string]func() string{
-		"uuid":            util.UuidFieldGenerator(),
-		"organization_id": util.UuidFieldGenerator(),
-		"fake_id":         util.UuidFieldGenerator(),
-		"class_name":      util.NameFieldGenerator("class", numClasses),
+		"uuid":              util.UuidFieldGenerator(),
+		"organization_uuid": util.UuidFieldGenerator(),
+		"fake_uuid":         util.UuidFieldGenerator(),
+		"name":              util.NameFieldGenerator("class", numClasses),
 	}
 	file, classes := util.MakeCsv(numClasses, classGeneratorMap)
 	err = util.UploadFileToS3(bucket, s3key2, awsRegion, file)
 	assert.Nil(t, err, "error uploading file to s3")
-	trackingId2 := uuid.NewString()
-	s3FileCreated2 := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	trackingUuid2 := uuid.NewString()
+	s3FileCreated2 := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key2,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -203,7 +203,7 @@ func TestProtoConsumeInvalidAndValidClassCsv(t *testing.T) {
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId2},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid2},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -232,12 +232,12 @@ func TestProtoConsumeInvalidAndValidClassCsv(t *testing.T) {
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId2, classOutput.Metadata.TrackingId)
+		assert.Equal(t, trackingUuid2, classOutput.Metadata.TrackingUuid)
 
 		classInput := classes[i]
 		assert.Equal(t, classInput["uuid"], util.DerefString(classOutput.Payload.Uuid))
-		assert.Equal(t, classInput["class_name"], classOutput.Payload.Name)
-		assert.Equal(t, classInput["organization_id"], classOutput.Payload.OrganizationUuid)
+		assert.Equal(t, classInput["name"], classOutput.Payload.Name)
+		assert.Equal(t, classInput["organization_uuid"], classOutput.Payload.OrganizationUuid)
 
 	}
 }

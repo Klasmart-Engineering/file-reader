@@ -59,13 +59,13 @@ func getOrgCsvToProtos(filePath string) ([]*onboarding.Organization, error) {
 		md := onboarding.Metadata{
 			OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 			Region:            os.Getenv("METADATA_REGION"),
-			TrackingId:        uuid.NewString(),
+			TrackingUuid:      uuid.NewString(),
 		}
 
 		pl := onboarding.OrganizationPayload{
-			Uuid:        row[headerIndexMap["uuid"]],
-			Name:        row[headerIndexMap["organization_name"]],
-			OwnerUserId: row[headerIndexMap["owner_user_id"]],
+			Uuid:          row[headerIndexMap["uuid"]],
+			Name:          row[headerIndexMap["name"]],
+			OwnerUserUuid: row[headerIndexMap["owner_user_uuid"]],
 		}
 
 		res = append(res, &onboarding.Organization{Payload: &pl, Metadata: &md})
@@ -169,7 +169,7 @@ func TestOrgFileProcessingServer(t *testing.T) {
 					}
 
 					if err == nil {
-						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingId}
+						validateTrackingId := validation.ValidateTrackingId{Uuid: org.Metadata.TrackingUuid}
 						err := validation.UUIDValidate(validateTrackingId)
 						if err != nil {
 							t.Fatalf("%s", err)
@@ -178,7 +178,7 @@ func TestOrgFileProcessingServer(t *testing.T) {
 						g.Expect(expected.Metadata.OriginApplication).To(gomega.Equal(org.Metadata.OriginApplication))
 						g.Expect(expected.Payload.Uuid).To(gomega.Equal(org.Payload.Uuid))
 						g.Expect(expected.Payload.Name).To(gomega.Equal(org.Payload.Name))
-						g.Expect(expected.Payload.OwnerUserId).To(gomega.Equal(org.Payload.OwnerUserId))
+						g.Expect(expected.Payload.OwnerUserUuid).To(gomega.Equal(org.Payload.OwnerUserUuid))
 
 					} else {
 						t.Logf("Error consuming the message: %v (%v)\n", err, msg)

@@ -51,9 +51,9 @@ func testProtoConsumeSchoolCsv(t *testing.T, numSchools int, schoolGeneratorMap 
 	assert.Nil(t, err, "error uploading file to s3")
 
 	// Put file create message on topic
-	trackingId := uuid.NewString()
-	s3FileCreated := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	trackingUuid := uuid.NewString()
+	s3FileCreated := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -61,7 +61,7 @@ func testProtoConsumeSchoolCsv(t *testing.T, numSchools int, schoolGeneratorMap 
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -89,14 +89,17 @@ func testProtoConsumeSchoolCsv(t *testing.T, numSchools int, schoolGeneratorMap 
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId, schoolOutput.Metadata.TrackingId)
+		assert.Equal(t, trackingUuid, schoolOutput.Metadata.TrackingUuid)
 
 		schoolInput := schools[i]
 		assert.Equal(t, schoolInput["uuid"], util.DerefString(schoolOutput.Payload.Uuid))
-		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name)
-		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.OrganizationId)
-		program_ids := strings.Split(schoolInput["program_ids"], ";")
-		assert.Equal(t, program_ids, util.DerefArrayString(&schoolOutput.Payload.ProgramIds))
+		assert.Equal(t, schoolInput["name"], schoolOutput.Payload.Name)
+		assert.Equal(t, schoolInput["organization_uuid"], schoolOutput.Payload.OrganizationUuid)
+		program_uuids := strings.Split(schoolInput["program_uuids"], ";")
+		output_program_uuids := []string{}
+		output_program_uuids = append(output_program_uuids, program_uuids...)
+
+		assert.Equal(t, program_uuids, output_program_uuids)
 	}
 	ctx.Done()
 }
@@ -113,20 +116,20 @@ func TestAvroConsumeSchoolCsvScenarios(t *testing.T) {
 			description: "should ingest schools when all optional fields are supplied",
 			numSchools:  5,
 			schoolGeneratorMap: map[string]func() string{
-				"uuid":            util.UuidFieldGenerator(),
-				"organization_id": util.UuidFieldGenerator(),
-				"school_name":     util.NameFieldGenerator("school", 5),
-				"program_ids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
+				"uuid":              util.UuidFieldGenerator(),
+				"organization_uuid": util.UuidFieldGenerator(),
+				"name":              util.NameFieldGenerator("school", 5),
+				"program_uuids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
 			},
 		},
 		{
 			description: "should ingest schools when all optional fields are null",
 			numSchools:  5,
 			schoolGeneratorMap: map[string]func() string{
-				"uuid":            util.EmptyFieldGenerator(),
-				"organization_id": util.UuidFieldGenerator(),
-				"school_name":     util.NameFieldGenerator("school", 5),
-				"program_ids":     util.EmptyFieldGenerator(),
+				"uuid":              util.EmptyFieldGenerator(),
+				"organization_uuid": util.UuidFieldGenerator(),
+				"name":              util.NameFieldGenerator("school", 5),
+				"program_uuids":     util.EmptyFieldGenerator(),
 			},
 		},
 	} {

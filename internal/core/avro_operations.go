@@ -55,26 +55,27 @@ func serializeAvroRecord(codec avroCodec, schemaId int) []byte {
 }
 
 const (
-	UUID              = "uuid"
-	ORGANIZATION_NAME = "organization_name"
-	OWNER_USER_ID     = "owner_user_id"
-	ORGANIZATION_UUID = "organization_id"
-	SCHOOL_NAME       = "school_name"
-	CLASS_NAME        = "class_name"
-	PROGRAM_IDS       = "program_ids"
-	GIVEN_NAME        = "user_given_name"
-	FAMILY_NAME       = "user_family_name"
-	EMAIL             = "user_email"
-	PHONE_NUMBER      = "user_phone_number"
-	DATE_OF_BIRTH     = "user_date_of_birth"
-	GENDER            = "user_gender"
+	UUID                    = "uuid"
+	OWNER_USER_UUID         = "owner_user_uuid"
+	USER_UUID               = "user_uuid"
+	ORGANIZATION_UUID       = "organization_uuid"
+	ORGANIZATION_ROLE_UUIDS = "organization_role_uuids"
+	NAME                    = "name"
+	PROGRAM_UUIDS           = "program_uuids"
+	GIVEN_NAME              = "user_given_name"
+	FAMILY_NAME             = "user_family_name"
+	EMAIL                   = "user_email"
+	PHONE_NUMBER            = "user_phone_number"
+	DATE_OF_BIRTH           = "user_date_of_birth"
+	GENDER                  = "user_gender"
 )
 
 var (
-	OrganizationHeaders = []string{UUID, ORGANIZATION_NAME, OWNER_USER_ID}
-	SchoolHeaders       = []string{UUID, ORGANIZATION_UUID, SCHOOL_NAME, PROGRAM_IDS}
+	OrganizationHeaders = []string{UUID, NAME, OWNER_USER_UUID}
+	SchoolHeaders       = []string{UUID, ORGANIZATION_UUID, NAME, PROGRAM_UUIDS}
+	ClassHeaders        = []string{UUID, ORGANIZATION_UUID, NAME}
+	OrgMemHeaders       = []string{ORGANIZATION_UUID, USER_UUID, ORGANIZATION_ROLE_UUIDS}
 	UserHeaders         = []string{UUID, GIVEN_NAME, FAMILY_NAME, EMAIL, PHONE_NUMBER, DATE_OF_BIRTH, GENDER}
-	ClassHeaders        = []string{UUID, ORGANIZATION_UUID, CLASS_NAME}
 )
 
 func GetOrganizationSchemaId(schemaRegistryClient *SchemaRegistry, organizationTopic string) int {
@@ -97,11 +98,18 @@ func GetClassSchemaId(schemaRegistryClient *SchemaRegistry, classTopic string) i
 	return schemaRegistryClient.GetSchemaId(schemaBody, classTopic)
 }
 
+func GetOrgMemSchemaId(schemaRegistryClient *SchemaRegistry, orgMemTopic string) int {
+	schemaBody := avrogen.OrganizationMembership.Schema(avrogen.NewOrganizationMembership())
+	return schemaRegistryClient.GetSchemaId(schemaBody, orgMemTopic)
+}
+
 func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_AVRO_TOPIC")
 	userTopic := instrument.MustGetEnv("USER_AVRO_TOPIC")
 	classTopic := instrument.MustGetEnv("CLASS_AVRO_TOPIC")
+	orgMemTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_AVRO_TOPIC")
+
 	return Operations{
 		OperationMap: map[string]Operation{
 			"ORGANIZATION": {
@@ -132,50 +140,57 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SerializeRow: RowToClassAvro,
 				Headers:      ClassHeaders,
 			},
+			"ORGANIZATION_MEMBERSHIP": {
+				Topic:        orgMemTopic,
+				Key:          "",
+				SchemaID:     GetOrgMemSchemaId(schemaRegistryClient, orgMemTopic),
+				SerializeRow: RowToOrgMemAvro,
+				Headers:      OrgMemHeaders,
+			},
 		},
 	}
 }
 
-func RowToOrganizationAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+func RowToOrganizationAvro(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	// Takes a slice of columns representing an organization and encodes to avro bytes
 	md := avrogen.OrganizationMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:             os.Getenv("METADATA_REGION"),
-		Tracking_id:        tracking_id,
+		Tracking_uuid:      tracking_uuid,
 	}
 	pl := avrogen.OrganizationPayload{
-		Uuid:          row[headerIndexes[UUID]],
-		Name:          row[headerIndexes[ORGANIZATION_NAME]],
-		Owner_user_id: row[headerIndexes[OWNER_USER_ID]],
+		Uuid:            row[headerIndexes[UUID]],
+		Name:            row[headerIndexes[NAME]],
+		Owner_user_uuid: row[headerIndexes[OWNER_USER_UUID]],
 	}
 	codec := avrogen.Organization{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }
 
-func RowToSchoolAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+func RowToSchoolAvro(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	// Takes a slice of columns representing a school and encodes to avro bytes
 	md := avrogen.SchoolMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:             os.Getenv("METADATA_REGION"),
-		Tracking_id:        tracking_id,
+		Tracking_uuid:      tracking_uuid,
 	}
 	pl := avrogen.SchoolPayload{
-		Uuid:            makeAvroOptionalString(row[headerIndexes[UUID]]),
-		Program_ids:     makeAvroOptionalArrayString(row[headerIndexes[PROGRAM_IDS]]),
-		Organization_id: row[headerIndexes[ORGANIZATION_UUID]],
-		Name:            row[headerIndexes[SCHOOL_NAME]],
+		Uuid:              makeAvroOptionalString(row[headerIndexes[UUID]]),
+		Organization_uuid: row[headerIndexes[ORGANIZATION_UUID]],
+		Name:              row[headerIndexes[NAME]],
+		Program_uuids:     makeAvroOptionalArrayString(row[headerIndexes[PROGRAM_UUIDS]]),
 	}
 
 	codec := avrogen.School{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }
 
-func RowToUserAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+func RowToUserAvro(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	// Takes a slice of columns representing a user and encodes to avro bytes
 	md := avrogen.UserMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:             os.Getenv("METADATA_REGION"),
-		Tracking_id:        tracking_id,
+		Tracking_uuid:      tracking_uuid,
 	}
 	pl := avrogen.UserPayload{
 		Uuid:          row[headerIndexes[UUID]],
@@ -191,20 +206,39 @@ func RowToUserAvro(row []string, tracking_id string, schemaId int, headerIndexes
 	return serializeAvroRecord(codec, schemaId), nil
 }
 
-func RowToClassAvro(row []string, tracking_id string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+func RowToClassAvro(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	// Takes a slice of columns representing a class and encodes to avro bytes
 	md := avrogen.ClassMetadata{
 		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 		Region:             os.Getenv("METADATA_REGION"),
-		Tracking_id:        tracking_id,
+		Tracking_uuid:      tracking_uuid,
 	}
 
 	pl := avrogen.ClassPayload{
 		Uuid:              makeAvroOptionalString(row[headerIndexes[UUID]]),
-		Name:              row[headerIndexes[CLASS_NAME]],
+		Name:              row[headerIndexes[NAME]],
 		Organization_uuid: row[headerIndexes[ORGANIZATION_UUID]],
 	}
 
 	codec := avrogen.Class{Payload: pl, Metadata: md}
+	return serializeAvroRecord(codec, schemaId), nil
+}
+
+func RowToOrgMemAvro(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	// Takes a slice of columns representing a class and encodes to avro bytes
+	orgRoleUuids := strings.Split(row[headerIndexes[ORGANIZATION_ROLE_UUIDS]], ";")
+	md := avrogen.OrganizationMembershipMetadata{
+		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:             os.Getenv("METADATA_REGION"),
+		Tracking_uuid:      tracking_uuid,
+	}
+
+	pl := avrogen.OrganizationMembershipPayload{
+		Organization_uuid:       row[headerIndexes[ORGANIZATION_UUID]],
+		User_uuid:               row[headerIndexes[USER_UUID]],
+		Organization_role_uuids: orgRoleUuids,
+	}
+
+	codec := avrogen.OrganizationMembership{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }

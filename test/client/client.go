@@ -10,12 +10,14 @@ import (
 type Type string
 
 var TypeName = map[Type]int32{
-	"ORGANIZATION": 0,
-	"SCHOOL":       1,
-	"CLASS":        2,
-	"USER":         3,
-	"ROLE":         4,
-	"PROGRAM":      5,
+	"ORGANIZATION":            0,
+	"SCHOOL":                  1,
+	"CLASS":                   2,
+	"USER":                    3,
+	"ROLE":                    4,
+	"PROGRAM":                 5,
+	"ORGANIZATION_MEMBERSHIP": 6,
+	"CLASS_DETAILS":           7,
 }
 
 var IntToType = map[int32]Type{
@@ -25,6 +27,8 @@ var IntToType = map[int32]Type{
 	3: "USER",
 	4: "ROLE",
 	5: "PROGRAM",
+	6: "ORGANIZATION_MEMBERSHIP",
+	7: "CLASS_DETAILS",
 }
 
 type InputFileType string
@@ -62,6 +66,10 @@ func (rb RequestBuilder) getInputFile(fileId string, filePath string, entity int
 		typeName = filepb.Type_ROLE
 	case 5:
 		typeName = filepb.Type_PROGRAM
+	case 6:
+		typeName = filepb.Type_ORGANIZATION_MEMBERSHIP
+	case 7:
+		typeName = filepb.Type_CLASS_DETAILS
 	}
 
 	switch fileType {

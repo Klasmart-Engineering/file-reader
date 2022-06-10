@@ -49,9 +49,9 @@ func testAvroConsumeSchoolCsv(t *testing.T, numSchools int, schoolGeneratorMap m
 	assert.Nil(t, err, "error uploading file to s3")
 
 	// Put file create message on topic
-	trackingId := uuid.NewString()
-	s3FileCreated := avro.S3FileCreated{
-		Payload: avro.S3FileCreatedPayload{
+	trackingUuid := uuid.NewString()
+	s3FileCreated := avro.S3FileCreatedUpdated{
+		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
@@ -59,7 +59,7 @@ func testAvroConsumeSchoolCsv(t *testing.T, numSchools int, schoolGeneratorMap m
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedMetadata{Tracking_id: trackingId},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -82,15 +82,14 @@ func testAvroConsumeSchoolCsv(t *testing.T, numSchools int, schoolGeneratorMap m
 		assert.Nil(t, err, "error deserialising message to school")
 		t.Log(schoolOutput)
 
-		assert.Equal(t, trackingId, schoolOutput.Metadata.Tracking_id)
+		assert.Equal(t, trackingUuid, schoolOutput.Metadata.Tracking_uuid)
 
 		schoolInput := schools[i]
 		assert.Equal(t, schoolInput["uuid"], util.DerefAvroNullString(schoolOutput.Payload.Uuid))
-		assert.Equal(t, schoolInput["school_name"], schoolOutput.Payload.Name)
-		assert.Equal(t, schoolInput["organization_id"], schoolOutput.Payload.Organization_id)
-		program_ids := strings.Split(schoolInput["program_ids"], ";")
-		assert.Equal(t, program_ids, util.DerefAvroNullArrayString(schoolOutput.Payload.Program_ids))
-
+		assert.Equal(t, schoolInput["name"], schoolOutput.Payload.Name)
+		assert.Equal(t, schoolInput["organization_uuid"], schoolOutput.Payload.Organization_uuid)
+		program_ids := strings.Split(schoolInput["program_uuids"], ";")
+		assert.Equal(t, program_ids, util.DerefAvroNullArrayString(schoolOutput.Payload.Program_uuids))
 	}
 	ctx.Done()
 }
@@ -107,20 +106,20 @@ func TestAvroConsumeSchoolCsvScenarios(t *testing.T) {
 			description: "should ingest schools when all optional fields are supplied",
 			numSchools:  5,
 			schoolGeneratorMap: map[string]func() string{
-				"uuid":            util.UuidFieldGenerator(),
-				"organization_id": util.UuidFieldGenerator(),
-				"school_name":     util.NameFieldGenerator("school", 5),
-				"program_ids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
+				"uuid":              util.UuidFieldGenerator(),
+				"organization_uuid": util.UuidFieldGenerator(),
+				"name":              util.NameFieldGenerator("school", 5),
+				"program_uuids":     util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 5, 10),
 			},
 		},
 		{
 			description: "should ingest schools when all optional fields are null",
 			numSchools:  5,
 			schoolGeneratorMap: map[string]func() string{
-				"uuid":            util.EmptyFieldGenerator(),
-				"organization_id": util.UuidFieldGenerator(),
-				"school_name":     util.NameFieldGenerator("school", 5),
-				"program_ids":     util.EmptyFieldGenerator(),
+				"uuid":              util.EmptyFieldGenerator(),
+				"organization_uuid": util.UuidFieldGenerator(),
+				"name":              util.NameFieldGenerator("school", 5),
+				"program_uuids":     util.EmptyFieldGenerator(),
 			},
 		},
 	} {
