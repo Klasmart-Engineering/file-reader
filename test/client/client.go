@@ -104,6 +104,7 @@ func (h *inputFileHandlers) ProcessRequests(ctx context.Context, fileClient file
 	var err error
 
 	stream, err = fileClient.IngestFile(ctx)
+
 	if err != nil {
 		h.logger.Errorf(ctx, "Error on IngestFile rpc call: %v", err.Error())
 	}
