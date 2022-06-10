@@ -125,7 +125,8 @@ func TestOrgMemFileProcessingServer(t *testing.T) {
 			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 		},
 	}
-	ctx, client := util.StartGrpc(logger, cfg, addr)
+	ctx, client, ln := util.StartGrpc(logger, cfg, addr)
+	defer ln.Close()
 
 	csvFh := clientPb.NewInputFileHandlers(logger)
 	orgMemProtoTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_PROTO_TOPIC")

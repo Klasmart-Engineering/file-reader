@@ -104,6 +104,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 func (c *IngestFileService) IngestFile(stream inputfile.IngestFileService_IngestFileServer) error {
 
 	errors := []*inputfile.InputFileError{}
+
 	for {
 		// Start receiving stream messages from client
 		req, err := stream.Recv()

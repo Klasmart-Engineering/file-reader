@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"encoding/csv"
+	"fmt"
 	"strings"
 	"time"
 
@@ -75,7 +76,7 @@ func getSchoolCsvToProtos(filePath string) ([]*onboarding.School, error) {
 }
 
 func TestSchoolFileProcessingServer(t *testing.T) {
-	t.Skip()
+	//t.Skip()
 	var testCases = []struct {
 		name        string
 		req         []*filepb.InputFileRequest
@@ -126,8 +127,10 @@ func TestSchoolFileProcessingServer(t *testing.T) {
 			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 		},
 	}
-	ctx, client := util.StartGrpc(logger, cfg, addr)
 
+	ctx, client, ln := util.StartGrpc(logger, cfg, addr)
+
+	defer ln.Close()
 	csvFh := clientPb.NewInputFileHandlers(logger)
 	schoolProtoTopic := instrument.MustGetEnv("SCHOOL_PROTO_TOPIC")
 
@@ -140,14 +143,16 @@ func TestSchoolFileProcessingServer(t *testing.T) {
 	serde := protobuf.NewProtoSerDe()
 	school := &onboarding.School{}
 
+	fmt.Println("testing school 1")
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			g := gomega.NewWithT(t)
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-
+			fmt.Println("testing school")
 			// grpc call
 			res := csvFh.ProcessRequests(ctx, client, testCase.req)
+
 			switch testCase.name {
 
 			case "req ok":

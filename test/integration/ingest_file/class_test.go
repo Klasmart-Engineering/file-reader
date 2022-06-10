@@ -122,7 +122,8 @@ func TestClassFileProcessingServer(t *testing.T) {
 			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 		},
 	}
-	ctx, client := util.StartGrpc(logger, cfg, addr)
+	ctx, client, ln := util.StartGrpc(logger, cfg, addr)
+	defer ln.Close()
 
 	csvFh := clientPb.NewInputFileHandlers(logger)
 	classProtoTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
