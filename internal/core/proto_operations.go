@@ -16,6 +16,7 @@ func InitProtoOperations() Operations {
 	userTopic := instrument.MustGetEnv("USER_PROTO_TOPIC")
 	classTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
 	orgMemTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_PROTO_TOPIC")
+	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_PROTO_TOPIC")
 
 	return Operations{
 		OperationMap: map[string]Operation{
@@ -54,6 +55,13 @@ func InitProtoOperations() Operations {
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgMemTopic),
 				SerializeRow: RowToOrgMemProto,
 				Headers:      OrgMemHeaders,
+			},
+			"SCHOOL_MEMBERSHIP": {
+				Topic:        schoolMemTopic,
+				Key:          "",
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(schoolMemTopic),
+				SerializeRow: RowToSchoolMemProto,
+				Headers:      SchoolMemHeaders,
 			},
 		},
 	}
@@ -114,6 +122,25 @@ func RowToSchoolProto(row []string, tracking_uuid string, schemaId int, headerIn
 		ProgramUuids:     programUuids,
 	}
 	codec := &onboarding.School{Payload: &pl, Metadata: &md}
+	serde := protobuf.NewProtoSerDe()
+	valueBytes, err := serde.Serialize(schemaId, codec)
+	if err != nil {
+		return nil, err
+	}
+	return valueBytes, nil
+}
+
+func RowToSchoolMemProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	md := onboarding.Metadata{
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingUuid:      tracking_uuid,
+	}
+	pl := onboarding.SchoolMembershipPayload{
+		SchoolUuid: row[headerIndexes[SCHOOL_UUID]],
+		UserUuid:   row[headerIndexes[USER_UUID]],
+	}
+	codec := &onboarding.SchoolMembership{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
 	valueBytes, err := serde.Serialize(schemaId, codec)
 	if err != nil {

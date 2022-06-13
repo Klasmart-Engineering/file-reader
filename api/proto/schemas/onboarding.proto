@@ -25,6 +25,17 @@ message Organization_membership_payload {
     repeated string organization_role_uuids = 3;
 }
 
+
+message School_membership {
+    School_membership_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message School_membership_payload {
+    string school_uuid = 1;
+    string user_uuid = 2;
+}
+
 message Subject {
     Metadata metadata = 1;
     Subject_payload payload = 2;

@@ -36,6 +36,7 @@ var operationEnumMap = map[inputfile.Type]string{
 	inputfile.Type_PROGRAM:                 "program",
 	inputfile.Type_ORGANIZATION_MEMBERSHIP: "organization_membership",
 	inputfile.Type_CLASS_DETAILS:           "class_details",
+	inputfile.Type_SCHOOL_MEMBERSHIP:       "school_membership",
 }
 
 // NewIngestFileService organizationServer constructor
