@@ -6,4 +6,5 @@ gogen-avro ./api/avro/avro_gencode/ \
 ./api/avro/schemas/user.avsc \
 ./api/avro/schemas/class.avsc \
 ./api/avro/schemas/organization_membership.avsc \
+./api/avro/schemas/class_details.avsc \
 ./api/avro/schemas/s3filecreated.avsc
