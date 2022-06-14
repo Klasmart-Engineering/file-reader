@@ -3,7 +3,6 @@ package integration_test
 import (
 	"bytes"
 	"context"
-	"strings"
 	"testing"
 
 	avro "github.com/KL-Engineering/file-reader/api/avro/avro_gencode"
@@ -18,15 +17,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAvroConsumeOrgMemCsv(t *testing.T) {
+func TestAvroConsumeSchoolMemCsv(t *testing.T) {
 	// set up env variables
-	orgMemAvroTopic := "orgMemAvroTopic" + uuid.NewString()
+	schoolMemAvroTopic := "schoolMemAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"ORGANIZATION_MEMBERSHIP_AVRO_TOPIC": orgMemAvroTopic,
-		"S3_FILE_CREATED_UPDATED_GROUP_ID":   "s3FileCreatedGroupId" + uuid.NewString(),
-		"S3_FILE_CREATED_UPDATED_TOPIC":      s3FileCreationTopic,
-		"SCHEMA_TYPE":                        "AVRO",
+		"SCHOOL_MEMBERSHIP_AVRO_TOPIC":     schoolMemAvroTopic,
+		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
+		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
+		"SCHEMA_TYPE":                      "AVRO",
 	})
 
 	defer t.Cleanup(closer)
@@ -39,19 +38,18 @@ func TestAvroConsumeOrgMemCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "organization.membership"
-	s3key := "organization.membership" + uuid.NewString() + ".csv"
-	operationType := "organization_membership"
+	bucket := "school.membership"
+	s3key := "school.membership" + uuid.NewString() + ".csv"
+	operationType := "school_membership"
 
 	// Make test csv file
-	numOrgMems := 5
-	orgMemGeneratorMap := map[string]func() string{
-		"organization_uuid":       util.UuidFieldGenerator(),
-		"user_uuid":               util.UuidFieldGenerator(),
-		"organization_role_uuids": util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, numOrgMems),
+	numSchoolMems := 5
+	schoolMemGeneratorMap := map[string]func() string{
+		"school_uuid": util.UuidFieldGenerator(),
+		"user_uuid":   util.UuidFieldGenerator(),
 	}
 
-	file, orgMems := util.MakeCsv(numOrgMems, orgMemGeneratorMap)
+	file, schoolMems := util.MakeCsv(numSchoolMems, schoolMemGeneratorMap)
 
 	// Upload csv to S3
 	err := util.UploadFileToS3(bucket, s3key, awsRegion, file)
@@ -81,37 +79,34 @@ func TestAvroConsumeOrgMemCsv(t *testing.T) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       orgMemAvroTopic,
+		Topic:       schoolMemAvroTopic,
 		StartOffset: kafka.FirstOffset,
 	})
-	for i := 0; i < numOrgMems; i++ {
+	for i := 0; i < numSchoolMems; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
-		orgMemOutput, err := avro.DeserializeOrganizationMembership(bytes.NewReader(msg.Value[5:]))
-		assert.Nil(t, err, "error deserialising message to org")
-		t.Log(orgMemOutput)
+		schoolMemOutput, err := avro.DeserializeSchoolMembership(bytes.NewReader(msg.Value[5:]))
+		assert.Nil(t, err, "error deserialising message to school membership")
+		t.Log(schoolMemOutput)
 
-		assert.Equal(t, trackingUuid, orgMemOutput.Metadata.Tracking_uuid)
+		assert.Equal(t, trackingUuid, schoolMemOutput.Metadata.Tracking_uuid)
 
-		orgMemInput := orgMems[i]
-		assert.Equal(t, orgMemInput["organization_uuid"], orgMemOutput.Payload.Organization_uuid)
-		assert.Equal(t, orgMemInput["user_uuid"], orgMemOutput.Payload.User_uuid)
-		orgRoleUuids := strings.Split(orgMemInput["organization_role_uuids"], ";")
-		assert.Equal(t, orgRoleUuids, orgMemOutput.Payload.Organization_role_uuids)
+		schoolMemInput := schoolMems[i]
+		assert.Equal(t, schoolMemInput["school_uuid"], schoolMemOutput.Payload.School_uuid)
+		assert.Equal(t, schoolMemInput["user_uuid"], schoolMemOutput.Payload.User_uuid)
 	}
 	ctx.Done()
 }
 
-func TestAvroConsumeInvalidAndValidOrgMemCsv(t *testing.T) {
-	t.Skip()
+func TestAvroConsumeInvalidAndValidSchoolMemCsv(t *testing.T) {
 	// set up env variables
-	orgMemAvroTopic := "orgMemAvroTopic" + uuid.NewString()
+	schoolMemAvroTopic := "schoolMemAvroTopic" + uuid.NewString()
 	s3FileCreationTopic := "s3FileCreatedTopic" + uuid.NewString()
 	closer := env.EnvSetter(map[string]string{
-		"ORGANIZATION_MEMBERSHIP_AVRO_TOPIC": orgMemAvroTopic,
-		"S3_FILE_CREATED_UPDATED_GROUP_ID":   "s3FileCreatedGroupId" + uuid.NewString(),
-		"S3_FILE_CREATED_UPDATED_TOPIC":      s3FileCreationTopic,
-		"SCHEMA_TYPE":                        "AVRO",
+		"SCHOOL_MEMBERSHIP_AVRO_TOPIC":     schoolMemAvroTopic,
+		"S3_FILE_CREATED_UPDATED_GROUP_ID": "s3FileCreatedGroupId" + uuid.NewString(),
+		"S3_FILE_CREATED_UPDATED_TOPIC":    s3FileCreationTopic,
+		"SCHEMA_TYPE":                      "AVRO",
 	})
 
 	defer t.Cleanup(closer)
@@ -124,11 +119,11 @@ func TestAvroConsumeInvalidAndValidOrgMemCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "organization.membership"
-	operationType := "organization_membership"
+	bucket := "school.membership"
+	operationType := "school_membership"
 
 	// First try to consume an empty file
-	s3key1 := "bad_organization_membership" + uuid.NewString() + ".csv"
+	s3key1 := "bad_school_membership" + uuid.NewString() + ".csv"
 	emptyFile := util.MakeEmptyFile()
 	err := util.UploadFileToS3(bucket, s3key1, awsRegion, emptyFile)
 	assert.Nil(t, err, "error uploading file to s3")
@@ -154,13 +149,12 @@ func TestAvroConsumeInvalidAndValidOrgMemCsv(t *testing.T) {
 
 	// Then try to consume a real organization file
 	s3key2 := "organization.membership" + uuid.NewString() + ".csv"
-	numOrgMems := 5
-	orgMemGeneratorMap := map[string]func() string{
-		"organization_uuid":       util.UuidFieldGenerator(),
-		"user_uuid":               util.UuidFieldGenerator(),
-		"organization_role_uuids": util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, numOrgMems),
+	numSchoolMems := 5
+	schoolMemGeneratorMap := map[string]func() string{
+		"school_uuid": util.UuidFieldGenerator(),
+		"user_uuid":   util.UuidFieldGenerator(),
 	}
-	file, orgMems := util.MakeCsv(numOrgMems, orgMemGeneratorMap)
+	file, schoolMems := util.MakeCsv(numSchoolMems, schoolMemGeneratorMap)
 	err = util.UploadFileToS3(bucket, s3key2, awsRegion, file)
 	assert.Nil(t, err, "error uploading file to s3")
 	trackingUuid2 := uuid.NewString()
@@ -187,24 +181,21 @@ func TestAvroConsumeInvalidAndValidOrgMemCsv(t *testing.T) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,
 		GroupID:     "consumer-group-" + uuid.NewString(),
-		Topic:       orgMemAvroTopic,
+		Topic:       schoolMemAvroTopic,
 		StartOffset: kafka.FirstOffset,
 	})
-	for i := 0; i < numOrgMems; i++ {
+	for i := 0; i < numSchoolMems; i++ {
 		msg, err := r.ReadMessage(ctx)
 		assert.Nil(t, err, "error reading message from topic")
-		orgMemOutput, err := avro.DeserializeOrganizationMembership(bytes.NewReader(msg.Value[5:]))
-		assert.Nil(t, err, "error deserialising message to org membership")
-		t.Log(orgMemOutput)
+		schoolMemOutput, err := avro.DeserializeSchoolMembership(bytes.NewReader(msg.Value[5:]))
+		assert.Nil(t, err, "error deserialising message to school membership")
+		t.Log(schoolMemOutput)
 
-		assert.Equal(t, trackingUuid2, orgMemOutput.Metadata.Tracking_uuid)
+		assert.Equal(t, trackingUuid2, schoolMemOutput.Metadata.Tracking_uuid)
 
-		orgMemInput := orgMems[i]
-		assert.Equal(t, orgMemInput["organization_uuid"], orgMemOutput.Payload.Organization_uuid)
-		assert.Equal(t, orgMemInput["user_uuid"], orgMemOutput.Payload.User_uuid)
-
-		orgRoleUuids := strings.Split(orgMemInput["organization_role_uuids"], ";")
-		assert.Equal(t, orgRoleUuids, orgMemOutput.Payload.Organization_role_uuids)
+		schoolMemInput := schoolMems[i]
+		assert.Equal(t, schoolMemInput["school_uuid"], schoolMemOutput.Payload.School_uuid)
+		assert.Equal(t, schoolMemInput["user_uuid"], schoolMemOutput.Payload.User_uuid)
 	}
 	ctx.Done()
 
