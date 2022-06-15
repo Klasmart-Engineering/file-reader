@@ -60,6 +60,7 @@ const (
 	USER_UUID               = "user_uuid"
 	ORGANIZATION_UUID       = "organization_uuid"
 	SCHOOL_UUID             = "school_uuid"
+	CLASS_UUID              = "class_uuid"
 	ORGANIZATION_ROLE_UUIDS = "organization_role_uuids"
 	NAME                    = "name"
 	PROGRAM_UUIDS           = "program_uuids"
@@ -69,6 +70,7 @@ const (
 	PHONE_NUMBER            = "user_phone_number"
 	DATE_OF_BIRTH           = "user_date_of_birth"
 	GENDER                  = "user_gender"
+	PARTICIPATING_AS        = "participating_as"
 )
 
 var (
@@ -77,6 +79,7 @@ var (
 	ClassHeaders        = []string{UUID, ORGANIZATION_UUID, NAME}
 	OrgMemHeaders       = []string{ORGANIZATION_UUID, USER_UUID, ORGANIZATION_ROLE_UUIDS}
 	SchoolMemHeaders    = []string{SCHOOL_UUID, USER_UUID}
+	ClassRosterHeaders  = []string{CLASS_UUID, USER_UUID, PARTICIPATING_AS}
 	UserHeaders         = []string{UUID, GIVEN_NAME, FAMILY_NAME, EMAIL, PHONE_NUMBER, DATE_OF_BIRTH, GENDER}
 )
 
@@ -100,6 +103,11 @@ func GetClassSchemaId(schemaRegistryClient *SchemaRegistry, classTopic string) i
 	return schemaRegistryClient.GetSchemaId(schemaBody, classTopic)
 }
 
+func GetClassRosterSchemaId(schemaRegistryClient *SchemaRegistry, classRosterTopic string) int {
+	schemaBody := avrogen.Class.Schema(avrogen.NewClass())
+	return schemaRegistryClient.GetSchemaId(schemaBody, classRosterTopic)
+}
+
 func GetOrgMemSchemaId(schemaRegistryClient *SchemaRegistry, orgMemTopic string) int {
 	schemaBody := avrogen.OrganizationMembership.Schema(avrogen.NewOrganizationMembership())
 	return schemaRegistryClient.GetSchemaId(schemaBody, orgMemTopic)
@@ -117,6 +125,7 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	classTopic := instrument.MustGetEnv("CLASS_AVRO_TOPIC")
 	orgMemTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_AVRO_TOPIC")
 	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_AVRO_TOPIC")
+	classRosterTopic := instrument.MustGetEnv("CLASS_ROSTER_AVRO_TOPIC")
 
 	return Operations{
 		OperationMap: map[string]Operation{
@@ -161,6 +170,13 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SchemaID:     GetSchoolMemSchemaId(schemaRegistryClient, schoolMemTopic),
 				SerializeRow: RowToSchoolMemAvro,
 				Headers:      SchoolMemHeaders,
+			},
+			"CLASS_ROSTER": {
+				Topic:        classRosterTopic,
+				Key:          "",
+				SchemaID:     GetClassRosterSchemaId(schemaRegistryClient, classRosterTopic),
+				SerializeRow: RowToClassRosterAvro,
+				Headers:      ClassRosterHeaders,
 			},
 		},
 	}
@@ -236,6 +252,24 @@ func RowToClassAvro(row []string, tracking_uuid string, schemaId int, headerInde
 	}
 
 	codec := avrogen.Class{Payload: pl, Metadata: md}
+	return serializeAvroRecord(codec, schemaId), nil
+}
+
+func RowToClassRosterAvro(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	// Takes a slice of columns representing a class and encodes to avro bytes
+	md := avrogen.ClassRosterMetadata{
+		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:             os.Getenv("METADATA_REGION"),
+		Tracking_uuid:      tracking_uuid,
+	}
+
+	pl := avrogen.ClassRosterPayload{
+		Class_uuid:       row[headerIndexes[CLASS_UUID]],
+		User_uuid:        row[headerIndexes[USER_UUID]],
+		Participating_as: row[headerIndexes[PARTICIPATING_AS]],
+	}
+
+	codec := avrogen.ClassRoster{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }
 

@@ -36,6 +36,17 @@ message School_membership_payload {
     string user_uuid = 2;
 }
 
+message Class_roster {
+    Class_roster_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Class_roster_payload {
+    string class_uuid = 1;
+    string user_uuid = 2;
+    string participating_as = 3;
+}
+
 message Subject {
     Metadata metadata = 1;
     Subject_payload payload = 2;

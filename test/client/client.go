@@ -19,6 +19,7 @@ var TypeName = map[Type]int32{
 	"ORGANIZATION_MEMBERSHIP": 6,
 	"CLASS_DETAILS":           7,
 	"SCHOOL_MEMBERSHIP":       8,
+	"CLASS_ROSTER":            9,
 }
 
 var IntToType = map[int32]Type{
@@ -31,6 +32,7 @@ var IntToType = map[int32]Type{
 	6: "ORGANIZATION_MEMBERSHIP",
 	7: "CLASS_DETAILS",
 	8: "SCHOOL_MEMBERSHIP",
+	9: "CLASS_ROSTER",
 }
 
 type InputFileType string
@@ -74,6 +76,8 @@ func (rb RequestBuilder) getInputFile(fileId string, filePath string, entity int
 		typeName = filepb.Type_CLASS_DETAILS
 	case 8:
 		typeName = filepb.Type_SCHOOL_MEMBERSHIP
+	case 9:
+		typeName = filepb.Type_CLASS_ROSTER
 	}
 
 	switch fileType {
