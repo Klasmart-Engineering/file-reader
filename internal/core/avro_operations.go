@@ -59,6 +59,7 @@ const (
 	OWNER_USER_UUID         = "owner_user_uuid"
 	USER_UUID               = "user_uuid"
 	ORGANIZATION_UUID       = "organization_uuid"
+	SCHOOL_UUID             = "school_uuid"
 	ORGANIZATION_ROLE_UUIDS = "organization_role_uuids"
 	NAME                    = "name"
 	PROGRAM_UUIDS           = "program_uuids"
@@ -69,7 +70,6 @@ const (
 	DATE_OF_BIRTH           = "user_date_of_birth"
 	GENDER                  = "user_gender"
 	CLASS_UUID              = "class_uuid"
-	SCHOOL_UUID             = "school_uuid"
 	SUBJECT_UUIDS           = "subject_uuids"
 	GRADE_UUIDS             = "grade_uuids"
 	AGE_RANGE_UUIDS         = "age_range_uuids"
@@ -81,6 +81,7 @@ var (
 	SchoolHeaders       = []string{UUID, ORGANIZATION_UUID, NAME, PROGRAM_UUIDS}
 	ClassHeaders        = []string{UUID, ORGANIZATION_UUID, NAME}
 	OrgMemHeaders       = []string{ORGANIZATION_UUID, USER_UUID, ORGANIZATION_ROLE_UUIDS}
+	SchoolMemHeaders    = []string{SCHOOL_UUID, USER_UUID}
 	UserHeaders         = []string{UUID, GIVEN_NAME, FAMILY_NAME, EMAIL, PHONE_NUMBER, DATE_OF_BIRTH, GENDER}
 	ClassDetailsHeaders = []string{CLASS_UUID, SCHOOL_UUID, PROGRAM_UUIDS, SUBJECT_UUIDS, GRADE_UUIDS, AGE_RANGE_UUIDS, ACADEMIC_TERM_UUID}
 )
@@ -115,6 +116,11 @@ func GetClassDetailsSchemaId(schemaRegistryClient *SchemaRegistry, classDetailsT
 	return schemaRegistryClient.GetSchemaId(schemaBody, classDetailsTopic)
 }
 
+func GetSchoolMemSchemaId(schemaRegistryClient *SchemaRegistry, schoolMemTopic string) int {
+	schemaBody := avrogen.SchoolMembership.Schema(avrogen.NewSchoolMembership())
+	return schemaRegistryClient.GetSchemaId(schemaBody, schoolMemTopic)
+}
+
 func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	organizationTopic := instrument.MustGetEnv("ORGANIZATION_AVRO_TOPIC")
 	schoolTopic := instrument.MustGetEnv("SCHOOL_AVRO_TOPIC")
@@ -122,6 +128,7 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	classTopic := instrument.MustGetEnv("CLASS_AVRO_TOPIC")
 	orgMemTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_AVRO_TOPIC")
 	classDetailsTopic := instrument.MustGetEnv("CLASS_DETAILS_AVRO_TOPIC")
+	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_AVRO_TOPIC")
 
 	return Operations{
 		OperationMap: map[string]Operation{
@@ -166,6 +173,13 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SchemaID:     GetClassDetailsSchemaId(schemaRegistryClient, classDetailsTopic),
 				SerializeRow: RowToClassDetailsAvro,
 				Headers:      ClassDetailsHeaders,
+			},
+			"SCHOOL_MEMBERSHIP": {
+				Topic:        schoolMemTopic,
+				Key:          "",
+				SchemaID:     GetSchoolMemSchemaId(schemaRegistryClient, schoolMemTopic),
+				SerializeRow: RowToSchoolMemAvro,
+				Headers:      SchoolMemHeaders,
 			},
 		},
 	}
@@ -270,7 +284,6 @@ func RowToClassDetailsAvro(row []string, tracking_uuid string, schemaId int, hea
 		Region:             os.Getenv("METADATA_REGION"),
 		Tracking_uuid:      tracking_uuid,
 	}
-
 	pl := avrogen.ClassDetailsPayload{
 		Class_uuid:         row[headerIndexes[CLASS_UUID]],
 		School_uuid:        makeAvroOptionalString(row[headerIndexes[SCHOOL_UUID]]),
@@ -282,5 +295,21 @@ func RowToClassDetailsAvro(row []string, tracking_uuid string, schemaId int, hea
 	}
 
 	codec := avrogen.ClassDetails{Payload: pl, Metadata: md}
+	return serializeAvroRecord(codec, schemaId), nil
+}
+
+func RowToSchoolMemAvro(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	// Takes a slice of columns representing a class and encodes to avro bytes
+	md := avrogen.SchoolMembershipMetadata{
+		Origin_application: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:             os.Getenv("METADATA_REGION"),
+		Tracking_uuid:      tracking_uuid,
+	}
+	pl := avrogen.SchoolMembershipPayload{
+		School_uuid: row[headerIndexes[SCHOOL_UUID]],
+		User_uuid:   row[headerIndexes[USER_UUID]],
+	}
+
+	codec := avrogen.SchoolMembership{Payload: pl, Metadata: md}
 	return serializeAvroRecord(codec, schemaId), nil
 }

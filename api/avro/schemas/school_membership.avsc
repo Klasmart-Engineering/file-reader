@@ -1,0 +1,49 @@
+{
+	"name": "SchoolMembership",
+	"type": "record",
+	"namespace": "com.kidsloop.onboarding",
+	"fields": [{
+			"name": "payload",
+			"type": {
+				"name": "SchoolMembershipPayload",
+				"type": "record",
+				"fields": [{
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"name": "school_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					},
+					{
+						"name": "user_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		},
+		{
+			"name": "metadata",
+			"type": {
+				"name": "SchoolMembershipMetadata",
+				"type": "record",
+				"fields": [{
+						"name": "origin_application",
+						"type": "string"
+					},
+					{
+						"name": "region",
+						"type": "string"
+					},
+					{
+						"name": "tracking_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		}
+	]
+}
