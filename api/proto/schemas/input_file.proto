@@ -21,12 +21,8 @@ enum Type {
 	ORGANIZATION_MEMBERSHIP = 6;
 	CLASS_DETAILS = 7;
 	SCHOOL_MEMBERSHIP = 8;
-<<<<<<< HEAD
 	CLASS_ROSTER = 9;
 	UNKNOWN = 10;
-=======
-	UNKNOWN = 9;
->>>>>>> main
   }
 message InputFileRequest {
 	Type type = 1;

@@ -36,7 +36,6 @@ message School_membership_payload {
     string user_uuid = 2;
 }
 
-<<<<<<< HEAD
 message Class_roster {
     Class_roster_payload payload = 1;
     Metadata metadata = 2;
@@ -48,8 +47,6 @@ message Class_roster_payload {
     string participating_as = 3;
 }
 
-=======
->>>>>>> main
 message Subject {
     Metadata metadata = 1;
     Subject_payload payload = 2;

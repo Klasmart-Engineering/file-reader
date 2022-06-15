@@ -19,7 +19,6 @@ func InitProtoOperations() Operations {
 	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_PROTO_TOPIC")
 	classRosterTopic := instrument.MustGetEnv("CLASS_ROSTER_PROTO_TOPIC")
 	classDetailsTopic := instrument.MustGetEnv("CLASS_DETAILS_PROTO_TOPIC")
-	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_PROTO_TOPIC")
 
 	return Operations{
 		OperationMap: map[string]Operation{

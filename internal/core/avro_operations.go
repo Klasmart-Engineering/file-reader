@@ -137,7 +137,6 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_AVRO_TOPIC")
 	classRosterTopic := instrument.MustGetEnv("CLASS_ROSTER_AVRO_TOPIC")
 	classDetailsTopic := instrument.MustGetEnv("CLASS_DETAILS_AVRO_TOPIC")
-	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_AVRO_TOPIC")
 
 	return Operations{
 		OperationMap: map[string]Operation{

@@ -19,10 +19,7 @@ var TypeName = map[Type]int32{
 	"ORGANIZATION_MEMBERSHIP": 6,
 	"CLASS_DETAILS":           7,
 	"SCHOOL_MEMBERSHIP":       8,
-<<<<<<< HEAD
 	"CLASS_ROSTER":            9,
-=======
->>>>>>> main
 }
 
 var IntToType = map[int32]Type{
@@ -35,10 +32,7 @@ var IntToType = map[int32]Type{
 	6: "ORGANIZATION_MEMBERSHIP",
 	7: "CLASS_DETAILS",
 	8: "SCHOOL_MEMBERSHIP",
-<<<<<<< HEAD
 	9: "CLASS_ROSTER",
-=======
->>>>>>> main
 }
 
 type InputFileType string
