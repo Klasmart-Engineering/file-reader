@@ -134,6 +134,21 @@ message Class_payload {
     string name = 3;
 }
 
+message Class_details {
+    Class_details_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Class_details_payload {
+    string class_uuid = 1;
+    optional string school_uuid = 2;
+    repeated string program_uuids = 3;
+    repeated string subject_uuids = 4;
+    repeated string grade_uuids = 5;
+    repeated string age_range_uuids = 6;
+    optional string academic_term_uuid = 7;
+}
+
 message Metadata {
     string origin_application = 1;
     string region = 2;

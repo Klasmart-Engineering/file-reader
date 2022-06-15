@@ -141,14 +141,6 @@ func DerefString(s *string) string {
 	return ""
 }
 
-func DerefArrayString(s *[]string) []string {
-	if s != nil {
-		return *s
-	}
-
-	return []string{}
-}
-
 func DerefAvroNullString(s *avro.UnionNullString) string {
 	if s != nil {
 		return s.String

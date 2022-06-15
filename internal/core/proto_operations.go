@@ -16,6 +16,7 @@ func InitProtoOperations() Operations {
 	userTopic := instrument.MustGetEnv("USER_PROTO_TOPIC")
 	classTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
 	orgMemTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_PROTO_TOPIC")
+	classDetailsTopic := instrument.MustGetEnv("CLASS_DETAILS_PROTO_TOPIC")
 	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_PROTO_TOPIC")
 
 	return Operations{
@@ -55,6 +56,13 @@ func InitProtoOperations() Operations {
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgMemTopic),
 				SerializeRow: RowToOrgMemProto,
 				Headers:      OrgMemHeaders,
+			},
+			"CLASS_DETAILS": {
+				Topic:        classDetailsTopic,
+				Key:          "",
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(classDetailsTopic),
+				SerializeRow: RowToClassDetailsProto,
+				Headers:      ClassDetailsHeaders,
 			},
 			"SCHOOL_MEMBERSHIP": {
 				Topic:        schoolMemTopic,
@@ -185,6 +193,30 @@ func RowToClassProto(row []string, tracking_uuid string, schemaId int, headerInd
 		OrganizationUuid: row[headerIndexes[ORGANIZATION_UUID]],
 	}
 	codec := &onboarding.Class{Payload: &pl, Metadata: &md}
+	serde := protobuf.NewProtoSerDe()
+	valueBytes, err := serde.Serialize(schemaId, codec)
+	if err != nil {
+		return nil, err
+	}
+	return valueBytes, nil
+}
+
+func RowToClassDetailsProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	md := onboarding.Metadata{
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingUuid:      tracking_uuid,
+	}
+	pl := onboarding.ClassDetailsPayload{
+		ClassUuid:        row[headerIndexes[CLASS_UUID]],
+		SchoolUuid:       &row[headerIndexes[SCHOOL_UUID]],
+		ProgramUuids:     strings.Split(row[headerIndexes[PROGRAM_UUIDS]], ";"),
+		SubjectUuids:     strings.Split(row[headerIndexes[SUBJECT_UUIDS]], ";"),
+		GradeUuids:       strings.Split(row[headerIndexes[GRADE_UUIDS]], ";"),
+		AgeRangeUuids:    strings.Split(row[headerIndexes[AGE_RANGE_UUIDS]], ";"),
+		AcademicTermUuid: &row[headerIndexes[ACADEMIC_TERM_UUID]],
+	}
+	codec := &onboarding.ClassDetails{Payload: &pl, Metadata: &md}
 	serde := protobuf.NewProtoSerDe()
 	valueBytes, err := serde.Serialize(schemaId, codec)
 	if err != nil {
