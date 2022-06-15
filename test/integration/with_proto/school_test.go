@@ -96,10 +96,8 @@ func testProtoConsumeSchoolCsv(t *testing.T, numSchools int, schoolGeneratorMap 
 		assert.Equal(t, schoolInput["name"], schoolOutput.Payload.Name)
 		assert.Equal(t, schoolInput["organization_uuid"], schoolOutput.Payload.OrganizationUuid)
 		program_uuids := strings.Split(schoolInput["program_uuids"], ";")
-		output_program_uuids := []string{}
-		output_program_uuids = append(output_program_uuids, program_uuids...)
 
-		assert.Equal(t, program_uuids, output_program_uuids)
+		assert.Equal(t, program_uuids, schoolOutput.Payload.ProgramUuids)
 	}
 	ctx.Done()
 }
