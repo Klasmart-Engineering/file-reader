@@ -50,21 +50,21 @@ func InitProtoOperations() Operations {
 				Headers:      ClassHeaders,
 			},
 
-			"ORGANIZATION_MEMBERSHIP": {
+			"ORGANIZATION.MEMBERSHIP": {
 				Topic:        orgMemTopic,
 				Key:          "",
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(orgMemTopic),
 				SerializeRow: RowToOrgMemProto,
 				Headers:      OrgMemHeaders,
 			},
-			"CLASS_DETAILS": {
+			"CLASS.DETAILS": {
 				Topic:        classDetailsTopic,
 				Key:          "",
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(classDetailsTopic),
 				SerializeRow: RowToClassDetailsProto,
 				Headers:      ClassDetailsHeaders,
 			},
-			"SCHOOL_MEMBERSHIP": {
+			"SCHOOL.MEMBERSHIP": {
 				Topic:        schoolMemTopic,
 				Key:          "",
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(schoolMemTopic),
