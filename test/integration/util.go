@@ -48,15 +48,15 @@ func dialer(server *grpc.Server, service *fileGrpc.IngestFileService) func(conte
 	}
 }
 
-func StartGrpc(logger *zapLogger.ZapLogger, cfg *config.Config, addr string) (context.Context, filepb.IngestFileServiceClient) {
+func StartGrpc(logger *zapLogger.ZapLogger, cfg *config.Config, addr string) (context.Context, filepb.IngestFileServiceClient, net.Listener) {
+
 	timeout, _ := strconv.Atoi(os.Getenv("DEFAULT_SERVER_TIMEOUT_MS"))
 	defaultTimeOut := time.Duration(timeout * int(time.Millisecond))
 	ctx, _ := context.WithTimeout(context.Background(), defaultTimeOut)
 
 	ingestFileService := fileGrpc.NewIngestFileService(ctx, logger, cfg)
 
-	_, grpcServer, _ := instrument.GetGrpcServer("Mock service", addr, logger)
-
+	ln, grpcServer, _ := instrument.GetGrpcServer("Mock service", addr, logger)
 	conn, err := grpc.DialContext(ctx, "", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithContextDialer(dialer(grpcServer, ingestFileService)))
 
 	if err != nil {
@@ -65,7 +65,7 @@ func StartGrpc(logger *zapLogger.ZapLogger, cfg *config.Config, addr string) (co
 
 	client := filepb.NewIngestFileServiceClient(conn)
 
-	return ctx, client
+	return ctx, client, ln
 }
 
 func UploadFileToS3(bucket string, s3key string, awsRegion string, file io.Reader) error {
@@ -147,4 +147,12 @@ func DerefAvroNullString(s *avro.UnionNullString) string {
 	}
 
 	return ""
+}
+
+func DerefAvroNullArrayString(s *avro.UnionNullArrayString) []string {
+	if s != nil {
+		return s.ArrayString
+	}
+
+	return []string{""}
 }

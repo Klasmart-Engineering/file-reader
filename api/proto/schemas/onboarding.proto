@@ -11,7 +11,29 @@ message Organization {
 message Organization_payload {
     string uuid = 1;
     string name = 2;
-    string owner_user_id = 3;
+    string owner_user_uuid = 3;
+}
+
+message Organization_membership {
+    Organization_membership_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message Organization_membership_payload {
+    string organization_uuid = 1;
+    string user_uuid = 2;
+    repeated string organization_role_uuids = 3;
+}
+
+
+message School_membership {
+    School_membership_payload payload = 1;
+    Metadata metadata = 2;
+}
+
+message School_membership_payload {
+    string school_uuid = 1;
+    string user_uuid = 2;
 }
 
 message Subject {
@@ -71,7 +93,7 @@ message Role_payload {
     optional string uuid = 1;
     string organization_uuid = 2;
     string name = 3;
-    repeated string permission_ids = 4;
+    repeated string permission_uuids = 4;
 }
 
 message School {
@@ -81,9 +103,9 @@ message School {
 
 message School_payload {
     optional string uuid = 1;
-    string organization_id = 2;
+    string organization_uuid = 2;
     string name = 3;
-    repeated string program_ids = 4;
+    repeated string program_uuids = 4;
 }
 
 message User {
@@ -93,12 +115,12 @@ message User {
 
 message User_payload {
     string uuid = 1;
-    string organization_uuid = 2;
-    string given_name = 3;
-    string family_name = 4;
-    optional string email = 5;
-    optional string phone_number = 6;
-    optional string date_of_birth = 7;
+    string given_name = 2;
+    string family_name = 3;
+    optional string email = 4;
+    optional string phone_number = 5;
+    optional string date_of_birth = 6;
+    string gender = 7;
 }
 
 message Class {
@@ -112,14 +134,23 @@ message Class_payload {
     string name = 3;
 }
 
-enum Gender {
-  MALE = 0;
-  FEMALE = 1;
+message Class_details {
+    Class_details_payload payload = 1;
+    Metadata metadata = 2;
 }
 
+message Class_details_payload {
+    string class_uuid = 1;
+    optional string school_uuid = 2;
+    repeated string program_uuids = 3;
+    repeated string subject_uuids = 4;
+    repeated string grade_uuids = 5;
+    repeated string age_range_uuids = 6;
+    optional string academic_term_uuid = 7;
+}
 
 message Metadata {
     string origin_application = 1;
     string region = 2;
-    string tracking_id = 3;
+    string tracking_uuid = 3;
 }

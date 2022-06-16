@@ -28,12 +28,15 @@ type IngestFileService struct {
 }
 
 var operationEnumMap = map[inputfile.Type]string{
-	inputfile.Type_ORGANIZATION: "organization",
-	inputfile.Type_SCHOOL:       "school",
-	inputfile.Type_CLASS:        "class",
-	inputfile.Type_USER:         "user",
-	inputfile.Type_ROLE:         "role",
-	inputfile.Type_PROGRAM:      "program",
+	inputfile.Type_ORGANIZATION:            "organization",
+	inputfile.Type_SCHOOL:                  "school",
+	inputfile.Type_CLASS:                   "class",
+	inputfile.Type_USER:                    "user",
+	inputfile.Type_ROLE:                    "role",
+	inputfile.Type_PROGRAM:                 "program",
+	inputfile.Type_ORGANIZATION_MEMBERSHIP: "organization_membership",
+	inputfile.Type_CLASS_DETAILS:           "class_details",
+	inputfile.Type_SCHOOL_MEMBERSHIP:       "school_membership",
 }
 
 // NewIngestFileService organizationServer constructor
@@ -53,7 +56,7 @@ func NewIngestFileService(ctx context.Context, logger *log.ZapLogger, cfg *confi
 	return &IngestFileService{ctx: ctx, logger: logger, cfg: cfg, operations: operations}
 }
 
-func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, operationType string, trackingId string) (erroStr string) {
+func (c *IngestFileService) processInputFile(filePath string, fileTypeName string, operationType string, trackingUuid string) (erroStr string) {
 	//Setup
 	c.logger.Infof(c.ctx, "Processing input file in ", filePath)
 	f, err := os.Open(filePath)
@@ -89,8 +92,8 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 			Logger:                 c.logger,
 			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 		},
-		TrackingId: trackingId,
-		Logger:     c.logger,
+		TrackingUuid: trackingUuid,
+		Logger:       c.logger,
 	}
 
 	operation.IngestFile(c.ctx, fileRows, headerIndexes, ingestFileConfig)
@@ -102,6 +105,7 @@ func (c *IngestFileService) processInputFile(filePath string, fileTypeName strin
 func (c *IngestFileService) IngestFile(stream inputfile.IngestFileService_IngestFileServer) error {
 
 	errors := []*inputfile.InputFileError{}
+
 	for {
 		// Start receiving stream messages from client
 		req, err := stream.Recv()
@@ -123,10 +127,10 @@ func (c *IngestFileService) IngestFile(stream inputfile.IngestFileService_Ingest
 		fileId := req.InputFile.GetFileId()
 		fileTypeName := req.InputFile.GetInputFileType().String()
 		operationType := operationEnumMap[req.GetType()]
-		trackingId := uuid.NewString()
+		trackingUuid := uuid.NewString()
 
 		// process organization
-		if errStr := c.processInputFile(filePath, fileTypeName, operationType, trackingId); errStr != "" {
+		if errStr := c.processInputFile(filePath, fileTypeName, operationType, trackingUuid); errStr != "" {
 			if errStr != "[]" {
 				c.logger.Errorf(c.ctx, "Failed to process csv file: %s, %s", filePath, errStr)
 

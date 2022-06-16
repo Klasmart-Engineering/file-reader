@@ -27,7 +27,6 @@ func DownloadFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *
 		log.Fatal("Failed to make tmp file", err)
 	}
 	defer os.Remove(f.Name())
-
 	// Download from S3 to file
 	downloader := s3manager.NewDownloader(awsSession)
 	numBytes, err := downloader.Download(f,

@@ -10,12 +10,15 @@ import (
 type Type string
 
 var TypeName = map[Type]int32{
-	"ORGANIZATION": 0,
-	"SCHOOL":       1,
-	"CLASS":        2,
-	"USER":         3,
-	"ROLE":         4,
-	"PROGRAM":      5,
+	"ORGANIZATION":            0,
+	"SCHOOL":                  1,
+	"CLASS":                   2,
+	"USER":                    3,
+	"ROLE":                    4,
+	"PROGRAM":                 5,
+	"ORGANIZATION_MEMBERSHIP": 6,
+	"CLASS_DETAILS":           7,
+	"SCHOOL_MEMBERSHIP":       8,
 }
 
 var IntToType = map[int32]Type{
@@ -25,6 +28,9 @@ var IntToType = map[int32]Type{
 	3: "USER",
 	4: "ROLE",
 	5: "PROGRAM",
+	6: "ORGANIZATION_MEMBERSHIP",
+	7: "CLASS_DETAILS",
+	8: "SCHOOL_MEMBERSHIP",
 }
 
 type InputFileType string
@@ -62,6 +68,12 @@ func (rb RequestBuilder) getInputFile(fileId string, filePath string, entity int
 		typeName = filepb.Type_ROLE
 	case 5:
 		typeName = filepb.Type_PROGRAM
+	case 6:
+		typeName = filepb.Type_ORGANIZATION_MEMBERSHIP
+	case 7:
+		typeName = filepb.Type_CLASS_DETAILS
+	case 8:
+		typeName = filepb.Type_SCHOOL_MEMBERSHIP
 	}
 
 	switch fileType {
@@ -96,6 +108,7 @@ func (h *inputFileHandlers) ProcessRequests(ctx context.Context, fileClient file
 	var err error
 
 	stream, err = fileClient.IngestFile(ctx)
+
 	if err != nil {
 		h.logger.Errorf(ctx, "Error on IngestFile rpc call: %v", err.Error())
 	}

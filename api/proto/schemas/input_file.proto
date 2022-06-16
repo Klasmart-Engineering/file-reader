@@ -18,7 +18,10 @@ enum Type {
 	USER = 3;
 	ROLE = 4;
 	PROGRAM = 5;
-	UNKNOWN = 6;
+	ORGANIZATION_MEMBERSHIP = 6;
+	CLASS_DETAILS = 7;
+	SCHOOL_MEMBERSHIP = 8;
+	UNKNOWN = 9;
   }
 message InputFileRequest {
 	Type type = 1;

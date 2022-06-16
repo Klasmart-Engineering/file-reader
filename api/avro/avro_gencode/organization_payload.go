@@ -3,7 +3,11 @@
  * SOURCES:
  *     organization.avsc
  *     school.avsc
+ *     user.avsc
  *     class.avsc
+ *     organization_membership.avsc
+ *     class_details.avsc
+ *     school_membership.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -25,10 +29,10 @@ type OrganizationPayload struct {
 
 	Uuid string `json:"uuid"`
 
-	Owner_user_id string `json:"owner_user_id"`
+	Owner_user_uuid string `json:"owner_user_uuid"`
 }
 
-const OrganizationPayloadAvroCRC64Fingerprint = "\xfb\xd4!\xac\xf7\x99\xc5\x1d"
+const OrganizationPayloadAvroCRC64Fingerprint = "\xe1&\x9f\n\xf6\xa0\xb3w"
 
 func NewOrganizationPayload() OrganizationPayload {
 	r := OrganizationPayload{}
@@ -68,7 +72,7 @@ func writeOrganizationPayload(r OrganizationPayload, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = vm.WriteString(r.Owner_user_id, w)
+	err = vm.WriteString(r.Owner_user_uuid, w)
 	if err != nil {
 		return err
 	}
@@ -80,7 +84,7 @@ func (r OrganizationPayload) Serialize(w io.Writer) error {
 }
 
 func (r OrganizationPayload) Schema() string {
-	return "{\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"owner_user_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.OrganizationPayload\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"uuid\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"owner_user_uuid\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.OrganizationPayload\",\"type\":\"record\"}"
 }
 
 func (r OrganizationPayload) SchemaName() string {
@@ -109,7 +113,7 @@ func (r *OrganizationPayload) Get(i int) types.Field {
 		return w
 
 	case 2:
-		w := types.String{Target: &r.Owner_user_id}
+		w := types.String{Target: &r.Owner_user_uuid}
 
 		return w
 
@@ -149,7 +153,7 @@ func (r OrganizationPayload) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	output["owner_user_id"], err = json.Marshal(r.Owner_user_id)
+	output["owner_user_uuid"], err = json.Marshal(r.Owner_user_uuid)
 	if err != nil {
 		return nil, err
 	}
@@ -192,18 +196,18 @@ func (r *OrganizationPayload) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("no value specified for uuid")
 	}
 	val = func() json.RawMessage {
-		if v, ok := fields["owner_user_id"]; ok {
+		if v, ok := fields["owner_user_uuid"]; ok {
 			return v
 		}
 		return nil
 	}()
 
 	if val != nil {
-		if err := json.Unmarshal([]byte(val), &r.Owner_user_id); err != nil {
+		if err := json.Unmarshal([]byte(val), &r.Owner_user_uuid); err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for owner_user_id")
+		return fmt.Errorf("no value specified for owner_user_uuid")
 	}
 	return nil
 }

@@ -1,0 +1,82 @@
+{
+	"name": "ClassDetails",
+	"type": "record",
+	"namespace": "com.kidsloop.onboarding",
+	"fields": [{
+			"name": "payload",
+			"type": {
+				"name": "ClassDetailsPayload",
+				"type": "record",
+				"fields": [{
+						"name": "class_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}, {
+						"name": "school_uuid",
+						"type": ["null", "string"],
+						"logicalType": "uuid",
+						"default": null
+					}, {
+						"name": "program_uuids",
+						"type": ["null", {
+							"type": "array",
+							"items": "string"
+						}],
+						"default": null
+					},
+                    {
+						"name": "subject_uuids",
+						"type": ["null", {
+							"type": "array",
+							"items": "string"
+						}],
+						"default": null
+					},
+                    {
+						"name": "grade_uuids",
+						"type": ["null", {
+							"type": "array",
+							"items": "string"
+						}],
+						"default": null
+					},
+                    {
+						"name": "age_range_uuids",
+						"type": ["null", {
+							"type": "array",
+							"items": "string"
+						}],
+						"default": null
+					},
+                    {
+						"name": "academic_term_uuid",
+						"type": ["null", "string"],
+						"logicalType": "uuid",
+						"default": null
+					}
+				]
+			}
+		},
+		{
+			"name": "metadata",
+			"type": {
+				"name": "ClassDetailsMetadata",
+				"type": "record",
+				"fields": [{
+						"name": "origin_application",
+						"type": "string"
+					},
+					{
+						"name": "region",
+						"type": "string"
+					},
+					{
+						"name": "tracking_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		}
+	]
+}

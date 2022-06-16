@@ -48,12 +48,12 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 	// Make test csv file
 	numOrgs := 5
 	orgGeneratorMap := map[string]func() string{
-		"uuid":              util.UuidFieldGenerator(),
-		"owner_user_id":     util.UuidFieldGenerator(),
-		"id_list":           util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
-		"foo":               util.UuidFieldGenerator(),
-		"bar":               util.UuidFieldGenerator(),
-		"organization_name": util.NameFieldGenerator("org", numOrgs),
+		"uuid":            util.UuidFieldGenerator(),
+		"owner_user_uuid": util.UuidFieldGenerator(),
+		"uuid_list":       util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
+		"foo":             util.UuidFieldGenerator(),
+		"bar":             util.UuidFieldGenerator(),
+		"name":            util.NameFieldGenerator("org", numOrgs),
 	}
 
 	file, orgs := util.MakeCsv(numOrgs, orgGeneratorMap)
@@ -63,7 +63,7 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 	assert.Nil(t, err, "error uploading file to s3")
 
 	// Put file create message on topic
-	trackingId := uuid.NewString()
+	trackingUuid := uuid.NewString()
 	s3FileCreated := avro.S3FileCreatedUpdated{
 		Payload: avro.S3FileCreatedUpdatedPayload{
 			Key:            s3key,
@@ -73,7 +73,7 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
-		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_id: trackingId},
+		Metadata: avro.S3FileCreatedUpdatedMetadata{Tracking_uuid: trackingUuid},
 	}
 	err = util.ProduceFileCreateMessage(
 		ctx,
@@ -102,12 +102,12 @@ func TestProtoConsumeOrganizationCsv(t *testing.T) {
 
 		assert.Nil(t, err, "error deserializing message from topic")
 
-		assert.Equal(t, trackingId, orgOutput.Metadata.TrackingId)
+		assert.Equal(t, trackingUuid, orgOutput.Metadata.TrackingUuid)
 
 		orgInput := orgs[i]
 		assert.Equal(t, orgInput["uuid"], orgOutput.Payload.Uuid)
-		assert.Equal(t, orgInput["organization_name"], orgOutput.Payload.Name)
-		assert.Equal(t, orgInput["owner_user_id"], orgOutput.Payload.OwnerUserId)
+		assert.Equal(t, orgInput["name"], orgOutput.Payload.Name)
+		assert.Equal(t, orgInput["owner_user_uuid"], orgOutput.Payload.OwnerUserUuid)
 	}
 	ctx.Done()
 }

@@ -50,7 +50,6 @@ func GetBrokers() []string {
 
 func GetGrpcServer(serviceName string, address string, logger *log.ZapLogger) (net.Listener, *grpc.Server, error) {
 	l, err := net.Listen("tcp", address)
-
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "net.Listen")
 	}

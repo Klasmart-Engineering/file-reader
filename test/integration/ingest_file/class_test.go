@@ -57,13 +57,13 @@ func getClassCsvToProtos(filePath string) ([]*onboarding.Class, error) {
 		md := onboarding.Metadata{
 			OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
 			Region:            os.Getenv("METADATA_REGION"),
-			TrackingId:        uuid.NewString(),
+			TrackingUuid:      uuid.NewString(),
 		}
 
 		pl := onboarding.ClassPayload{
 			Uuid:             &row[headerIndexMap["uuid"]],
-			Name:             row[headerIndexMap["class_name"]],
-			OrganizationUuid: row[headerIndexMap["organization_id"]],
+			Name:             row[headerIndexMap["name"]],
+			OrganizationUuid: row[headerIndexMap["organization_uuid"]],
 		}
 
 		res = append(res, &onboarding.Class{Payload: &pl, Metadata: &md})
@@ -122,7 +122,8 @@ func TestClassFileProcessingServer(t *testing.T) {
 			AllowAutoTopicCreation: instrument.IsEnv("TEST"),
 		},
 	}
-	ctx, client := util.StartGrpc(logger, cfg, addr)
+	ctx, client, ln := util.StartGrpc(logger, cfg, addr)
+	defer ln.Close()
 
 	csvFh := clientPb.NewInputFileHandlers(logger)
 	classProtoTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
@@ -158,20 +159,20 @@ func TestClassFileProcessingServer(t *testing.T) {
 					msg, err := r.ReadMessage(ctx)
 					t.Log("read message", msg, err)
 					if err != nil {
-						t.Logf("Error deserializing message: %v\n", err)
-						break
+						t.Logf("Error reading message: %v\n", err)
+						t.FailNow()
 					}
 
 					_, err = serde.Deserialize(msg.Value, class)
 
 					if err != nil {
 						t.Logf("Error deserializing message: %v\n", err)
-						break
+						t.FailNow()
 					}
 
 					if err == nil {
-						validateTrackingId := validation.ValidateTrackingId{Uuid: class.Metadata.TrackingId}
-						err := validation.UUIDValidate(validateTrackingId)
+						validateTrackingUuid := validation.ValidateTrackingId{Uuid: class.Metadata.TrackingUuid}
+						err := validation.UUIDValidate(validateTrackingUuid)
 						if err != nil {
 							t.Fatalf("%s", err)
 						}

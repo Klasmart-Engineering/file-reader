@@ -10,7 +10,8 @@
 				"fields": [{
 					"name": "uuid",
 					"type": ["null", "string"],
-					"logicalType": "uuid"
+					"logicalType": "uuid",
+					"default": null
 				}, {
 					"name": "organization_uuid",
 					"type": "string",
@@ -35,7 +36,7 @@
 						"type": "string"
 					},
 					{
-						"name": "tracking_id",
+						"name": "tracking_uuid",
 						"type": "string",
 						"logicalType": "uuid"
 					}

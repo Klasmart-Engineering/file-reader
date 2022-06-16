@@ -3,7 +3,11 @@
  * SOURCES:
  *     organization.avsc
  *     school.avsc
+ *     user.avsc
  *     class.avsc
+ *     organization_membership.avsc
+ *     class_details.avsc
+ *     school_membership.avsc
  *     s3filecreated.avsc
  */
 package avro
@@ -25,10 +29,10 @@ type OrganizationMetadata struct {
 
 	Region string `json:"region"`
 
-	Tracking_id string `json:"tracking_id"`
+	Tracking_uuid string `json:"tracking_uuid"`
 }
 
-const OrganizationMetadataAvroCRC64Fingerprint = "9R\xbf\x96Į\xff\xf7"
+const OrganizationMetadataAvroCRC64Fingerprint = "\x06\xe5?J\xac\xbc\x95\x8a"
 
 func NewOrganizationMetadata() OrganizationMetadata {
 	r := OrganizationMetadata{}
@@ -68,7 +72,7 @@ func writeOrganizationMetadata(r OrganizationMetadata, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = vm.WriteString(r.Tracking_id, w)
+	err = vm.WriteString(r.Tracking_uuid, w)
 	if err != nil {
 		return err
 	}
@@ -80,7 +84,7 @@ func (r OrganizationMetadata) Serialize(w io.Writer) error {
 }
 
 func (r OrganizationMetadata) Schema() string {
-	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_id\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.OrganizationMetadata\",\"type\":\"record\"}"
+	return "{\"fields\":[{\"name\":\"origin_application\",\"type\":\"string\"},{\"name\":\"region\",\"type\":\"string\"},{\"logicalType\":\"uuid\",\"name\":\"tracking_uuid\",\"type\":\"string\"}],\"name\":\"com.kidsloop.onboarding.OrganizationMetadata\",\"type\":\"record\"}"
 }
 
 func (r OrganizationMetadata) SchemaName() string {
@@ -109,7 +113,7 @@ func (r *OrganizationMetadata) Get(i int) types.Field {
 		return w
 
 	case 2:
-		w := types.String{Target: &r.Tracking_id}
+		w := types.String{Target: &r.Tracking_uuid}
 
 		return w
 
@@ -149,7 +153,7 @@ func (r OrganizationMetadata) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	output["tracking_id"], err = json.Marshal(r.Tracking_id)
+	output["tracking_uuid"], err = json.Marshal(r.Tracking_uuid)
 	if err != nil {
 		return nil, err
 	}
@@ -192,18 +196,18 @@ func (r *OrganizationMetadata) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("no value specified for region")
 	}
 	val = func() json.RawMessage {
-		if v, ok := fields["tracking_id"]; ok {
+		if v, ok := fields["tracking_uuid"]; ok {
 			return v
 		}
 		return nil
 	}()
 
 	if val != nil {
-		if err := json.Unmarshal([]byte(val), &r.Tracking_id); err != nil {
+		if err := json.Unmarshal([]byte(val), &r.Tracking_uuid); err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("no value specified for tracking_id")
+		return fmt.Errorf("no value specified for tracking_uuid")
 	}
 	return nil
 }
