@@ -1,0 +1,53 @@
+{
+	"name": "ClassRoster",
+	"type": "record",
+	"namespace": "com.kidsloop.onboarding",
+	"fields": [{
+			"name": "payload",
+			"type": {
+				"name": "ClassRosterPayload",
+				"type": "record",
+				"fields": [{
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"name": "class_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					},
+					{
+						"name": "user_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					},
+                    {
+						"name": "participating_as",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "metadata",
+			"type": {
+				"name": "ClassRosterMetadata",
+				"type": "record",
+				"fields": [{
+						"name": "origin_application",
+						"type": "string"
+					},
+					{
+						"name": "region",
+						"type": "string"
+					},
+					{
+						"name": "tracking_uuid",
+						"type": "string",
+						"logicalType": "uuid"
+					}
+				]
+			}
+		}
+	]
+}

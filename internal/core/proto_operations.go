@@ -16,8 +16,9 @@ func InitProtoOperations() Operations {
 	userTopic := instrument.MustGetEnv("USER_PROTO_TOPIC")
 	classTopic := instrument.MustGetEnv("CLASS_PROTO_TOPIC")
 	orgMemTopic := instrument.MustGetEnv("ORGANIZATION_MEMBERSHIP_PROTO_TOPIC")
-	classDetailsTopic := instrument.MustGetEnv("CLASS_DETAILS_PROTO_TOPIC")
 	schoolMemTopic := instrument.MustGetEnv("SCHOOL_MEMBERSHIP_PROTO_TOPIC")
+	classRosterTopic := instrument.MustGetEnv("CLASS_ROSTER_PROTO_TOPIC")
+	classDetailsTopic := instrument.MustGetEnv("CLASS_DETAILS_PROTO_TOPIC")
 
 	return Operations{
 		OperationMap: map[string]Operation{
@@ -70,6 +71,13 @@ func InitProtoOperations() Operations {
 				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(schoolMemTopic),
 				SerializeRow: RowToSchoolMemProto,
 				Headers:      SchoolMemHeaders,
+			},
+			"CLASS_ROSTER": {
+				Topic:        classRosterTopic,
+				Key:          "",
+				SchemaID:     proto.SchemaRegistryClient.GetSchemaID(classRosterTopic),
+				SerializeRow: RowToClassRosterProto,
+				Headers:      ClassRosterHeaders,
 			},
 		},
 	}
@@ -201,6 +209,25 @@ func RowToClassProto(row []string, tracking_uuid string, schemaId int, headerInd
 	return valueBytes, nil
 }
 
+func RowToClassRosterProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
+	md := onboarding.Metadata{
+		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),
+		Region:            os.Getenv("METADATA_REGION"),
+		TrackingUuid:      tracking_uuid,
+	}
+	pl := onboarding.ClassRosterPayload{
+		ClassUuid:       row[headerIndexes[CLASS_UUID]],
+		UserUuid:        row[headerIndexes[USER_UUID]],
+		ParticipatingAs: row[headerIndexes[PARTICIPATING_AS]],
+	}
+	codec := &onboarding.ClassRoster{Payload: &pl, Metadata: &md}
+	serde := protobuf.NewProtoSerDe()
+	valueBytes, err := serde.Serialize(schemaId, codec)
+	if err != nil {
+		return nil, err
+	}
+	return valueBytes, nil
+}
 func RowToClassDetailsProto(row []string, tracking_uuid string, schemaId int, headerIndexes map[string]int) ([]byte, error) {
 	md := onboarding.Metadata{
 		OriginApplication: os.Getenv("METADATA_ORIGIN_APPLICATION"),

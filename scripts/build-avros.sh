@@ -7,5 +7,6 @@ gogen-avro ./api/avro/avro_gencode/ \
 ./api/avro/schemas/class.avsc \
 ./api/avro/schemas/organization_membership.avsc \
 ./api/avro/schemas/class_details.avsc \
+./api/avro/schemas/class_roster.avsc \
 ./api/avro/schemas/school_membership.avsc \
 ./api/avro/schemas/s3filecreated.avsc
