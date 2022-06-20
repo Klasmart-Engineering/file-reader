@@ -37,9 +37,9 @@ func testAvroConsumeClassDetailsCsv(t *testing.T, numClassDetails int, classDeta
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "class.details"
-	s3key := "class.details" + uuid.NewString() + ".csv"
-	operationType := "class_details"
+	bucket := "class-details"
+	s3key := "class-details" + uuid.NewString() + ".csv"
+	operationType := "class-details"
 
 	// Make test csv file
 	file, classDetails := util.MakeCsv(numClassDetails, classDetailsGeneratorMap)

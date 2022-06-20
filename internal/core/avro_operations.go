@@ -168,28 +168,28 @@ func InitAvroOperations(schemaRegistryClient *SchemaRegistry) Operations {
 				SerializeRow: RowToClassAvro,
 				Headers:      ClassHeaders,
 			},
-			"ORGANIZATION_MEMBERSHIP": {
+			"ORGANIZATION-MEMBERSHIP": {
 				Topic:        orgMemTopic,
 				Key:          "",
 				SchemaID:     GetOrgMemSchemaId(schemaRegistryClient, orgMemTopic),
 				SerializeRow: RowToOrgMemAvro,
 				Headers:      OrgMemHeaders,
 			},
-			"CLASS_DETAILS": {
+			"CLASS-DETAILS": {
 				Topic:        classDetailsTopic,
 				Key:          "",
 				SchemaID:     GetClassDetailsSchemaId(schemaRegistryClient, classDetailsTopic),
 				SerializeRow: RowToClassDetailsAvro,
 				Headers:      ClassDetailsHeaders,
 			},
-			"SCHOOL_MEMBERSHIP": {
+			"SCHOOL-MEMBERSHIP": {
 				Topic:        schoolMemTopic,
 				Key:          "",
 				SchemaID:     GetSchoolMemSchemaId(schemaRegistryClient, schoolMemTopic),
 				SerializeRow: RowToSchoolMemAvro,
 				Headers:      SchoolMemHeaders,
 			},
-			"CLASS_ROSTER": {
+			"CLASS-ROSTER": {
 				Topic:        classRosterTopic,
 				Key:          "",
 				SchemaID:     GetClassRosterSchemaId(schemaRegistryClient, classRosterTopic),

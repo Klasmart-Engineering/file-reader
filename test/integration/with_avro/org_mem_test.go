@@ -39,9 +39,9 @@ func TestAvroConsumeOrgMemCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "organization.membership"
-	s3key := "organization.membership" + uuid.NewString() + ".csv"
-	operationType := "organization_membership"
+	bucket := "organization-membership"
+	s3key := "organization-membership" + uuid.NewString() + ".csv"
+	operationType := "organization-membership"
 
 	// Make test csv file
 	numOrgMems := 5
@@ -124,8 +124,8 @@ func TestAvroConsumeInvalidAndValidOrgMemCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "organization.membership"
-	operationType := "organization_membership"
+	bucket := "organization-membership"
+	operationType := "organization-membership"
 
 	// First try to consume an empty file
 	s3key1 := "bad_organization_membership" + uuid.NewString() + ".csv"
@@ -153,7 +153,7 @@ func TestAvroConsumeInvalidAndValidOrgMemCsv(t *testing.T) {
 	assert.Nil(t, err, "error producing file create message to topic")
 
 	// Then try to consume a real organization file
-	s3key2 := "organization.membership" + uuid.NewString() + ".csv"
+	s3key2 := "organization-membership" + uuid.NewString() + ".csv"
 	numOrgMems := 5
 	orgMemGeneratorMap := map[string]func() string{
 		"organization_uuid":       util.UuidFieldGenerator(),

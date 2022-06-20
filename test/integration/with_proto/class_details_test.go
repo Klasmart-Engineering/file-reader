@@ -39,9 +39,9 @@ func testProtoConsumeClassDetailsCsv(t *testing.T, numClassDetails int, classDet
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "class.details"
-	operationType := "class_details"
-	s3key := "class.details" + uuid.NewString() + ".csv"
+	bucket := "class-details"
+	operationType := "class-details"
+	s3key := "class-details" + uuid.NewString() + ".csv"
 
 	// Make test csv file
 	file, classDetails := util.MakeCsv(numClassDetails, classDetailsGeneratorMap)

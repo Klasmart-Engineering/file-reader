@@ -38,9 +38,9 @@ func TestAvroConsumeSchoolMemCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "school.membership"
-	s3key := "school.membership" + uuid.NewString() + ".csv"
-	operationType := "school_membership"
+	bucket := "school-membership"
+	s3key := "school-membership" + uuid.NewString() + ".csv"
+	operationType := "school-membership"
 
 	// Make test csv file
 	numSchoolMems := 5
@@ -119,8 +119,8 @@ func TestAvroConsumeInvalidAndValidSchoolMemCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "school.membership"
-	operationType := "school_membership"
+	bucket := "school-membership"
+	operationType := "school-membership"
 
 	// First try to consume an empty file
 	s3key1 := "bad_school_membership" + uuid.NewString() + ".csv"
@@ -148,7 +148,7 @@ func TestAvroConsumeInvalidAndValidSchoolMemCsv(t *testing.T) {
 	assert.Nil(t, err, "error producing file create message to topic")
 
 	// Then try to consume a real organization file
-	s3key2 := "organization.membership" + uuid.NewString() + ".csv"
+	s3key2 := "school-membership" + uuid.NewString() + ".csv"
 	numSchoolMems := 5
 	schoolMemGeneratorMap := map[string]func() string{
 		"school_uuid": util.UuidFieldGenerator(),

@@ -41,9 +41,9 @@ func TestProtoConsumeSchoolMemCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "school.membership"
-	operationType := "school_membership"
-	s3key := "school.membership" + uuid.NewString() + ".csv"
+	bucket := "school-membership"
+	operationType := "school-membership"
+	s3key := "school-membership" + uuid.NewString() + ".csv"
 
 	// Make test csv file
 	numSchoolMems := 5
