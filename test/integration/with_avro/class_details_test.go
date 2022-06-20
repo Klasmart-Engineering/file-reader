@@ -39,7 +39,7 @@ func testAvroConsumeClassDetailsCsv(t *testing.T, numClassDetails int, classDeta
 	awsRegion := "eu-west-1"
 	bucket := "class-details"
 	s3key := "class-details" + uuid.NewString() + ".csv"
-	operationType := "class-details"
+	operationType := "class_details"
 
 	// Make test csv file
 	file, classDetails := util.MakeCsv(numClassDetails, classDetailsGeneratorMap)

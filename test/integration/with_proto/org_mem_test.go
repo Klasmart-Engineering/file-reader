@@ -43,7 +43,7 @@ func TestProtoConsumeOrgMemCsv(t *testing.T) {
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
 	bucket := "organization-membership"
-	operationType := "organization-membership"
+	operationType := "organization_membership"
 	s3key := "organization-membership" + uuid.NewString() + ".csv"
 
 	// Make test csv file

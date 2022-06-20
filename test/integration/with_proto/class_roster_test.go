@@ -39,7 +39,7 @@ func testProtoConsumeClassRosterCsv(t *testing.T, numClassRosters int, classRost
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
 	bucket := "class-roster"
-	operationType := "class-roster"
+	operationType := "class_roster"
 	s3key := "classroster" + uuid.NewString() + ".csv"
 
 	// Make test csv file
@@ -145,7 +145,7 @@ func TestProtoConsumeInvalidAndValidClassRosterCsv(t *testing.T) {
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
 	bucket := "class-roster"
-	operationType := "class-roster"
+	operationType := "class_roster"
 
 	// First try to consume an empty file
 	s3key1 := "bad_classroster" + uuid.NewString() + ".csv"

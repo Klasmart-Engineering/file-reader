@@ -41,7 +41,7 @@ func TestAvroConsumeOrgMemCsv(t *testing.T) {
 	awsRegion := "eu-west-1"
 	bucket := "organization-membership"
 	s3key := "organization-membership" + uuid.NewString() + ".csv"
-	operationType := "organization-membership"
+	operationType := "organization_membership"
 
 	// Make test csv file
 	numOrgMems := 5
@@ -125,7 +125,7 @@ func TestAvroConsumeInvalidAndValidOrgMemCsv(t *testing.T) {
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
 	bucket := "organization-membership"
-	operationType := "organization-membership"
+	operationType := "organization_membership"
 
 	// First try to consume an empty file
 	s3key1 := "bad_organization_membership" + uuid.NewString() + ".csv"
