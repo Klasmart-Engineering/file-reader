@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf/srclient"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoiface"
 
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
@@ -35,7 +35,7 @@ func (r *SchemaRegistrator) RegisterValue(ctx context.Context, topic string, msg
 }
 
 func (r *SchemaRegistrator) register(ctx context.Context, topic string, msg interface{}) (*srclient.Schema, error) {
-	protoMsg, ok := msg.(proto.Message)
+	protoMsg, ok := msg.(protoiface.MessageV1)
 	if !ok {
 		return nil, fmt.Errorf("record type must be of proto.Message")
 	}
