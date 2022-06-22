@@ -1,6 +1,5 @@
 FROM golang:1.18-alpine
 
-ADD . $GOPATH/src/
 # Set the Current Working Directory inside the container
 WORKDIR $GOPATH/src/
 
