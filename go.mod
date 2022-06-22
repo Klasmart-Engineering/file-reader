@@ -4,21 +4,21 @@ go 1.18
 
 require (
 	github.com/actgardner/gogen-avro/v10 v10.2.1
-	github.com/aws/aws-sdk-go v1.44.20
+	github.com/aws/aws-sdk-go v1.44.39
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/goburrow/cache v0.1.4
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
 	github.com/jhump/protoreflect v1.12.0
-	github.com/newrelic/go-agent v3.16.0+incompatible
+	github.com/newrelic/go-agent v3.16.1+incompatible
 	github.com/onsi/gomega v1.19.0
 	github.com/pkg/errors v0.9.1
-	github.com/riferrei/srclient v0.5.3
-	github.com/segmentio/kafka-go v0.4.31
-	github.com/stretchr/testify v1.7.1
+	github.com/riferrei/srclient v0.5.4
+	github.com/segmentio/kafka-go v0.4.32
+	github.com/stretchr/testify v1.7.4
 	go.uber.org/zap v1.21.0
-	google.golang.org/grpc v1.46.2
+	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 )
 
@@ -45,5 +45,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
