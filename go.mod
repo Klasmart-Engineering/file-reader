@@ -10,6 +10,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
+	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
 	github.com/jhump/protoreflect v1.12.0
 	github.com/newrelic/go-agent v3.16.0+incompatible
 	github.com/onsi/gomega v1.19.0
@@ -28,9 +29,7 @@ require (
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/linkedin/goavro/v2 v2.11.1 // indirect

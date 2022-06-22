@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/KL-Engineering/file-reader/pkg/third_party/protobuf/srclient"
-
 	"github.com/golang/protobuf/proto"
+
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/desc/protoprint"

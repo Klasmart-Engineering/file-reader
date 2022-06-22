@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoiface"
 )
 
 const magicByte = 0
@@ -50,7 +51,7 @@ func deserializeMessageIntoProto(data []byte, msg proto.Message) error {
 }
 
 func serializeMessage(schemaID int, msg proto.Message) ([]byte, error) {
-	msgDesc, err := desc.LoadMessageDescriptorForMessage(msg)
+	msgDesc, err := desc.LoadMessageDescriptorForMessage(msg.(protoiface.MessageV1))
 	if err != nil {
 		return nil, fmt.Errorf("error loading message desciprot for message: %w", err)
 	}
