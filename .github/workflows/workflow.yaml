@@ -1,0 +1,58 @@
+name: csi file reader 
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+env:
+  AWS_REGION: eu-west-2
+  ECR_REPOSITORY: csi-file-reader
+  
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.18.1'
+    - name: Setup integration env
+      run: grep -o '^[^#]*' .env.example >> $GITHUB_ENV
+    - name: Integration tests
+      run: |
+        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    
+        ids=$(docker ps -a -q)
+        for id in $ids
+        do
+          echo "$id"
+          docker stop $id && docker rm $id
+        done
+
+        make integration-tests
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.18.1'
+    - name: Build and Push Image
+      id: build-push
+      uses: KL-Engineering/github-action-workflows/.github/actions/docker-build-push@v3.2.0
+      with:
+        image_name: ${{ env.ECR_REPOSITORY }}
+        dockerfile: Dockerfile
+        platforms: linux/amd64,linux/arm64
+        tags: |
+          type=ref,event=branch,suffix=-{{sha}}
+          type=ref,event=pr,suffix=-{{sha}}
+          type=ref,event=tag
+        ECR_AWS_ACCESS_KEY_ID: ${{ secrets.ECR_AWS_ACCESS_KEY_ID }}
+        ECR_AWS_SECRET_ACCESS_KEY: ${{ secrets.ECR_AWS_SECRET_ACCESS_KEY }}
+  
