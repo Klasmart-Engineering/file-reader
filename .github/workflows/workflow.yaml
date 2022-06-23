@@ -36,7 +36,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/fix/CSI-400-build-fail'
     steps:
     - uses: actions/checkout@v2
     - name: Setup Go
