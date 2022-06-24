@@ -73,11 +73,8 @@ func StreamFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *se
 	lines := bytes.Split(buff, []byte("\n"))
 	headers := strings.Split(string(lines[0]), ",")
 	colNum := len(headers)
-	if err != nil {
-		logger.Error(ctx, "Error reading headers when streaming file", err)
-		return err
-	}
 	fileRows <- headers
+
 	// Read the rest of the first chunk
 	for line := 1; line < len(lines)-1; line++ {
 		cols := strings.Split(string(lines[line]), ",")
