@@ -38,8 +38,8 @@ func testAvrosConsumeClassRosterCsv(t *testing.T, numClassRosters int, classRost
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "class.roster"
-	s3key := "class.roster" + uuid.NewString() + ".csv"
+	bucket := "class-roster"
+	s3key := "class-roster" + uuid.NewString() + ".csv"
 	operationType := "class_roster"
 
 	// Make test csv file
@@ -140,7 +140,7 @@ func TestAvroConsumeInvalidAndValidClassRosterCsv(t *testing.T) {
 
 	brokerAddrs := []string{"localhost:9092"}
 	awsRegion := "eu-west-1"
-	bucket := "class.roster"
+	bucket := "class-roster"
 	operationType := "class_roster"
 
 	// First try to consume an empty file
