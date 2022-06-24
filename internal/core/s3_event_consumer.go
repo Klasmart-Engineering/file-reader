@@ -57,12 +57,7 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 
 			// Download S3 file
 			fileRows := make(chan []string)
-			//err = DownloadFile(ctx, config.Logger, config.AwsSession, s3FileCreated, fileRows)
 			go StreamFile(ctx, config.Logger, config.AwsSession, s3FileCreated, fileRows, config.BatchSize)
-			// if err != nil {
-			// 	logger.Error(ctx, "error downloading s3 File ", err.Error())
-			// 	continue
-			// }
 
 			// Map to operation based on operation type
 			operation, exists := config.Operations.GetOperation(s3FileCreated.Payload.Operation_type)

@@ -135,7 +135,7 @@ func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
 			Key:            s3key1,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
-			Content_length: 0, // Content length isn't yet implemented
+			Content_length: emptyFile.Size(),
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
@@ -169,7 +169,7 @@ func TestAvroConsumeInvalidAndValidOrganizationCsv(t *testing.T) {
 			Key:            s3key2,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
-			Content_length: 0, // Content length isn't yet implemented
+			Content_length: file.Size(),
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},

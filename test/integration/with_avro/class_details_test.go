@@ -110,7 +110,7 @@ func TestAvroConsumeClassDetailsCsvScenarios(t *testing.T) {
 	for _, scenario := range []TestCases{
 		{
 			description:     "should ingest class details when all optional fields are supplied",
-			numClassDetails: 20,
+			numClassDetails: 5,
 			classDetailsGeneratorMap: map[string]func() string{
 				"class_uuid":         util.UuidFieldGenerator(),
 				"school_uuid":        util.UuidFieldGenerator(),

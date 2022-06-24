@@ -56,24 +56,16 @@ func StreamFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *se
 	defer func() {
 		close(fileRows)
 	}()
-	downloader := s3manager.NewDownloader(awsSession)
 
-	// Buffer needs to be larger than chunk size, as we won't clear it fully after each download due to partial lines being left over
 	if chunkSize < int(s3FileCreated.Payload.Content_length) {
 		chunkSize = int(s3FileCreated.Payload.Content_length)
 	}
-	buff := make([]byte, chunkSize+2000)
-	awsbuff := aws.NewWriteAtBuffer(buff)
 
 	// Download the first chunk which includes the headers
-	numBytes, err := downloader.DownloadWithContext(ctx, awsbuff,
-		&s3.GetObjectInput{
-			Bucket: aws.String(s3FileCreated.Payload.Bucket_name),
-			Key:    aws.String(s3FileCreated.Payload.Key),
-			Range:  aws.String(fmt.Sprintf("bytes=%v-%v", 0, chunkSize)),
-		})
+	downloader := s3manager.NewDownloader(awsSession)
+	buff := make([]byte, chunkSize)
+	err := downloadChunk(ctx, logger, downloader, buff, s3FileCreated, 0, chunkSize)
 	if err != nil {
-		logger.Error(ctx, "Error downloading file", err)
 		return err
 	}
 
@@ -86,6 +78,7 @@ func StreamFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *se
 		return err
 	}
 	fileRows <- headers
+	// Read the rest of the first chunk
 	for line := 1; line < len(lines)-1; line++ {
 		cols := strings.Split(string(lines[line]), ",")
 		if len(cols) != colNum {
@@ -94,38 +87,29 @@ func StreamFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *se
 		fileRows <- cols
 	}
 
+	// Read the remaining chunks
 	partialLine := bytes.Trim(lines[len(lines)-1], "\x00")
 	start := chunkSize + 1
-	end := chunkSize * 2
 	for start < int(s3FileCreated.Payload.Content_length) {
-		// Initialise buffer with end of last chunk at the start
-		buff := make([]byte, chunkSize+2000)
-		//buff = append(buff, partialLine...)
-		awsbuff := aws.NewWriteAtBuffer(buff)
-
-		numBytes, err := downloader.DownloadWithContext(ctx, awsbuff,
-			&s3.GetObjectInput{
-				Bucket: aws.String(s3FileCreated.Payload.Bucket_name),
-				Key:    aws.String(s3FileCreated.Payload.Key),
-				Range:  aws.String(fmt.Sprintf("bytes=%v-%v", start, end)),
-			})
+		buff := make([]byte, chunkSize)
+		err := downloadChunk(ctx, logger, downloader, buff, s3FileCreated, start, chunkSize)
 		if err != nil {
 			return err
 		}
-		logger.Infof(ctx, "Streamed %v bytes from %s. Range(%v-%v)", numBytes, s3FileCreated.Payload.Key, start, end)
 
 		lines := bytes.Split(buff, []byte("\n"))
 		// Edge case for when the batch only contains a single partial line
-		if end-start <= chunkSize && len(lines) < 2 {
+		if len(lines) < 2 {
 			partialLine = append(partialLine, bytes.Trim(buff, "\x00")...)
-			start = end + 1
-			end += chunkSize
+			start = start + chunkSize + 1
 			continue
 		}
+		// Feed each line in this batch to the fileRows channel
 		for line := 0; line < len(lines)-1; line++ {
 			var l []byte
 			if line == 0 {
-				l = append(partialLine, lines[line]...)
+				// Stitch first line in batch to the last line in the prev batch as they are the same line
+				l = append(partialLine, lines[0]...)
 			} else {
 				l = lines[line]
 			}
@@ -137,8 +121,7 @@ func StreamFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *se
 			fileRows <- cols
 		}
 		partialLine = bytes.Trim(lines[len(lines)-1], "\x00")
-		start = end + 1
-		end += chunkSize
+		start = start + chunkSize + 1
 	}
 	if len(partialLine) > 0 {
 		cols := strings.Split(string(partialLine), ",")
@@ -148,6 +131,28 @@ func StreamFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *se
 		fileRows <- cols
 	}
 
-	logger.Infof(ctx, "Downloaded %s %d bytes", s3FileCreated.Payload.Key, numBytes)
+	return nil
+}
+
+func downloadChunk(
+	ctx context.Context,
+	logger *zaplogger.ZapLogger,
+	downloader *s3manager.Downloader,
+	buff []byte,
+	s3FileCreated avro.S3FileCreatedUpdated,
+	start int,
+	chunkSize int,
+) error {
+	awsbuff := aws.NewWriteAtBuffer(buff)
+	numBytes, err := downloader.DownloadWithContext(ctx, awsbuff,
+		&s3.GetObjectInput{
+			Bucket: aws.String(s3FileCreated.Payload.Bucket_name),
+			Key:    aws.String(s3FileCreated.Payload.Key),
+			Range:  aws.String(fmt.Sprintf("bytes=%v-%v", start, start+chunkSize)),
+		})
+	if err != nil {
+		return err
+	}
+	logger.Infof(ctx, "Streamed %v bytes from %s. Range(%v-%v)", numBytes, s3FileCreated.Payload.Key, start, start+chunkSize)
 	return nil
 }
