@@ -30,6 +30,7 @@ type ConsumeToIngestConfig struct {
 	SchemaRegistry    *SchemaRegistry
 	Operations        Operations
 	Logger            *zaplogger.ZapLogger
+	BatchSize         int
 }
 
 func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config ConsumeToIngestConfig) {
@@ -56,11 +57,12 @@ func ConsumeToIngest(ctx context.Context, kafkaReader *kafka.Reader, config Cons
 
 			// Download S3 file
 			fileRows := make(chan []string)
-			err = DownloadFile(ctx, config.Logger, config.AwsSession, s3FileCreated, fileRows)
-			if err != nil {
-				logger.Error(ctx, "error downloading s3 File ", err.Error())
-				continue
-			}
+			//err = DownloadFile(ctx, config.Logger, config.AwsSession, s3FileCreated, fileRows)
+			go StreamFile(ctx, config.Logger, config.AwsSession, s3FileCreated, fileRows, config.BatchSize)
+			// if err != nil {
+			// 	logger.Error(ctx, "error downloading s3 File ", err.Error())
+			// 	continue
+			// }
 
 			// Map to operation based on operation type
 			operation, exists := config.Operations.GetOperation(s3FileCreated.Payload.Operation_type)
@@ -131,6 +133,7 @@ func StartFileCreateConsumer(ctx context.Context, logger *zaplogger.ZapLogger) {
 		Operations:        operations,
 		SchemaRegistry:    schemaRegistryClient,
 		Logger:            logger,
+		BatchSize:         100000,
 	}
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     brokerAddrs,

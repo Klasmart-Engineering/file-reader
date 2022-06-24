@@ -55,7 +55,7 @@ func testAvroConsumeClassDetailsCsv(t *testing.T, numClassDetails int, classDeta
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
-			Content_length: 0, // Content length isn't yet implemented
+			Content_length: file.Size(),
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
@@ -110,7 +110,7 @@ func TestAvroConsumeClassDetailsCsvScenarios(t *testing.T) {
 	for _, scenario := range []TestCases{
 		{
 			description:     "should ingest class details when all optional fields are supplied",
-			numClassDetails: 5,
+			numClassDetails: 20,
 			classDetailsGeneratorMap: map[string]func() string{
 				"class_uuid":         util.UuidFieldGenerator(),
 				"school_uuid":        util.UuidFieldGenerator(),

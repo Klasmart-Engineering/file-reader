@@ -47,9 +47,6 @@ func TestAvroConsumeOrganizationCsv(t *testing.T) {
 	orgGeneratorMap := map[string]func() string{
 		"uuid":            util.UuidFieldGenerator(),
 		"owner_user_uuid": util.UuidFieldGenerator(),
-		"uuid_list":       util.RepeatedFieldGenerator(util.UuidFieldGenerator(), 0, 5),
-		"foo":             util.UuidFieldGenerator(),
-		"bar":             util.UuidFieldGenerator(),
 		"name":            util.NameFieldGenerator("org", numOrgs),
 	}
 
@@ -66,7 +63,7 @@ func TestAvroConsumeOrganizationCsv(t *testing.T) {
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
-			Content_length: 0, // Content length isn't yet implemented
+			Content_length: file.Size(), // Content length isn't yet implemented
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},

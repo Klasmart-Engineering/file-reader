@@ -57,7 +57,7 @@ func testProtoConsumeClassDetailsCsv(t *testing.T, numClassDetails int, classDet
 			Key:            s3key,
 			Aws_region:     awsRegion,
 			Bucket_name:    bucket,
-			Content_length: 0, // Content length isn't yet implemented
+			Content_length: file.Size(), // Content length isn't yet implemented
 			Content_type:   "text/csv",
 			Operation_type: operationType,
 		},
