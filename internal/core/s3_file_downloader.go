@@ -14,11 +14,34 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 type Reader interface {
 	Read() ([]string, error)
+}
+
+type Client struct {
+	s3iface.S3API
+	key    string
+	bucket string
+}
+type Filter struct {
+	k, v string
+}
+
+func NewClient(s s3iface.S3API, bucket, key string) *Client {
+	return &Client{
+		S3API:  s,
+		bucket: bucket,
+		key:    key,
+	}
+}
+
+// NewFilter creates a new filter foa key value pair
+func NewFilter(k, v string) Filter {
+	return Filter{k, v}
 }
 
 func DownloadFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *session.Session, s3FileCreated avro.S3FileCreatedUpdated, fileRows chan []string) error {
@@ -60,36 +83,34 @@ func StreamFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *se
 	if chunkSize < int(s3FileCreated.Payload.Content_length) {
 		chunkSize = int(s3FileCreated.Payload.Content_length)
 	}
-
 	// Download the first chunk which includes the headers
 	downloader := s3manager.NewDownloader(awsSession)
-	buff := make([]byte, chunkSize)
-	err := downloadChunk(ctx, logger, downloader, buff, s3FileCreated, 0, chunkSize)
-	if err != nil {
-		return err
-	}
 
-	// Read the headers first
-	lines := bytes.Split(buff, []byte("\n"))
-	headers := strings.Split(string(lines[0]), ",")
-	colNum := len(headers)
-	fileRows <- headers
-
+	// Process the headers first
 	// Read the rest of the first chunk
-	for line := 1; line < len(lines)-1; line++ {
-		cols := strings.Split(string(lines[line]), ",")
-		if len(cols) != colNum {
-			logger.Error(ctx, "Error streaming from file. Wrong number of cols", cols)
+	var lines [][]byte
+	var colNum int
+
+	// If the chunk does not contain the whole header, keep trying with larger chunk size
+	for {
+		l, c, newChunkSize, err := processCsvHeaders(ctx, logger, downloader, s3FileCreated, chunkSize, fileRows)
+		if err != nil {
+			return err
 		}
-		fileRows <- cols
+		lines = l
+		colNum = c
+		if newChunkSize == chunkSize {
+			break
+		}
+		chunkSize = newChunkSize
+
 	}
 
 	// Read the remaining chunks
 	partialLine := bytes.Trim(lines[len(lines)-1], "\x00")
 	start := chunkSize + 1
 	for start < int(s3FileCreated.Payload.Content_length) {
-		buff := make([]byte, chunkSize)
-		err := downloadChunk(ctx, logger, downloader, buff, s3FileCreated, start, chunkSize)
+		buff, err := downloadChunk(ctx, logger, downloader, s3FileCreated, start, chunkSize)
 		if err != nil {
 			return err
 		}
@@ -131,15 +152,41 @@ func StreamFile(ctx context.Context, logger *zaplogger.ZapLogger, awsSession *se
 	return nil
 }
 
+func processCsvHeaders(ctx context.Context, logger *zaplogger.ZapLogger, downloader *s3manager.Downloader, s3FileCreated avro.S3FileCreatedUpdated, chunkSize int, fileRows chan []string) ([][]byte, int, int, error) {
+	buff, err := downloadChunk(ctx, logger, downloader, s3FileCreated, 0, chunkSize)
+	if err != nil {
+		return nil, 0, chunkSize, err
+	}
+
+	lines := bytes.Split(buff, []byte("\n"))
+	// If the chunk does not contain the whole headers, double the chunk size
+	if len(lines) == 1 {
+		return nil, 0, chunkSize * 2, nil
+	}
+
+	headers := strings.Split(string(lines[0]), ",")
+	colNum := len(headers)
+	fileRows <- headers
+
+	for line := 1; line < len(lines)-1; line++ {
+		cols := strings.Split(string(lines[line]), ",")
+		if len(cols) != colNum {
+			logger.Error(ctx, "Error streaming from file. Wrong number of cols", cols)
+		}
+		fileRows <- cols
+	}
+	return lines, colNum, chunkSize, nil
+}
+
 func downloadChunk(
 	ctx context.Context,
 	logger *zaplogger.ZapLogger,
 	downloader *s3manager.Downloader,
-	buff []byte,
 	s3FileCreated avro.S3FileCreatedUpdated,
 	start int,
 	chunkSize int,
-) error {
+) ([]byte, error) {
+	buff := make([]byte, chunkSize)
 	awsbuff := aws.NewWriteAtBuffer(buff)
 	numBytes, err := downloader.DownloadWithContext(ctx, awsbuff,
 		&s3.GetObjectInput{
@@ -148,8 +195,8 @@ func downloadChunk(
 			Range:  aws.String(fmt.Sprintf("bytes=%v-%v", start, start+chunkSize)),
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	logger.Infof(ctx, "Streamed %v bytes from %s. Range(%v-%v)", numBytes, s3FileCreated.Payload.Key, start, start+chunkSize)
-	return nil
+	return buff, nil
 }
